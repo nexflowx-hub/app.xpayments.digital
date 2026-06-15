@@ -36,3 +36,41 @@ Stage Summary:
 - ESLint: 0 errors
 - Dev Server: Compiles successfully, 200 responses
 - VLM Verification: All visual elements confirmed correct and professional
+
+---
+Task ID: 2
+Agent: Lead Frontend Engineer (Main)
+Task: Integrate XPayments Production API, refactor cards to API-driven, write Technical README
+
+Work Log:
+- Created `.env.local` with `NEXT_PUBLIC_API_URL="https://api.xpayments.digital"`
+- Built `src/lib/api-client.ts`: Typed fetch wrapper with `XPaymentsApiError` class, generic `ApiResponse<T>` type, `buildHeaders()` with Bearer token support, `request<T>()` generic function, `xpaymentsApi.getMerchantDashboard()` endpoint
+- Built `src/lib/query-provider.tsx`: React Query client provider with `QueryClient` configured (staleTime: 15s, refetchInterval: 30s, retry: 2, refetchOnWindowFocus: true)
+- Built `src/hooks/use-merchant-dashboard.ts`: Custom hook wrapping `useQuery` with query key factory `merchantKeys.dashboard()`, `merchantDashboardOptions()` reusable query options, test merchant UUID `00000000-0000-0000-0000-000000000000`
+- Refactored `balance-overview-cards.tsx` from mock data to API-driven:
+  - Accepts `MerchantDashboardBalances` data via props
+  - 4 primary cards map to INCOMING, PENDING, RESERVE, AVAILABLE
+  - 3 secondary state indicators (CLEARED, AUDIT, BLOCKED) show conditionally when > 0
+  - USDT formatting via `Intl.NumberFormat`
+  - Skeleton loading state (4 card skeletons)
+  - Error state with WifiOff icon + Retry button
+  - Total balance line when primary total > 0
+- Updated `layout.tsx`: Wrapped children in `<QueryProvider>`
+- Updated `page.tsx`: Client component using `useMerchantDashboard()` hook, API Connected badge, manual refresh button, sync timestamp, error detail (dev), refetch via `onRetry`
+- Verified with Agent Browser: All 4 cards render with $0.00 (correct for test merchant), API Connected badge visible, sync timestamp working
+- Wrote complete Technical README.md (14 sections: Overview, Architecture, Stack, Project Structure, Design System, API Integration, Env Vars, Components, Data Flow, Settlement States, Setup, Code Conventions, Roadmap, License)
+
+Stage Summary:
+- New artifacts:
+  - `.env.local` — API URL configuration
+  - `src/lib/api-client.ts` — Typed fetch wrapper
+  - `src/lib/query-provider.tsx` — React Query provider
+  - `src/hooks/use-merchant-dashboard.ts` — Dashboard data hook
+  - `README.md` — Complete technical documentation
+- Modified artifacts:
+  - `src/app/layout.tsx` — Added QueryProvider
+  - `src/app/page.tsx` — Full API integration
+  - `src/components/dashboard/balance-overview-cards.tsx` — Refactored to data-driven
+- ESLint: 0 errors
+- Dev Server: Compiled successfully, API Connected confirmation visible
+- Browser verified: 4 cards render with API data, all states functional
