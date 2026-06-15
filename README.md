@@ -2,6 +2,8 @@
 
 > **Gateway/Agregador de Pagamentos High-Risk** — Receba em Fiat (BRL, EUR, USD), liquide em USDT (Tether).
 
+[![Deploy on Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/nexflowx-hub/app.xpayments.digital&env=NEXT_PUBLIC_API_URL,https://api.xpayments.digital)
+
 ---
 
 ## Índice
@@ -14,12 +16,15 @@
 6. [Integração com a API](#6-integração-com-a-api)
 7. [Variáveis de Ambiente](#7-variáveis-de-ambiente)
 8. [Componentes do Dashboard](#8-componentes-do-dashboard)
-9. [Data Flow](#9-data-flow)
-10. [Estados de Settlement](#10-estados-de-settlement)
-11. [Setup & Desenvolvimento](#11-setup--desenvolvimento)
-12. [Convenções de Código](#12-convenções-de-código)
-13. [Roadmap](#13-roadmap)
-14. [Licença](#14-licença)
+9. [Módulo: Payment Links](#9-módulo-payment-links)
+10. [Data Flow](#10-data-flow)
+11. [Estados de Settlement](#11-estados-de-settlement)
+12. [Navegação & View Routing](#12-navegação--view-routing)
+13. [Deploy — Vercel](#13-deploy--vercel)
+14. [Setup & Desenvolvimento](#14-setup--desenvolvimento)
+15. [Convenções de Código](#15-convenções-de-código)
+16. [Roadmap](#16-roadmap)
+17. [Licença](#17-licença)
 
 ---
 
@@ -32,6 +37,7 @@ O **XPayments.Digital** é um MVP de Gateway de Pagamentos High-Risk com as segu
 - **Arquitetura Headless**: o frontend Next.js consome a nossa API REST própria. Não existem chamadas diretas a Firebase, Supabase ou outros BaaS do lado do cliente.
 - **Dark Mode Native**: a estética é permanentemente escura, ao estilo "Control Tower" financeiro / Web3.
 - **Motor de Estados Temporais**: os fundos do merchant transitam por 7 estados (INCOMING → PENDING → AVAILABLE, com desvios para RESERVE, AUDIT, BLOCKED, CLEARED).
+- **CRM de Pagamentos**: Gestão de Links de Cobrança, Clientes com LTV, e Configuração de Loja.
 
 ---
 
@@ -55,6 +61,9 @@ O **XPayments.Digital** é um MVP de Gateway de Pagamentos High-Risk com as segu
 │                                                                     │
 │  REST Endpoints:                                                    │
 │    GET  /api/v1/merchant/:id/dashboard                             │
+│    GET  /api/v1/merchant/:id/payment-links                         │
+│    POST /api/v1/merchant/:id/payment-links                         │
+│    GET  /api/v1/merchant/:id/customers                             │
 │    POST /api/v1/auth/login                                         │
 │    POST /api/v1/payouts/request                                    │
 │    ...                                                              │
@@ -63,17 +72,17 @@ O **XPayments.Digital** é um MVP de Gateway de Pagamentos High-Risk com as segu
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    NEXT.JS FRONTEND (Este Repo)                     │
-│                     http://localhost:3000                           │
+│              NEXT.JS FRONTEND (Este Repo)                           │
+│          https://app.xpayments.digital (Vercel)                    │
 │                                                                     │
 │  ┌────────────┐  ┌──────────────┐  ┌────────────────────────────┐  │
 │  │  Page.tsx   │  │  Components  │  │  API Client (Fetch)        │  │
-│  │  (Routes)   │  │  (Dashboard) │  │  + React Query (TanStack)  │  │
+│  │  (Views)    │  │  (Dashboard) │  │  + React Query (TanStack)  │  │
 │  └────────────┘  └──────────────┘  └────────────────────────────┘  │
 │                                                                     │
 │  ┌────────────┐  ┌──────────────┐  ┌────────────────────────────┐  │
 │  │  globals.css│  │  Zustand     │  │  Prisma (Local SQLite)    │  │
-│  │  (Theme)    │  │  (State)     │  │  (Cache/Sessions)         │  │
+│  │  (Theme)    │  │  (Nav State) │  │  (Cache/Sessions)         │  │
 │  └────────────┘  └──────────────┘  └────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -87,6 +96,7 @@ O **XPayments.Digital** é um MVP de Gateway de Pagamentos High-Risk com as segu
 | **Type-Safe** | TypeScript strict em todo o projeto. Interfaces de API tipadas em `src/lib/api-client.ts`. |
 | **Optimistic UI** | React Query com `staleTime: 15s` e `refetchInterval: 30s` para actualização em tempo real. |
 | **Dark Native** | `<html class="dark">` forçado no layout root. Não existe modo claro. |
+| **View Routing** | Navegação via Zustand store (`useNavigationStore`) — sem router file-system para views internas do dashboard. |
 
 ---
 
@@ -99,13 +109,15 @@ O **XPayments.Digital** é um MVP de Gateway de Pagamentos High-Risk com as segu
 | **Styling** | Tailwind CSS | 4.x | Utility-first CSS |
 | **UI Library** | shadcn/ui (New York) | — | Componentes Radix-based |
 | **State (Server)** | TanStack React Query | 5.82+ | Fetching, caching, sync |
-| **State (Client)** | Zustand | 5.x | Estado global do cliente |
-| **ORM** | Prisma | 6.x | Local SQLite cache |
+| **State (Client)** | Zustand | 5.x | Navegação entre views |
+| **Data Tables** | TanStack React Table | 8.21+ | Tabelas sort/filter |
 | **Formulários** | React Hook Form + Zod | 7.60+ / 4.x | Validação de forms |
+| **ORM** | Prisma | 6.x | Local SQLite cache |
 | **Animações** | Framer Motion | 12.x | Transições |
 | **Gráficos** | Recharts | 2.x | Dados visuais |
 | **Ícones** | Lucide React | 0.525+ | Iconografia |
 | **Runtime** | Bun | — | Dev server & build tool |
+| **Hosting** | Vercel | — | Deploy de produção |
 
 ---
 
@@ -113,14 +125,16 @@ O **XPayments.Digital** é um MVP de Gateway de Pagamentos High-Risk com as segu
 
 ```
 xpayments-digital/
-├── .env.local                          # Variáveis de ambiente (API URL)
 ├── .env.example                        # Template de env vars
-├── next.config.ts                      # Configuração Next.js (standalone output)
-├── Caddyfile                           # Reverse proxy com XTransformPort
+├── .env.local                          # Variáveis de ambiente (gitignored)
+├── .gitignore
+├── next.config.ts                      # ★ Config Next.js + Vercel
+├── package.json
+├── Caddyfile                           # Reverse proxy local (dev)
 ├── prisma/
 │   └── schema.prisma                   # Schema Prisma (SQLite)
 ├── db/
-│   └── custom.db                       # SQLite local database
+│   └── custom.db                       # SQLite local (gitignored)
 ├── public/
 │   ├── logo.svg
 │   └── robots.txt
@@ -128,40 +142,55 @@ xpayments-digital/
 │   ├── app/
 │   │   ├── globals.css                 # ★ Design System — Dark Theme + Tokens
 │   │   ├── layout.tsx                  # Root layout (dark, QueryProvider, fonts)
-│   │   ├── page.tsx                    # ★ Dashboard page (API-integrated)
+│   │   ├── page.tsx                    # ★ View Router (Overview / Payment Links / ...)
 │   │   └── api/
-│   │       └── route.ts                # API routes placeholder
+│   │       └── route.ts                # API routes
 │   ├── components/
-│   │   ├── ui/                         # ★ shadcn/ui (40+ componentes)
+│   │   ├── ui/                         # shadcn/ui (40+ componentes)
 │   │   │   ├── button.tsx
 │   │   │   ├── card.tsx
 │   │   │   ├── sidebar.tsx
+│   │   │   ├── sheet.tsx
+│   │   │   ├── switch.tsx
+│   │   │   ├── table.tsx
 │   │   │   ├── skeleton.tsx
 │   │   │   ├── badge.tsx
+│   │   │   ├── form.tsx
+│   │   │   ├── select.tsx
 │   │   │   ├── separator.tsx
-│   │   │   └── ... (accordion, dialog, dropdown-menu, etc.)
-│   │   └── dashboard/                  # ★ Componentes do Dashboard Merchant
-│   │       ├── dashboard-sidebar.tsx   #   Sidebar colapsável com navegação
+│   │   │   └── ... (accordion, dialog, dropdown-menu, tooltip, etc.)
+│   │   └── dashboard/                  # ★ Componentes de negócio XPayments
+│   │       ├── dashboard-sidebar.tsx   #   Sidebar colapsável (Zustand-driven)
 │   │       ├── dashboard-header.tsx    #   Header sticky com search + notifs
-│   │       └── balance-overview-cards.tsx  #   4 Cartões de Saldo (API-driven)
+│   │       ├── balance-overview-cards.tsx  #   4 Cartões de Saldo (API-driven)
+│   │       └── payment-links/          #   ★ Módulo Payment Links
+│   │           ├── types.ts            #     PaymentLink, CurrencyCode, etc.
+│   │           ├── mock-data.ts        #     6 links mock + mock API
+│   │           ├── columns.tsx         #     TanStack Table column defs
+│   │           ├── data-table.tsx      #     DataTable com search/sort/skeleton
+│   │           ├── create-link-sheet.tsx   # Sheet com RHF + Zod form
+│   │           └── payment-links-view.tsx  # View completa com stats + table
 │   ├── hooks/
-│   │   ├── use-merchant-dashboard.ts   # ★ React Query hook (dashboard data)
-│   │   ├── use-mobile.ts               #   Mobile detection
-│   │   └── use-toast.ts                #   Toast notifications
+│   │   ├── use-merchant-dashboard.ts   # React Query hook (balances)
+│   │   ├── use-mobile.ts               # Mobile detection
+│   │   └── use-toast.ts                # Toast notifications
 │   └── lib/
 │       ├── api-client.ts               # ★ Typed fetch wrapper (XPayments API)
-│       ├── query-provider.tsx          # ★ React Query client provider
-│       ├── utils.ts                    #   cn() helper (clsx + tailwind-merge)
-│       └── db.ts                       #   Prisma client instance
-└── worklog.md                          # Registo de desenvolvimento
+│       ├── query-provider.tsx          # React Query client provider
+│       ├── navigation-store.ts         # ★ Zustand store (view routing)
+│       ├── utils.ts                    # cn() helper (clsx + tailwind-merge)
+│       └── db.ts                       # Prisma client instance
+├── worklog.md                          # Registo de desenvolvimento
+└── README.md                           # Este ficheiro
 ```
 
 ### Convenção de Pastas
 
 - **`src/components/ui/`** — Componentes shadcn/ui puros (não alterar directamente, gerados pelo CLI).
-- **`src/components/dashboard/`** — Componentes de negócio do XPayments (livre para customização).
+- **`src/components/dashboard/`** — Componentes de negócio do XPayments.
+- **`src/components/dashboard/payment-links/`** — Módulo completo de Payment Links (types, mock, table, sheet, view).
 - **`src/hooks/`** — Custom React hooks.
-- **`src/lib/`** — Utilities, providers, e configurações partilhadas.
+- **`src/lib/`** — Utilities, providers, stores, e configurações partilhadas.
 
 ---
 
@@ -191,9 +220,9 @@ Definidos em `src/app/globals.css` no bloco `:root`:
 | `--ring` | `rgba(0,229,160,0.4)` | Neon Ring | Focus rings |
 | `--sidebar` | `#0C0C0C` | Sidebar BG | Fundo da sidebar |
 
-### Tailwind Custom Classes
+### Tailwind Custom Classes (Glow Utilities)
 
-Estas utilities estão registadas em `@layer utilities` no `globals.css`:
+Registadas em `@layer utilities` no `globals.css`:
 
 | Classe | Efeito |
 |---|---|
@@ -216,7 +245,7 @@ bg-surface / bg-surface-raised              → #0F0F0F / #181818
 ### Tipografia
 
 - **Sans**: Geist Sans (variável `--font-geist-sans`)
-- **Mono**: Geist Mono (variável `--font-geist-mono`) — usada para IDs, valores tabulares, código
+- **Mono**: Geist Mono (variável `--font-geist-mono`) — IDs, valores tabulares, código
 - Valores monetários usam `font-variant-numeric: tabular-nums` para alinhamento
 
 ### Scrollbar
@@ -237,12 +266,11 @@ O cliente é um **typed fetch wrapper** com as seguintes características:
 - **Generic response wrapper**: toda a API devolve `{ success: boolean, data: T, message?: string }`
 
 ```typescript
-// Exemplo de uso
 import { xpaymentsApi } from "@/lib/api-client";
 
 const balances = await xpaymentsApi.getMerchantDashboard(
   "merchant-uuid-here",
-  "bearer-token-here"  // opcional até auth estar pronto
+  "bearer-token-here"
 );
 // → { INCOMING: 1200, PENDING: 5400, RESERVE: 2150, AVAILABLE: 3000, ... }
 ```
@@ -253,69 +281,64 @@ const balances = await xpaymentsApi.getMerchantDashboard(
 |---|---|---|---|
 | `GET` | `/api/v1/merchant/:id/dashboard` | Balances do merchant | `MerchantDashboardBalances` |
 
+### Endpoints Previstos (Payment Links, CRM, Store)
+
+| Método | Path | Descrição |
+|---|---|---|
+| `GET` | `/api/v1/merchant/:id/payment-links` | Listar todos os links |
+| `POST` | `/api/v1/merchant/:id/payment-links` | Criar novo link |
+| `PATCH` | `/api/v1/merchant/:id/payment-links/:linkId` | Editar link |
+| `DELETE` | `/api/v1/merchant/:id/payment-links/:linkId` | Desactivar link |
+| `GET` | `/api/v1/merchant/:id/customers` | Listar clientes com LTV |
+| `GET` | `/api/v1/merchant/:id/customers/:custId/transactions` | Histórico do cliente |
+| `GET` | `/api/v1/merchant/:id/store` | Configuração da loja |
+| `PATCH` | `/api/v1/merchant/:id/store` | Atualizar configuração |
+
 ### React Query Hook (`src/hooks/use-merchant-dashboard.ts`)
 
 ```typescript
 import { useMerchantDashboard } from "@/hooks/use-merchant-dashboard";
 
-function MyComponent() {
-  const { data, isLoading, isError, error, refetch, isFetching, dataUpdatedAt } =
-    useMerchantDashboard({ merchantId: "uuid-aqui" });
+const { data, isLoading, isError, error, refetch, isFetching, dataUpdatedAt } =
+  useMerchantDashboard({ merchantId: "uuid-aqui" });
 
-  // data → { INCOMING: number, PENDING: number, RESERVE: number, AVAILABLE: number, CLEARED: number, AUDIT: number, BLOCKED: number }
-
-  // Auto-refetch a cada 30 segundos
-  // Stale após 15 segundos
-  // Refetch on window focus
-  // 2 retries em caso de falha
-}
-```
-
-### Query Configuration
-
-| Parâmetro | Valor | Rationale |
-|---|---|---|
-| `staleTime` | 15,000 ms (15s) | Dados considerados frescos por 15s |
-| `refetchInterval` | 30,000 ms (30s) | Polling automático para dados em tempo real |
-| `retry` | 2 | Tolerância a falhas de rede pontuais |
-| `refetchOnWindowFocus` | `true` | Refresca quando o merchant volta ao tab |
-
-### Query Key Factory
-
-```typescript
-merchantKeys.dashboard(merchantId)
-// → ["merchant", "dashboard", "uuid"]
-```
-
-Isto permite invalidação granular:
-```typescript
-queryClient.invalidateQueries({ queryKey: merchantKeys.dashboard(id) });
+// data → { INCOMING, PENDING, RESERVE, AVAILABLE, CLEARED, AUDIT, BLOCKED }
+// Auto-refetch: 30s | Stale: 15s | Refetch on focus: true | Retry: 2
 ```
 
 ---
 
 ## 7. Variáveis de Ambiente
 
-### `.env.local`
+### `.env.example` (commit to repo)
 
 ```env
-# URL base da API de produção do XPayments
 NEXT_PUBLIC_API_URL="https://api.xpayments.digital"
 ```
 
-### Variáveis Futuras (previstas)
+### `.env.local` (gitignored — dev + Vercel)
 
 ```env
-# Authentication (quando o fluxo de login estiver pronto)
-NEXT_PUBLIC_MERCHANT_ID=""          # UUID do merchant logado (via auth)
-NEXTAUTH_SECRET=""                  # NextAuth.js secret
-NEXTAUTH_URL=""                     # Base URL da app
+# Required
+NEXT_PUBLIC_API_URL="https://api.xpayments.digital"
 
-# Database (Prisma/SQLite local)
+# Auth (quando o fluxo estiver pronto)
+NEXTAUTH_SECRET=""
+NEXTAUTH_URL="https://app.xpayments.digital"
+
+# Database (dev only)
 DATABASE_URL="file:./db/custom.db"
 ```
 
-> **Nota**: A variável `NEXT_PUBLIC_*` é exposta ao browser. Para dados sensíveis (tokens JWT), usar Server Components ou API routes que leiam de `process.env.SECRET_VAR` (sem o prefixo `NEXT_PUBLIC_`).
+> **Nota**: `NEXT_PUBLIC_*` é exposta ao browser. Para dados sensíveis (JWT), usar Server Components ou API routes.
+
+### Variáveis no Vercel
+
+Configurar no **Vercel Dashboard → Settings → Environment Variables**:
+
+| Key | Valor | Ambientes |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | `https://api.xpayments.digital` | Production, Preview, Development |
 
 ---
 
@@ -324,82 +347,142 @@ DATABASE_URL="file:./db/custom.db"
 ### 8.1 `DashboardSidebar`
 
 **Ficheiro**: `src/components/dashboard/dashboard-sidebar.tsx`
-**Tipo**: Client Component (`"use client"`)
-**Props**: Nenhuma (self-contained)
 
 | Feature | Detalhe |
 |---|---|
 | Colapsável | Sim, via shadcn `Sidebar` com `collapsible="icon"` |
-| Navegação Principal | Overview, Transactions (badge "12"), Payouts, Payment Links, Compliance |
-| Navegação Sistema | Settings, Help & Support |
-| Branding | Logo "XPayments / Digital" com ícone Zap em fundo usdt/15 |
-| Avatar Dropdown | Merchant Co. com email, Account Settings, Log out |
-| Keyboard Shortcut | `Ctrl/Cmd + B` para toggle |
+| Navegação | Overview, Transactions (badge "12"), Payouts, **Payment Links**, Compliance |
+| State | Zustand `useNavigationStore` (lifted state) |
 | Mobile | Abre como Sheet (bottom drawer) |
+| Shortcut | `Ctrl/Cmd + B` para toggle |
 
 ### 8.2 `DashboardHeader`
 
 **Ficheiro**: `src/components/dashboard/dashboard-header.tsx`
-**Tipo**: Client Component
-**Props**: Nenhuma
 
 | Feature | Detalhe |
 |---|---|
 | Sticky | `sticky top-0` com `backdrop-blur-md` |
 | Search | Barra de pesquisa com ícone (hidden em mobile) |
-| Badge "LIVE" | Indicador verde neon do ambiente |
+| Badge "LIVE" | Indicador verde neon |
 | Notifications | Sino com count badge ("3") |
-| Sidebar Trigger | Botão de toggle da sidebar |
 
 ### 8.3 `BalanceOverviewCards`
 
 **Ficheiro**: `src/components/dashboard/balance-overview-cards.tsx`
-**Tipo**: Client Component
-
-**Props**:
 
 | Prop | Tipo | Descrição |
 |---|---|---|
 | `data` | `MerchantDashboardBalances \| undefined` | Dados da API (7 estados) |
-| `isLoading` | `boolean` | Mostra skeleton loaders |
-| `isError` | `boolean` | Mostra estado de erro |
-| `error` | `Error \| null` | Objeto de erro (para debug) |
-| `onRetry` | `() => void` | Callback para refetch manual |
+| `isLoading` | `boolean` | Skeleton loaders |
+| `isError` | `boolean` | Estado de erro |
+| `error` | `Error \| null` | Objeto de erro |
+| `onRetry` | `() => void` | Callback refetch |
 
-**Comportamento**:
-
-1. **Loading**: 4 Skeleton cards com animação pulse
-2. **Error**: Card de erro com ícone Wi-Fi Off e botão "Retry"
-3. **Sucesso — Cards Principais**:
-   - **Incoming** (`INCOMING`): Cor neutra slate, ícone ArrowDownLeft
-   - **Pending** (`PENDING`): Border/glow ambar, ícone Clock, "In transit D+1 to D+3"
-   - **Risk Reserve** (`RESERVE`): Border/glow vermelho, ícone Lock, "Held by compliance"
-   - **Available to Withdraw** (`AVAILABLE`): **Grande destaque** — texto em verde neon com glow, gradiente sutil, botão CTA **"Request Payout"**
-4. **Sucesso — Estados Secundários** (aparecem apenas quando > 0):
-   - Cleared (`CLEARED`): Ícone ShieldCheck, cor emerald
-   - Under Audit (`AUDIT`): Ícone FileSearch, cor cyan
-   - Blocked (`BLOCKED`): Ícone Ban, cor red
-5. **Total Line**: Aparece quando o total dos 4 estados principais > 0
-
-**Formatação**: Todos os valores usam `Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })`.
+**4 Cards Principais**: Incoming (slate), Pending (amber), Risk Reserve (red), Available (USDT neon + CTA).
+**3 Cards Secundários** (condicionais): Cleared, Under Audit, Blocked.
 
 ---
 
-## 9. Data Flow
+## 9. Módulo: Payment Links
+
+### Visão Geral
+
+Módulo completo de gestão de links de cobrança hospedados (Hosted Checkout Links).
+
+```
+src/components/dashboard/payment-links/
+├── types.ts              # PaymentLink, CreateLinkFormValues, CurrencyCode
+├── mock-data.ts          # 6 links mock + fetchPaymentLinks() + createPaymentLink()
+├── columns.tsx           # TanStack Table column definitions
+├── data-table.tsx        # DataTable com search, sort, skeletons, empty state
+├── create-link-sheet.tsx # Sheet drawer com formulário RHF + Zod
+└── payment-links-view.tsx # View principal com stats + table + sheet
+```
+
+### Data Model (`types.ts`)
+
+```typescript
+interface PaymentLink {
+  id: string;                    // "pl_01JXK2M3N4..."
+  name: string;                  // "Premium VPN Subscription"
+  description: string;           // "12-month premium VPN access..."
+  amount: number;                // 49.9
+  currency: CurrencyCode;        // "BRL" | "EUR" | "USD" | "USDT"
+  type: "reusable" | "single_use";
+  status: "active" | "expired" | "disabled";
+  clicks: number;                // 1247
+  sales: number;                 // 318
+  imageUrl?: string;             // product image URL
+  collectShipping: boolean;
+  collectTaxId: boolean;
+  expiresAt?: string;            // ISO date
+  createdAt: string;             // ISO datetime
+  updatedAt: string;
+  checkoutUrl: string;           // "https://pay.xpayments.digital/l/..."
+}
+```
+
+### Data Table (`data-table.tsx`)
+
+| Feature | Implementação |
+|---|---|
+| Framework | TanStack React Table v8 |
+| UI | shadcn/ui `<Table>` |
+| Colunas | Name (thumbnail + desc), Amount (currency formatted), Type (badge), Performance (sales/clicks/conversion), Status (colored badge), Created (formatted), Actions |
+| Sort | Todas as colunas numéricas e de data são sortáveis |
+| Search | Filtro global por nome e descrição |
+| Skeleton | 5 linhas de skeleton durante loading |
+| Empty State | CTA "Create New Link" quando sem dados |
+| Actions | Copy URL (clipboard), Open Checkout (external link), Edit, Delete (dropdown) |
+
+### Formulário de Criação (`create-link-sheet.tsx`)
+
+| Seção | Campos | Validação |
+|---|---|---|
+| **Product Information** | Name, Amount (number), Currency (select: BRL/EUR/USD/USDT), Description (textarea) | Zod: name min 2, amount > 0, currency required |
+| **Product Image** | Image URL (input com ícone) + Drag & Drop visual placeholder | Zod: URL válida ou vazio |
+| **Configuration** | Reusable Link (switch), Collect Shipping Address (switch), Collect Tax ID/CPF/NIF (switch) | Boolean defaults: reusable=true, others=false |
+| **Advanced** | Expiration Date (date picker, optional) | Opcional, só para reusable links |
+
+| Feature | Detalhe |
+|---|---|
+| Form Library | React Hook Form + Zod |
+| Sheet Size | `sm:max-w-lg` (mais largo que o default) |
+| Submit | Mutation via React Query, toast de sucesso/erro |
+| Reset | Formulário reseta ao fechar o sheet |
+
+### View Principal (`payment-links-view.tsx`)
+
+| Feature | Detalhe |
+|---|---|
+| Quick Stats | 4 mini-cards: Total Links, Active, Total Sales, Total Clicks |
+| Error State | Banner vermelho com retry |
+| CTA Header | Botão "Create New Link" (usdt green) |
+| Data Fetch | `useQuery` com mock API (800ms delay) |
+| Create Mutation | `useMutation` com invalidação de cache + toast |
+
+---
+
+## 10. Data Flow
 
 ```
 ┌──────────────┐     ┌────────────────────┐     ┌───────────────────────────┐
-│  page.tsx    │────▶│ useMerchantDashboard│────▶│ GET /api/v1/merchant/:id  │
-│  (Client)    │◀────│ (React Query Hook)  │◀────│ /dashboard                │
-│              │     │                    │     │ (api.xpayments.digital)    │
-└──────┬───────┘     └────────────────────┘     └───────────────────────────┘
-       │
-       │ props: { data, isLoading, isError, onRetry }
-       ▼
-┌──────────────────────┐
-│ BalanceOverviewCards │
-│ (4 Primary + 3 Sec.) │
-└──────────────────────┘
+│  page.tsx    │────▶│ useNavigationStore │────▶│ View Router (switch)     │
+│  (Client)    │     │   (Zustand)        │     │                           │
+└──────────────┘     └────────────────────┘     └───────────┬───────────────┘
+                                                           │
+              ┌────────────────────────────────────────────┼────────────────┐
+              ▼                                            ▼                ▼
+     ┌─────────────────┐  ┌──────────────────────┐  ┌──────────────────┐
+     │  OverviewView   │  │  PaymentLinksView    │  │ PlaceholderView │
+     │                 │  │                      │  │ (Coming Soon)    │
+     │ useMerchantDash │  │ useQuery(links)      │  │                  │
+     │ board()         │  │ useMutation(create)  │  │                  │
+     │       │         │  │       │               │  │                  │
+     │       ▼         │  │       ▼               │  │                  │
+     │ BalanceCards    │  │ DataTable + Sheet    │  │                  │
+     └─────────────────┘  └──────────────────────┘  └──────────────────┘
 ```
 
 ### Fluxo de Refresh
@@ -408,13 +491,11 @@ DATABASE_URL="file:./db/custom.db"
 2. **Polling**: A cada 30s, React Query refaz o GET automaticamente
 3. **Focus**: Quando o user volta ao tab, refetch automático
 4. **Manual**: Botão de refresh no header ou "Retry" no estado de erro
-5. **Indicator**: Ícone spinning `RefreshCw` durante fetch + timestamp "Synced HH:MM:SS"
+5. **Indicator**: Timestamp "Synced HH:MM:SS" + spinner durante fetch
 
 ---
 
-## 10. Estados de Settlement
-
-A API devolve **7 estados** que representam o ciclo de vida dos fundos:
+## 11. Estados de Settlement
 
 ```
                     ┌──────────┐
@@ -443,7 +524,7 @@ A API devolve **7 estados** que representam o ciclo de vida dos fundos:
                     ┌────┴─────┐
                     ▼          ▼
               ┌──────────┐ ┌──────────┐
-              │  AUDIT   │ │ BLOCKED  │  ← Estados de excepção
+              │  AUDIT   │ │ BLOCKED  │
               └──────────┘ └──────────┘
 ```
 
@@ -453,13 +534,114 @@ A API devolve **7 estados** que representam o ciclo de vida dos fundos:
 | Pending | `PENDING` | Amber `#F59E0B` | `Clock` | Fundos em trânsito D+1 a D+3 |
 | Risk Reserve | `RESERVE` | Red `#EF4444` | `Lock` | Retido por compliance/KYC/AML |
 | Available | `AVAILABLE` | Neon Green `#00E5A0` | `Wallet` | Pronto para payout em USDT |
-| Cleared | `CLEARED` | Emerald | `ShieldCheck` | Payout já realizado com sucesso |
-| Under Audit | `AUDIT` | Cyan | `FileSearch` | Em revisão manual pela equipa de compliance |
-| Blocked | `BLOCKED` | Red | `Ban` | Fundos bloqueados permanentemente |
+| Cleared | `CLEARED` | Emerald | `ShieldCheck` | Payout já realizado |
+| Under Audit | `AUDIT` | Cyan | `FileSearch` | Em revisão manual |
+| Blocked | `BLOCKED` | Red | `Ban` | Fundos bloqueados |
 
 ---
 
-## 11. Setup & Desenvolvimento
+## 12. Navegação & View Routing
+
+O dashboard usa **navegação client-side via Zustand** em vez de file-system routing para as views internas.
+
+### Store (`src/lib/navigation-store.ts`)
+
+```typescript
+import { useNavigationStore, type DashboardView } from "@/lib/navigation-store";
+
+// Ler view activa
+const { activeView } = useNavigationStore();
+
+// Mudar de view
+const { setActiveView } = useNavigationStore();
+setActiveView("Payment Links");
+```
+
+### Views Disponíveis
+
+| View | Componente | Estado |
+|---|---|---|
+| Overview | `OverviewView` (inline) | ✅ Completo — Balance Cards + API |
+| Payment Links | `PaymentLinksView` | ✅ Completo — Table + Sheet + Form |
+| Transactions | `PlaceholderView` | 🚧 Coming Soon |
+| Payouts | `PlaceholderView` | 🚧 Coming Soon |
+| Compliance | `PlaceholderView` | 🚧 Coming Soon |
+| Settings | `PlaceholderView` | 🚧 Coming Soon |
+| Help & Support | `PlaceholderView` | 🚧 Coming Soon |
+
+---
+
+## 13. Deploy — Vercel
+
+### Configuração do `next.config.ts`
+
+O projeto está configurado para deploy direto na Vercel:
+
+```typescript
+const nextConfig: NextConfig = {
+  output: "standalone",
+
+  // Domínios permitidos para dev/preview
+  allowedDevOrigins: [
+    "https://app.xpayments.digital",
+    "https://*.vercel.app",
+    "https://*.space-z.ai",
+  ],
+
+  // Imagens externas permitidas
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "pay.xpayments.digital" },
+      { protocol: "https", hostname: "api.xpayments.digital" },
+      { protocol: "https", hostname: "picsum.photos" },
+    ],
+  },
+};
+```
+
+### Passo-a-Passo: Deploy Inicial
+
+1. **Fork / Push** este repositório para o GitHub:
+   ```
+   https://github.com/nexflowx-hub/app.xpayments.digital
+   ```
+
+2. **Importar na Vercel**:
+   - Aceder a [vercel.com/new](https://vercel.com/new)
+   - Selecionar o repositório `nexflowx-hub/app.xpayments.digital`
+   - Framework Preset: **Next.js** (detectado automaticamente)
+   - Build Command: `npm run build` (ou deixar default)
+   - Output Directory: `.next` (default para Next.js)
+
+3. **Configurar Environment Variables** no Vercel Dashboard:
+   - `NEXT_PUBLIC_API_URL` = `https://api.xpayments.digital`
+   - Marcar como disponível em **Production**, **Preview** e **Development**
+
+4. **Deploy** — A Vercel faz o deploy automático em cada push para `main`.
+
+### Deploy Commands
+
+```bash
+# Se preferir deploy via CLI
+npm i -g vercel
+vercel --prod
+
+# Ou linkar ao projeto existente
+vercel link
+vercel --prod
+```
+
+### Domínio Customizado
+
+Na Vercel Dashboard:
+1. **Settings → Domains**
+2. Adicionar `app.xpayments.digital`
+3. Configurar DNS no provedor:
+   - **CNAME**: `app` → `cname.vercel-dns.com`
+
+---
+
+## 14. Setup & Desenvolvimento
 
 ### Pré-requisitos
 
@@ -469,122 +651,102 @@ A API devolve **7 estados** que representam o ciclo de vida dos fundos:
 ### Instalação
 
 ```bash
-# Clonar o repositório
-git clone <repo-url> xpayments-digital
-cd xpayments-digital
+# Clonar
+git clone https://github.com/nexflowx-hub/app.xpayments.digital.git
+cd app.xpayments.digital
 
 # Instalar dependências
 bun install
 
 # Copiar variáveis de ambiente
 cp .env.example .env.local
-# Editar .env.local com a URL da API
 
-# Gerar cliente Prisma
+# Gerar cliente Prisma (opcional, para dev local)
 bun run db:generate
-
-# Push schema para a DB local
 bun run db:push
-```
 
-### Desenvolvimento
-
-```bash
-# Iniciar o dev server (porta 3000)
+# Iniciar
 bun run dev
-
-# Verificar qualidade do código
-bun run lint
-
-# Acessar: http://localhost:3000
 ```
 
-### Scripts Disponíveis
+### Scripts
 
 | Script | Comando | Descrição |
 |---|---|---|
-| `dev` | `bun run dev` | Dev server na porta 3000 (log para dev.log) |
+| `dev` | `bun run dev` | Dev server na porta 3000 |
 | `build` | `bun run build` | Build de produção (standalone) |
 | `start` | `bun run start` | Servidor de produção |
 | `lint` | `bun run lint` | ESLint |
-| `db:push` | `bun run db:push` | Push Prisma schema para SQLite |
+| `db:push` | `bun run db:push` | Push Prisma schema |
 | `db:generate` | `bun run db:generate` | Gerar Prisma Client |
-| `db:migrate` | `bun run db:migrate` | Criar migration Prisma |
-| `db:reset` | `bun run db:reset` | Reset da base de dados |
+| `db:migrate` | `bun run db:migrate` | Criar migration |
+| `db:reset` | `bun run db:reset` | Reset da DB |
 
 ---
 
-## 12. Convenções de Código
+## 15. Convenções de Código
 
 ### Imports
 
 ```typescript
 // 1. React / Next.js
 import { useState } from "react";
-import { Metadata } from "next";
 
-// 2. Third-party libraries
+// 2. Third-party
 import { useQuery } from "@tanstack/react-query";
 
-// 3. shadcn/ui components
+// 3. shadcn/ui
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 
 // 4. Project components
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 
 // 5. Lib / hooks / types
 import { xpaymentsApi } from "@/lib/api-client";
-import { useMerchantDashboard } from "@/hooks/use-merchant-dashboard";
-import type { MerchantDashboardBalances } from "@/lib/api-client";
+import type { PaymentLink } from "@/components/dashboard/payment-links/types";
 ```
-
-### Componentes
-
-- Usar **`"use client"`** apenas quando necessário (state, effects, event handlers)
-- Preferir **Server Components** por default
-- Componentes shadcn/ui em `src/components/ui/`
-- Componentes de negócio em `src/components/dashboard/`
 
 ### Nomenclatura
 
-- **Ficheiros**: `kebab-case.tsx` (ex: `balance-overview-cards.tsx`)
-- **Componentes**: `PascalCase` (ex: `BalanceOverviewCards`)
-- **Hooks**: `use-kebab-case.ts` (ex: `use-merchant-dashboard.ts`)
-- **Tipos/Interfaces**: `PascalCase` (ex: `MerchantDashboardBalances`)
-- **Constants**: `UPPER_SNAKE_CASE` (ex: `TEST_MERCHANT_ID`)
-- **CSS tokens**: `--kebab-case` (ex: `--usdt-muted`)
+- **Ficheiros**: `kebab-case.tsx`
+- **Componentes**: `PascalCase`
+- **Hooks**: `use-kebab-case.ts`
+- **Tipos**: `PascalCase`
+- **Constants**: `UPPER_SNAKE_CASE`
+- **CSS tokens**: `--kebab-case`
 
 ### Tailwind
 
-- Usar as cores semânticas do tema (`text-usdt`, `bg-pending`, `border-risk`) em vez de valores hex hard-coded
+- Usar cores semânticas (`text-usdt`, `bg-pending`, `border-risk`)
 - Usar `text-muted-foreground` para texto secundário
-- Usar `bg-card` / `bg-surface` para fundos de componentes
+- Usar `bg-card` / `bg-surface` para fundos
 - Usar `border-border` para bordas padrão
 
 ---
 
-## 13. Roadmap
+## 16. Roadmap
 
-### MVP Actual (v0.2.0)
+### v0.3.0 — Sprint Actual
 
-- [x] Design System (Dark Theme, paleta USDT)
+- [x] Design System (Dark Theme, paleta USDT, glow utilities)
 - [x] Dashboard Layout (Sidebar, Header, Footer)
-- [x] 4 Cartões de Saldo (INCOMING, PENDING, RESERVE, AVAILABLE)
-- [x] 3 Estados Secundários (CLEARED, AUDIT, BLOCKED)
+- [x] 4 Cartões de Saldo + 3 Estados Secundários
 - [x] Integração API real (`api.xpayments.digital`)
 - [x] React Query (polling 30s, refetch on focus, retry)
 - [x] Loading skeletons e Error states
-- [x] USDT formatter com `Intl.NumberFormat`
+- [x] **Payment Links — DataTable + Sheet + Form (RHF + Zod)**
+- [x] **View Routing via Zustand** (navigation store)
+- [x] **Vercel deployment configuration**
+- [x] **GitHub repository** (`nexflowx-hub/app.xpayments.digital`)
 
-### Próximo Sprint
+### Próximo Sprint (v0.4.0)
 
 - [ ] Fluxo de Login / Register (NextAuth.js)
 - [ ] Tabela de Transações com filtros
 - [ ] Gráficos de volume (Recharts)
 - [ ] Página de Payouts (Request + History)
-- [ ] Payment Links (CRUD)
-- [ ] Página de Compliance
+- [ ] **Customers / CRM** (LTV, histórico individual)
+- [ ] **Store Settings** (branding, webhooks, cores)
 - [ ] Landing Page pública
 - [ ] Webhook real-time (WebSocket/Socket.io)
 
@@ -594,11 +756,12 @@ import type { MerchantDashboardBalances } from "@/lib/api-client";
 - [ ] Export CSV/Excel de transacções
 - [ ] 2FA (TOTP)
 - [ ] API Keys management
-- [ ] Webhook configuration
+- [ ] Webhook configuration UI
+- [ ] Mobile-responsive hosted checkout
 - [ ] Dark/Light mode toggle (se requisitado)
 
 ---
 
-## 14. Licença
+## 17. Licença
 
 Propriedade privada. Todos os direitos reservados — XPayments.Digital © 2025.
