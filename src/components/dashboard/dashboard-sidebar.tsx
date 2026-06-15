@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   LayoutDashboard,
   ArrowDownLeft,
@@ -12,6 +11,7 @@ import {
   ChevronDown,
   LogOut,
   Zap,
+  Link2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -35,27 +35,35 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useNavigationStore, type DashboardView } from "@/lib/navigation-store";
 
-const mainNav = [
-  { title: "Overview", icon: LayoutDashboard, active: true },
+// ─── Nav definitions ─────────────────────────────────────────────────────────
+
+const mainNav: {
+  title: DashboardView;
+  icon: React.ElementType;
+  badge?: string;
+}[] = [
+  { title: "Overview", icon: LayoutDashboard },
   { title: "Transactions", icon: ArrowDownLeft, badge: "12" },
   { title: "Payouts", icon: ArrowUpRight },
-  { title: "Payment Links", icon: CreditCard },
+  { title: "Payment Links", icon: Link2 },
   { title: "Compliance", icon: Shield },
 ];
 
-const bottomNav = [
+const bottomNav: { title: DashboardView; icon: React.ElementType }[] = [
   { title: "Settings", icon: Settings },
   { title: "Help & Support", icon: HelpCircle },
 ];
 
+// ─── Component ───────────────────────────────────────────────────────────────
+
 export function DashboardSidebar() {
-  const [activeItem, setActiveItem] = useState("Overview");
+  const { activeView, setActiveView } = useNavigationStore();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="p-4">
-        {/* Logo / Brand */}
         <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-usdt/15">
             <Zap className="h-4 w-4 text-usdt" />
@@ -83,8 +91,8 @@ export function DashboardSidebar() {
               {mainNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    isActive={activeItem === item.title}
-                    onClick={() => setActiveItem(item.title)}
+                    isActive={activeView === item.title}
+                    onClick={() => setActiveView(item.title)}
                     tooltip={item.title}
                   >
                     <item.icon className="h-4 w-4" />
@@ -112,8 +120,8 @@ export function DashboardSidebar() {
               {bottomNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    isActive={activeItem === item.title}
-                    onClick={() => setActiveItem(item.title)}
+                    isActive={activeView === item.title}
+                    onClick={() => setActiveView(item.title)}
                     tooltip={item.title}
                   >
                     <item.icon className="h-4 w-4" />
