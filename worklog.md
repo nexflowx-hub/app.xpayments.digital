@@ -74,3 +74,41 @@ Stage Summary:
 - ESLint: 0 errors
 - Dev Server: Compiled successfully, API Connected confirmation visible
 - Browser verified: 4 cards render with API data, all states functional
+
+---
+Task ID: 3
+Agent: Lead Frontend Engineer (Main)
+Task: Build Payment Links module, Zustand navigation, and push to GitHub/Vercel
+
+Work Log:
+- Created `src/lib/navigation-store.ts`: Zustand store with `DashboardView` type union, `useNavigationStore` hook for lifted sidebar state
+- Built Payment Links module (`src/components/dashboard/payment-links/`):
+  - `types.ts`: PaymentLink interface, CurrencyCode, PaymentLinkStatus, CreateLinkFormValues
+  - `mock-data.ts`: 6 realistic mock links (VPN, Consulting, Course, T-Shirt, License, Event) + mock API with 800ms delay
+  - `columns.tsx`: 7 TanStack Table columns (Name with thumbnail, Amount with currency formatting, Type badge, Performance with conversion rate, Status colored badge, Created date, Actions with Copy/External/Dropdown)
+  - `data-table.tsx`: Full DataTable with search, sort, 5-row skeleton loader, empty state with CTA, filtered count display
+  - `create-link-sheet.tsx`: Right-side Sheet (sm:max-w-lg) with 4 sections — Product Info (name, amount, currency select, description textarea), Product Image (URL input + drag-drop placeholder), Configuration (3 switches: Reusable, Collect Shipping, Collect Tax ID), Advanced (expiration date picker). Zod schema validation. RHF integration. Submit with mutation + toast.
+  - `payment-links-view.tsx`: Complete view with 4 quick stat cards, error banner, table, and create sheet. useQuery + useMutation integration.
+- Updated `dashboard-sidebar.tsx`: Replaced local useState with Zustand `useNavigationStore`, changed Payment Links icon to `Link2`
+- Updated `page.tsx`: Added view router (switch/case), OverviewView inline component, PlaceholderView for unimplemented modules
+- Browser verified: Payment Links table renders 6 mock links with all columns, Sheet opens with full form, navigation between Overview ↔ Payment Links works
+- Updated `next.config.ts`: Added `allowedDevOrigins` for Vercel/preview domains, `images.remotePatterns` for pay.xpayments.digital, api.xpayments.digital, picsum.photos
+- Created `.env.example` with NEXT_PUBLIC_API_URL template
+- Updated `.gitignore`: Added `!.env.example` exception, `*.png` exclusion for local screenshots
+- Rewrote `README.md`: 17 sections including Payment Links module docs, View Routing, Vercel deployment guide, updated project structure and roadmap v0.3.0
+- Pushed to GitHub: `https://github.com/nexflowx-hub/app.xpayments.digital.git` (main branch)
+
+Stage Summary:
+- New artifacts:
+  - `src/lib/navigation-store.ts` — Zustand navigation store
+  - `src/components/dashboard/payment-links/` (6 files) — Complete Payment Links module
+  - `.env.example` — Environment template
+- Modified artifacts:
+  - `next.config.ts` — Vercel configuration
+  - `.gitignore` — .env.example exception + screenshot exclusion
+  - `README.md` — Complete rewrite (17 sections)
+  - `src/components/dashboard/dashboard-sidebar.tsx` — Zustand-driven navigation
+  - `src/app/page.tsx` — View router
+- GitHub: Pushed to nexflowx-hub/app.xpayments.digital (main)
+- ESLint: 0 errors, 1 warning (TanStack Table React Compiler)
+- Browser verified: Full Payment Links flow functional
