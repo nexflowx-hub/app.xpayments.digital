@@ -209,9 +209,9 @@ export const mockKycProfile: KycProfile = {
       postalCode: '1000-001',
     },
     tier3: {
-      verificationUrl: 'https://verify.onramp.money/xpayments/xyz',
+      verificationUrl: 'https://verify.xpayments.digital/kyc/xyz',
       verifiedAt: '2024-12-15T10:00:00Z',
-      provider: 'Onramp.Money',
+      provider: 'XPayments.Verify',
     },
   },
 };

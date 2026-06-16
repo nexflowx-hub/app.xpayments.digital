@@ -1,0 +1,589 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import React, { useState, useCallback } from 'react';
+     4→     4→import { useAuthStore, ROLE_LABELS } from '@/stores/auth-store';
+     5→     5→import { xpApi } from '@/lib/api/client';
+     6→     6→import { Input } from '@/components/ui/input';
+     7→     7→import { Button } from '@/components/ui/button';
+     8→     8→import { Label } from '@/components/ui/label';
+     9→     9→import {
+    10→    10→  Shield,
+    11→    11→  Globe,
+    12→    12→  Zap,
+    13→    13→  ArrowRight,
+    14→    14→  Eye,
+    15→    15→  EyeOff,
+    16→    16→  Lock,
+    17→    17→  User,
+    18→    18→  Loader2,
+    19→    19→  ChevronRight,
+    20→    20→  TrendingUp,
+    21→    21→  Layers,
+    22→    22→  Fingerprint,
+    23→    23→  AlertCircle,
+    24→    24→  Menu,
+    25→    25→  X,
+    26→    26→  FileText,
+    27→    27→  HelpCircle,
+    28→    28→  Activity,
+    29→    29→} from 'lucide-react';
+    30→    30→import CryptoCards from '@/components/shared/crypto-cards';
+    31→    31→import TradingViewWidget from '@/components/shared/tradingview-widget';
+    32→    32→import type { AuthUser } from '@/types/xpayments';
+    33→    33→
+    34→    34→// --- Dev Mode Mock Users (apenas para dev) ---
+    35→    35→const devUsers: Record<string, AuthUser> = {
+    36→    36→  customer: {
+    37→    37→    id: 'usr_cust_001',
+    38→    38→    email: 'customer@email.com',
+    39→    39→    nickname: 'Buyer2024',
+    40→    40→    fullName: 'Customer Demo',
+    41→    41→    role: 'customer',
+    42→    42→    tier: 'TIER_1_BASIC',
+    43→    43→  },
+    44→    44→  merchant: {
+    45→    45→    id: 'usr_merch_001',
+    46→    46→    email: 'merchant@shop.com',
+    47→    47→    nickname: 'CryptoSeller',
+    48→    48→    fullName: 'Merchant Demo',
+    49→    49→    role: 'merchant',
+    50→    50→    tier: 'TIER_2_VERIFIED',
+    51→    51→    organizationId: 'org_001',
+    52→    52→    organizationName: 'XPayments Demo Store',
+    53→    53→  },
+    54→    54→  super_merchant: {
+    55→    55→    id: 'usr_super_001',
+    56→    56→    email: 'super@xpayments.corp',
+    57→    57→    nickname: 'XPaymentsAdmin',
+    58→    58→    fullName: 'Super Merchant',
+    59→    59→    role: 'super_merchant',
+    60→    60→    tier: 'TIER_3_CORPORATE',
+    61→    61→    organizationId: 'org_xpcorp',
+    62→    62→    organizationName: 'XPayments Corp',
+    63→    63→  },
+    64→    64→  operator: {
+    65→    65→    id: 'usr_ops_001',
+    66→    66→    email: 'ops@xpayments.digital',
+    67→    67→    nickname: 'OpsAgent',
+    68→    68→    fullName: 'Operator',
+    69→    69→    role: 'operator',
+    70→    70→  },
+    71→    71→};
+    72→    72→
+    73→    73→const devRoles = ['customer', 'merchant', 'super_merchant', 'operator'] as const;
+    74→    74→
+    75→    75→const FEATURES = [
+    76→    76→  { icon: Layers, title: 'Multi-Wallet', desc: 'EUR, BRL, USD, USDT — gestão centralizada em multi-moeda' },
+    77→    77→  { icon: Zap, title: 'Motor de Swap', desc: 'Conversão instantânea entre moedas com taxas reais' },
+    78→    78→  { icon: Shield, title: 'KYC Progressivo', desc: '4 níveis de verificação com limites adaptados' },
+    79→    79→  { icon: Fingerprint, title: 'Infraestrutura Segura', desc: 'Ledger institucional com encriptação de ponta a ponta' },
+    80→    80→];
+    81→    81→
+    82→    82→const NAV_LINKS = [
+    83→    83→  { label: 'Plataforma', href: '#features' },
+    84→    84→  { label: 'Mercado', href: '#market' },
+    85→    85→  { label: 'Documentação', href: '#' },
+    86→    86→  { label: 'Suporte', href: '#' },
+    87→    87→];
+    88→    88→
+    89→    89→export default function XPaymentsLanding() {
+    90→    90→  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+    91→    91→  const [loginId, setLoginId] = useState('');
+    92→    92→  const [loginPassword, setLoginPassword] = useState('');
+    93→    93→  const [regEmail, setRegEmail] = useState('');
+    94→    94→  const [regPassword, setRegPassword] = useState('');
+    95→    95→  const [regStoreName, setRegStoreName] = useState('');
+    96→    96→  const [showPassword, setShowPassword] = useState(false);
+    97→    97→  const [loginError, setLoginError] = useState('');
+    98→    98→  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    99→    99→
+   100→   100→  const { setAuth, isLoading, setLoading } = useAuthStore();
+   101→   101→
+   102→   102→  // ── Login real via API ──
+   103→   103→  const handleLogin = useCallback(
+   104→   104→    async (e: React.FormEvent) => {
+   105→   105→      e.preventDefault();
+   106→   106→      setLoginError('');
+   107→   107→      setLoading(true);
+   108→   108→
+   109→   109→      try {
+   110→   110→        const response = await xpApi.auth.login({
+   111→   111→          email: loginId,
+   112→   112→          password: loginPassword,
+   113→   113→        });
+   114→   114→
+   115→   115→        const token = response?.token || response?.access_token;
+   116→   116→        const userData = response?.user || response;
+   117→   117→
+   118→   118→        if (!token || !userData) {
+   119→   119→          setLoginError('Resposta inválida do servidor');
+   120→   120→          setLoading(false);
+   121→   121→          return;
+   122→   122→        }
+   123→   123→
+   124→   124→        setAuth(token, userData);
+   125→   125→        window.dispatchEvent(new CustomEvent('xp:authenticated'));
+   126→   126→      } catch (err: unknown) {
+   127→   127→        const message = err instanceof Error ? err.message : 'Erro de conexão';
+   128→   128→        setLoginError(message);
+   129→   129→      } finally {
+   130→   130→        setLoading(false);
+   131→   131→      }
+   132→   132→    },
+   133→   133→    [loginId, loginPassword, setAuth, setLoading],
+   134→   134→  );
+   135→   135→
+   136→   136→  // ── Register real via API ──
+   137→   137→  const handleRegister = useCallback(
+   138→   138→    async (e: React.FormEvent) => {
+   139→   139→      e.preventDefault();
+   140→   140→      if (!regEmail || !regPassword) {
+   141→   141→        setLoginError('Preencha todos os campos obrigatórios.');
+   142→   142→        return;
+   143→   143→      }
+   144→   144→      setLoginError('');
+   145→   145→      setLoading(true);
+   146→   146→      try {
+   147→   147→        const response = await xpApi.auth.register({
+   148→   148→          email: regEmail,
+   149→   149→          password: regPassword,
+   150→   150→          storeName: regStoreName || undefined,
+   151→   151→        });
+   152→   152→
+   153→   153→        const token = response?.token;
+   154→   154→        const userData = response?.user;
+   155→   155→
+   156→   156→        if (token && userData) {
+   157→   157→          setAuth(token, userData);
+   158→   158→          window.dispatchEvent(new CustomEvent('xp:authenticated'));
+   159→   159→        } else {
+   160→   160→          setLoginError('Conta criada com sucesso! Faça login para continuar.');
+   161→   161→          setAuthMode('login');
+   162→   162→        }
+   163→   163→      } catch (err: unknown) {
+   164→   164→        const msg = err instanceof Error ? err.message : 'Erro ao criar conta';
+   165→   165→        setLoginError(msg);
+   166→   166→      } finally {
+   167→   167→        setLoading(false);
+   168→   168→      }
+   169→   169→    },
+   170→   170→    [regEmail, regPassword, regStoreName, setAuth, setLoading],
+   171→   171→  );
+   172→   172→
+   173→   173→  // ── Dev Mode (sem API) ──
+   174→   174→  const handleDevLogin = useCallback(
+   175→   175→    (role: string) => {
+   176→   176→      const user = devUsers[role];
+   177→   177→      if (!user) return;
+   178→   178→      setAuth('dev_token_xxx', user);
+   179→   179→      window.dispatchEvent(new CustomEvent('xp:authenticated'));
+   180→   180→    },
+   181→   181→    [setAuth],
+   182→   182→  );
+   183→   183→
+   184→   184→  return (
+   185→   185→    <div className="relative flex flex-col min-h-screen w-full overflow-hidden bg-[#0A0E1A]">
+   186→   186→      {/* === NEON GRID BACKGROUND === */}
+   187→   187→      <div className="xpayments-grid-bg" />
+   188→   188→      <div className="xpayments-sweep" />
+   189→   189→
+   190→   190→      {/* Ambient glow orbs */}
+   191→   191→      <div className="pointer-events-none absolute inset-0">
+   192→   192→        <div className="absolute left-[10%] top-[20%] h-[700px] w-[700px] rounded-full bg-neon-600/[0.06] blur-[150px] animate-pulse-glow" />
+   193→   193→        <div className="absolute right-[15%] bottom-[10%] h-[500px] w-[500px] rounded-full bg-neon-500/[0.04] blur-[120px] animate-pulse-glow" style={{ animationDelay: '2s' }} />
+   194→   194→        <div className="absolute left-[50%] top-[60%] h-[400px] w-[400px] rounded-full bg-neon-400/[0.03] blur-[100px] animate-pulse-glow" style={{ animationDelay: '4s' }} />
+   195→   195→      </div>
+   196→   196→
+   197→   197→      {/* === NAVIGATION BAR === */}
+   198→   198→      <header className="relative z-20 flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 shrink-0 border-b border-zinc-800/30 bg-[#0A0E1A]/80 backdrop-blur-md">
+   199→   199→        <div className="flex items-center gap-3">
+   200→   200→          <div className="flex items-center justify-center w-9 h-9">
+   201→   201→            <img src="/logo.png" alt="XPayments" className="w-8 h-8 rounded-full" />
+   202→   202→          </div>
+   203→   203→          <span className="text-base font-bold text-zinc-100 tracking-tight">XPayments.Digital</span>
+   204→   204→          <span className="hidden sm:inline-flex text-[9px] font-medium uppercase tracking-widest text-neon-500/60 bg-neon-500/10 px-2 py-0.5 rounded">
+   205→   205→            Banking
+   206→   206→          </span>
+   207→   207→        </div>
+   208→   208→
+   209→   209→        {/* Desktop Nav Links */}
+   210→   210→        <nav className="hidden md:flex items-center gap-1">
+   211→   211→          {NAV_LINKS.map((link) => (
+   212→   212→            <a
+   213→   213→              key={link.label}
+   214→   214→              href={link.href}
+   215→   215→              className="px-3 py-2 text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors rounded-lg hover:bg-zinc-800/40"
+   216→   216→            >
+   217→   217→              {link.label}
+   218→   218→            </a>
+   219→   219→          ))}
+   220→   220→        </nav>
+   221→   221→
+   222→   222→        <div className="flex items-center gap-3">
+   223→   223→          {/* Status badge */}
+   224→   224→          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neon-500/10 border border-neon-500/20">
+   225→   225→            <Activity className="w-3 h-3 text-neon-400" />
+   226→   226→            <span className="text-[10px] font-medium text-neon-300">Online</span>
+   227→   227→          </div>
+   228→   228→
+   229→   229→          {/* Mobile menu toggle */}
+   230→   230→          <Button
+   231→   231→            variant="ghost"
+   232→   232→            size="icon"
+   233→   233→            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+   234→   234→            className="md:hidden h-8 w-8 text-zinc-400 hover:text-zinc-200"
+   235→   235→            aria-label="Menu"
+   236→   236→          >
+   237→   237→            {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+   238→   238→          </Button>
+   239→   239→        </div>
+   240→   240→      </header>
+   241→   241→
+   242→   242→      {/* Mobile Navigation Menu */}
+   243→   243→      {mobileMenuOpen && (
+   244→   244→        <nav className="relative z-20 md:hidden border-b border-zinc-800/30 bg-[#0A0E1A]/95 backdrop-blur-md px-4 py-3 animate-slide-in-left">
+   245→   245→          <div className="flex flex-col gap-1">
+   246→   246→            {NAV_LINKS.map((link) => (
+   247→   247→              <a
+   248→   248→                key={link.label}
+   249→   249→                href={link.href}
+   250→   250→                onClick={() => setMobileMenuOpen(false)}
+   251→   251→                className="px-3 py-2.5 text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors rounded-lg hover:bg-zinc-800/40"
+   252→   252→              >
+   253→   253→                {link.label}
+   254→   254→              </a>
+   255→   255→            ))}
+   256→   256→            <div className="flex items-center gap-4 mt-2 pt-2 border-t border-zinc-800/30">
+   257→   257→              <a href="#" className="text-xs text-zinc-500 hover:text-zinc-300">Documentação API</a>
+   258→   258→              <a href="#" className="text-xs text-zinc-500 hover:text-zinc-300">Status</a>
+   259→   259→            </div>
+   260→   260→          </div>
+   261→   261→        </nav>
+   262→   262→      )}
+   263→   263→
+   264→   264→      {/* === MAIN CONTENT === */}
+   265→   265→      <div className="relative z-10 flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
+   266→   266→
+   267→   267→        {/* MOBILE: Auth first (order-1), Crypto second (order-2) */}
+   268→   268→        {/* DESKTOP: LEFT = Crypto (no order), RIGHT = Auth (no order) */}
+   269→   269→
+   270→   270→        {/* RIGHT: Auth + Marketing — order-1 on mobile, order-last on desktop */}
+   271→   271→        <div className="order-1 lg:order-last lg:w-[440px] xl:w-[480px] shrink-0 flex flex-col justify-center p-4 sm:p-6 lg:p-8 lg:border-l border-t lg:border-t-0 border-zinc-800/30 bg-[#0A0E1A]/50 backdrop-blur-sm">
+   272→   272→          <div className="max-w-md mx-auto w-full space-y-5 animate-slide-in-right">
+   273→   273→            {/* Branding */}
+   274→   274→            <div className="space-y-3">
+   275→   275→              <div className="flex items-center gap-3">
+   276→   276→                <div className="flex items-center justify-center w-12 h-12 rounded-2xl border border-neon-500/20 bg-neon-500/10 animate-float-up">
+   277→   277→                  <img src="/logo.png" alt="XPayments" className="w-7 h-7 rounded-full" />
+   278→   278→                </div>
+   279→   279→                <div>
+   280→   280→                  <h1 className="text-2xl font-bold text-white tracking-tight">XPayments.Digital</h1>
+   281→   281→                  <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-neon-400/70">Centro de Comando</p>
+   282→   282→                </div>
+   283→   283→              </div>
+   284→   284→              <div className="space-y-2">
+   285→   285→                <h2 className="text-xl sm:text-2xl font-bold leading-tight text-white">
+   286→   286→                  O Futuro da{' '}
+   287→   287→                  <span className="bg-gradient-to-r from-neon-400 via-neon-300 to-neon-400 bg-clip-text text-transparent animate-gradient-x">
+   288→   288→                    Logística Financeira
+   289→   289→                  </span>
+   290→   290→                </h2>
+   291→   291→                <p className="text-sm leading-relaxed text-zinc-400">
+   292→   292→                  Plataforma institucional Web3 para gestão de wallets multi-moeda,
+   293→   293→                  settlement automatizado e operações cross-border.
+   294→   294→                  A ponte entre o sistema financeiro tradicional e a economia digital.
+   295→   295→                </p>
+   296→   296→              </div>
+   297→   297→              <div className="flex items-center gap-2 pt-1 flex-wrap">
+   298→   298→                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neon-500/10 border border-neon-500/20">
+   299→   299→                  <Shield className="w-3 h-3 text-neon-400" />
+   300→   300→                  <span className="text-[10px] font-medium text-neon-300">Seguro</span>
+   301→   301→                </div>
+   302→   302→                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800/60 border border-zinc-700/40">
+   303→   303→                  <Globe className="w-3 h-3 text-zinc-400" />
+   304→   304→                  <span className="text-[10px] font-medium text-zinc-300">Global</span>
+   305→   305→                </div>
+   306→   306→                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800/60 border border-zinc-700/40">
+   307→   307→                  <Zap className="w-3 h-3 text-zinc-400" />
+   308→   308→                  <span className="text-[10px] font-medium text-zinc-300">Instant</span>
+   309→   309→                </div>
+   310→   310→              </div>
+   311→   311→            </div>
+   312→   312→
+   313→   313→            {/* Auth Tabs */}
+   314→   314→            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl overflow-hidden shadow-2xl">
+   315→   315→              <div className="flex border-b border-white/[0.06]">
+   316→   316→                <button
+   317→   317→                  type="button"
+   318→   318→                  onClick={() => { setAuthMode('login'); setLoginError(''); }}
+   319→   319→                  className={`flex-1 py-3 text-sm font-semibold transition-all ${
+   320→   320→                    authMode === 'login' ? 'text-neon-400 bg-neon-500/[0.06] border-b-2 border-neon-400' : 'text-zinc-500 hover:text-zinc-300'
+   321→   321→                  }`}
+   322→   322→                >
+   323→   323→                  Entrar
+   324→   324→                </button>
+   325→   325→                <button
+   326→   326→                  type="button"
+   327→   327→                  onClick={() => { setAuthMode('register'); setLoginError(''); }}
+   328→   328→                  className={`flex-1 py-3 text-sm font-semibold transition-all ${
+   329→   329→                    authMode === 'register' ? 'text-neon-400 bg-neon-500/[0.06] border-b-2 border-neon-400' : 'text-zinc-500 hover:text-zinc-300'
+   330→   330→                  }`}
+   331→   331→                >
+   332→   332→                  Criar Conta
+   333→   333→                </button>
+   334→   334→              </div>
+   335→   335→
+   336→   336→              <div className="p-5 sm:p-6">
+   337→   337→                {loginError && (
+   338→   338→                  <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+   339→   339→                    <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+   340→   340→                    <p className="text-xs text-red-300">{loginError}</p>
+   341→   341→                  </div>
+   342→   342→                )}
+   343→   343→
+   344→   344→                {authMode === 'login' ? (
+   345→   345→                  <form onSubmit={handleLogin} className="space-y-4">
+   346→   346→                    <div className="space-y-2">
+   347→   347→                      <Label htmlFor="login-id" className="text-xs font-medium text-zinc-400">Email</Label>
+   348→   348→                      <div className="relative">
+   349→   349→                        <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+   350→   350→                        <Input
+   351→   351→                          id="login-id"
+   352→   352→                          type="text"
+   353→   353→                          placeholder="seu@email.com"
+   354→   354→                          value={loginId}
+   355→   355→                          onChange={(e) => setLoginId(e.target.value)}
+   356→   356→                          className="h-11 border-white/[0.06] bg-white/[0.03] pl-10 text-sm text-white placeholder:text-zinc-600 focus-visible:border-neon-500/40 focus-visible:ring-neon-500/15"
+   357→   357→                          required
+   358→   358→                        />
+   359→   359→                      </div>
+   360→   360→                    </div>
+   361→   361→                    <div className="space-y-2">
+   362→   362→                      <div className="flex items-center justify-between">
+   363→   363→                        <Label htmlFor="login-pass" className="text-xs font-medium text-zinc-400">Senha</Label>
+   364→   364→                        <button type="button" className="text-[10px] text-neon-400/60 hover:text-neon-400 transition-colors">Esqueceu?</button>
+   365→   365→                      </div>
+   366→   366→                      <div className="relative">
+   367→   367→                        <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+   368→   368→                        <Input
+   369→   369→                          id="login-pass"
+   370→   370→                          type={showPassword ? 'text' : 'password'}
+   371→   371→                          placeholder="••••••••"
+   372→   372→                          value={loginPassword}
+   373→   373→                          onChange={(e) => setLoginPassword(e.target.value)}
+   374→   374→                          className="h-11 border-white/[0.06] bg-white/[0.03] pl-10 pr-10 text-sm text-white placeholder:text-zinc-600 focus-visible:border-neon-500/40 focus-visible:ring-neon-500/15"
+   375→   375→                          required
+   376→   376→                        />
+   377→   377→                        <button
+   378→   378→                          type="button"
+   379→   379→                          onClick={() => setShowPassword(!showPassword)}
+   380→   380→                          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
+   381→   381→                          tabIndex={-1}
+   382→   382→                        >
+   383→   383→                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+   384→   384→                        </button>
+   385→   385→                      </div>
+   386→   386→                    </div>
+   387→   387→                    <Button
+   388→   388→                      type="submit"
+   389→   389→                      disabled={isLoading}
+   390→   390→                      className="h-11 w-full gap-2 rounded-xl bg-gradient-to-r from-neon-600 to-neon-500 text-sm font-semibold text-white shadow-lg shadow-neon-900/20 transition-all hover:from-neon-500 hover:to-neon-400 hover:shadow-neon-800/30 disabled:opacity-50"
+   391→   391→                    >
+   392→   392→                      {isLoading ? (
+   393→   393→                        <Loader2 className="h-4 w-4 animate-spin" />
+   394→   394→                      ) : (
+   395→   395→                        <>
+   396→   396→                          Acessar Plataforma
+   397→   397→                          <ArrowRight className="h-4 w-4" />
+   398→   398→                        </>
+   399→   399→                      )}
+   400→   400→                    </Button>
+   401→   401→                  </form>
+   402→   402→                ) : (
+   403→   403→                  <form onSubmit={handleRegister} className="space-y-4">
+   404→   404→                    <div className="space-y-2">
+   405→   405→                      <Label htmlFor="reg-store" className="text-xs font-medium text-zinc-400">Nome da Loja (opcional)</Label>
+   406→   406→                      <Input
+   407→   407→                        id="reg-store"
+   408→   408→                        type="text"
+   409→   409→                        placeholder="Minha Loja"
+   410→   410→                        value={regStoreName}
+   411→   411→                        onChange={(e) => setRegStoreName(e.target.value)}
+   412→   412→                        className="h-11 border-white/[0.06] bg-white/[0.03] pl-10 text-sm text-white placeholder:text-zinc-600 focus-visible:border-neon-500/40 focus-visible:ring-neon-500/15"
+   413→   413→                      />
+   414→   414→                    </div>
+   415→   415→                    <div className="space-y-2">
+   416→   416→                      <Label htmlFor="reg-store" className="text-xs font-medium text-zinc-400">Nome da Loja (opcional)</Label>
+   417→   417→                      <Input
+   418→   418→                        id="reg-store"
+   419→   419→                        type="text"
+   420→   420→                        placeholder="Minha Loja"
+   421→   421→                        value={regStoreName}
+   422→   422→                        onChange={(e) => setRegStoreName(e.target.value)}
+   423→   423→                        className="h-11 border-white/[0.06] bg-white/[0.03] pl-10 text-sm text-white placeholder:text-zinc-600 focus-visible:border-neon-500/40 focus-visible:ring-neon-500/15"
+   424→   424→                      />
+   425→   425→                    </div>
+   426→   426→                    <div className="space-y-2">
+   427→   427→                      <Label htmlFor="reg-email" className="text-xs font-medium text-zinc-400">Email</Label>
+   428→   428→                      <div className="relative">
+   429→   429→                        <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+   430→   430→                        <Input
+   431→   431→                          id="reg-email"
+   432→   432→                          type="email"
+   433→   433→                          placeholder="seu@email.com"
+   434→   434→                          value={regEmail}
+   435→   435→                          onChange={(e) => setRegEmail(e.target.value)}
+   436→   436→                          className="h-11 border-white/[0.06] bg-white/[0.03] pl-10 text-sm text-white placeholder:text-zinc-600 focus-visible:border-neon-500/40 focus-visible:ring-neon-500/15"
+   437→   437→                          required
+   438→   438→                        />
+   439→   439→                      </div>
+   440→   440→                    </div>
+   441→   441→                    <div className="space-y-2">
+   442→   442→                      <Label htmlFor="reg-pass" className="text-xs font-medium text-zinc-400">Criar Senha</Label>
+   443→   443→                      <div className="relative">
+   444→   444→                        <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+   445→   445→                        <Input
+   446→   446→                          id="reg-pass"
+   447→   447→                          type={showPassword ? 'text' : 'password'}
+   448→   448→                          placeholder="Mínimo 8 caracteres"
+   449→   449→                          value={regPassword}
+   450→   450→                          onChange={(e) => setRegPassword(e.target.value)}
+   451→   451→                          className="h-11 border-white/[0.06] bg-white/[0.03] pl-10 pr-10 text-sm text-white placeholder:text-zinc-600 focus-visible:border-neon-500/40 focus-visible:ring-neon-500/15"
+   452→   452→                          required
+   453→   453→                        />
+   454→   454→                        <button
+   455→   455→                          type="button"
+   456→   456→                          onClick={() => setShowPassword(!showPassword)}
+   457→   457→                          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
+   458→   458→                          tabIndex={-1}
+   459→   459→                        >
+   460→   460→                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+   461→   461→                        </button>
+   462→   462→                      </div>
+   463→   463→                    </div>
+   464→   464→                    <div className="space-y-3">
+   465→   465→                      <Button
+   466→   466→                        type="submit"
+   467→   467→                        disabled={isLoading}
+   468→   468→                        className="h-11 w-full gap-2 rounded-xl bg-gradient-to-r from-neon-600 to-neon-500 text-sm font-semibold text-white shadow-lg shadow-neon-900/20 transition-all hover:from-neon-500 hover:to-neon-400 hover:shadow-neon-800/30 disabled:opacity-50"
+   469→   469→                      >
+   470→   470→                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Criar Conta<ChevronRight className="h-4 w-4" /></>}
+   471→   471→                      </Button>
+   472→   472→                      <p className="text-[10px] text-center text-zinc-600 leading-relaxed">
+   473→   473→                        Ao criar uma conta, concorda com os{' '}
+   474→   474→                        <span className="text-zinc-400 underline cursor-pointer">Termos de Uso</span>
+   475→   475→                        {' '}e{' '}
+   476→   476→                        <span className="text-zinc-400 underline cursor-pointer">Política de Privacidade</span>
+   477→   477→                      </p>
+   478→   478→                    </div>
+   479→   479→                  </form>
+   480→   480→                )}
+   481→   481→              </div>
+   482→   482→            </div>
+   483→   483→
+   484→   484→            {/* Dev Mode */}
+   485→   485→            <div className="space-y-2">
+   486→   486→              <div className="flex items-center gap-2">
+   487→   487→                <div className="h-1.5 w-1.5 rounded-full bg-amber-500/80 animate-pulse" />
+   488→   488→                <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">Dev Mode — Acesso Rápido</span>
+   489→   489→              </div>
+   490→   490→              <div className="flex flex-wrap gap-1.5">
+   491→   491→                {devRoles.map((role) => (
+   492→   492→                  <button
+   493→   493→                    key={role}
+   494→   494→                    type="button"
+   495→   495→                    onClick={() => handleDevLogin(role)}
+   496→   496→                    className="group flex items-center gap-1.5 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-1.5 text-[11px] font-medium text-zinc-500 transition-all hover:border-neon-500/25 hover:bg-neon-500/[0.06] hover:text-neon-400"
+   497→   497→                  >
+   498→   498→                    {ROLE_LABELS[role]}
+   499→   499→                    <ArrowRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+   500→   500→                  </button>
+   501→   501→                ))}
+   502→   502→              </div>
+   503→   503→            </div>
+   504→   504→          </div>
+   505→   505→        </div>
+   506→   506→
+   507→   507→        {/* LEFT: Crypto Exchange Data — order-2 on mobile (comes after auth), first on desktop */}
+   508→   508→        <div className="order-2 lg:order-first lg:flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+   509→   509→          {/* Stats row - horizontal scroll on mobile */}
+   510→   510→          <div className="flex items-center gap-4 sm:gap-6 mb-5 overflow-x-auto pb-2 -mx-1 px-1 animate-slide-in-left">
+   511→   511→            {[
+   512→   512→              { value: '$2.4B+', label: 'Volume Processado' },
+   513→   513→              { value: '150K+', label: 'Transações/Mês' },
+   514→   514→              { value: '99.9%', label: 'Uptime' },
+   515→   515→              { value: '< 2s', label: 'Settlement' },
+   516→   516→            ].map((stat) => (
+   517→   517→              <div key={stat.label} className="flex flex-col shrink-0">
+   518→   518→                <span className="text-xs sm:text-sm font-bold text-zinc-300 tabular-nums">{stat.value}</span>
+   519→   519→                <span className="text-[9px] text-zinc-600 uppercase tracking-wider">{stat.label}</span>
+   520→   520→              </div>
+   521→   521→            ))}
+   522→   522→          </div>
+   523→   523→
+   524→   524→          <div id="market" className="mb-4 animate-slide-in-left">
+   525→   525→            <div className="flex items-center gap-2 mb-1">
+   526→   526→              <TrendingUp className="w-4 h-4 text-neon-400" />
+   527→   527→              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neon-400/80">Mercado Ao Vivo</span>
+   528→   528→            </div>
+   529→   529→            <h2 className="text-lg sm:text-xl font-bold text-zinc-100">Crypto Markets</h2>
+   530→   530→          </div>
+   531→   531→
+   532→   532→          <div className="animate-slide-in-left" style={{ animationDelay: '0.1s' }}>
+   533→   533→            <CryptoCards />
+   534→   534→          </div>
+   535→   535→
+   536→   536→          {/* TradingView - hidden on very small screens */}
+   537→   537→          <div className="mt-6 rounded-xl border border-zinc-800/40 bg-zinc-900/30 overflow-hidden animate-slide-in-left hidden sm:block" style={{ animationDelay: '0.3s' }}>
+   538→   538→            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800/40">
+   539→   539→              <Globe className="w-3.5 h-3.5 text-neon-400/60" />
+   540→   540→              <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">TradingView — Market Overview</span>
+   541→   541→            </div>
+   542→   542→            <div className="h-[320px] sm:h-[380px]">
+   543→   543→              <TradingViewWidget type="market-overview" height={380} />
+   544→   544→            </div>
+   545→   545→          </div>
+   546→   546→
+   547→   547→          {/* Features */}
+   548→   548→          <div id="features" className="mt-6 grid grid-cols-2 gap-3 animate-slide-in-left" style={{ animationDelay: '0.5s' }}>
+   549→   549→            {FEATURES.map((feat) => (
+   550→   550→              <div key={feat.title} className="group flex flex-col gap-2 p-3.5 rounded-xl border border-zinc-800/30 bg-zinc-900/20 transition-all hover:border-neon-500/20 hover:bg-zinc-900/40">
+   551→   551→                <feat.icon className="w-4 h-4 text-zinc-500 group-hover:text-neon-400 transition-colors" />
+   552→   552→                <span className="text-xs font-semibold text-zinc-200">{feat.title}</span>
+   553→   553→                <span className="text-[10px] leading-relaxed text-zinc-500">{feat.desc}</span>
+   554→   554→              </div>
+   555→   555→            ))}
+   556→   556→          </div>
+   557→   557→
+   558→   558→          <div className="mt-6 pt-4 border-t border-zinc-800/30">
+   559→   559→            <p className="text-[10px] text-zinc-600 leading-relaxed text-center">
+   560→   560→              XPayments.Digital v2.0 · Infraestrutura Web3 Institucional
+   561→   561→            </p>
+   562→   562→          </div>
+   563→   563→        </div>
+   564→   564→      </div>
+   565→   565→
+   566→   566→      {/* === FOOTER (sticky) === */}
+   567→   567→      <footer className="relative z-10 border-t border-zinc-800/30 bg-[#0A0E1A]/80 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-3 mt-auto">
+   568→   568→        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+   569→   569→          <div className="flex items-center gap-2">
+   570→   570→            <img src="/logo.png" alt="XPayments" className="w-4 h-4 rounded-full" />
+   571→   571→            <span className="text-[10px] text-zinc-600">&copy; 2026 XPayments.Digital. Todos os direitos reservados.</span>
+   572→   572→          </div>
+   573→   573→          <div className="flex items-center gap-4 sm:gap-6">
+   574→   574→            <a href="#" className="flex items-center gap-1 text-[10px] text-zinc-700 hover:text-zinc-400 transition-colors">
+   575→   575→              <FileText className="w-3 h-3" />
+   576→   576→              Documentação
+   577→   577→            </a>
+   578→   578→            <a href="#" className="flex items-center gap-1 text-[10px] text-zinc-700 hover:text-zinc-400 transition-colors">
+   579→   579→              <HelpCircle className="w-3 h-3" />
+   580→   580→              Suporte
+   581→   581→            </a>
+   582→   582→            <a href="#" className="text-[10px] text-zinc-700 hover:text-zinc-400 transition-colors">Status</a>
+   583→   583→          </div>
+   584→   584→        </div>
+   585→   585→      </footer>
+   586→   586→    </div>
+   587→   587→  );
+   588→   588→}
+   589→   589→

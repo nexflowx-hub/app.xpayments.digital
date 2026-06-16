@@ -42,7 +42,7 @@ export class PageErrorBoundary extends Component<Props, State> {
             <AlertTriangle className="size-6 text-red-400" />
           </div>
           <h3 className="text-base font-semibold text-zinc-200 mb-1">
-            Erro ao carregar p&aacute;gina
+            Erro ao carregar página
           </h3>
           <p className="text-sm text-zinc-500 mb-4 max-w-sm">
             Ocorreu um erro inesperado. Tente novamente.

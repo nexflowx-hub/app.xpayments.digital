@@ -134,9 +134,9 @@ export default function AdminTicketsPage() {
           label="Em Curso"
           value={stats.inProgress}
           icon={Clock}
-          color="text-blue-400"
-          bgColor="bg-blue-500/10"
-          borderColor="border-blue-500/20"
+          color="text-neon-400"
+          bgColor="bg-neon-500/10"
+          borderColor="border-neon-500/20"
         />
         <StatCard
           label="Resolvidos"

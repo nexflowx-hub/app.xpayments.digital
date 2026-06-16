@@ -454,18 +454,18 @@ export default function DepositsPage() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs text-zinc-500 uppercase tracking-wider">Client Secret</Label>
+                  <Label className="text-xs text-zinc-500 uppercase tracking-wider">Token de Sessão</Label>
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-zinc-800/80 border border-zinc-700/50">
                     <code className="text-xs text-zinc-400 font-mono truncate flex-1">
-                      pi_{Math.random().toString(36).substring(2, 15)}_secret_{Math.random().toString(36).substring(2, 10)}
+                      xp_{Math.random().toString(36).substring(2, 15)}_sess_{Math.random().toString(36).substring(2, 10)}
                     </code>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs text-zinc-500 uppercase tracking-wider">Payment Intent ID</Label>
+                  <Label className="text-xs text-zinc-500 uppercase tracking-wider">ID da Transação</Label>
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-zinc-800/80 border border-zinc-700/50">
                     <code className="text-xs text-zinc-400 font-mono truncate flex-1">
-                      pi_{Math.random().toString(36).substring(2, 15)}
+                      txn_{Math.random().toString(36).substring(2, 15)}
                     </code>
                   </div>
                 </div>
@@ -473,7 +473,7 @@ export default function DepositsPage() {
                   O pagamento será processado em 1-2 dias úteis.
                 </p>
                 <Button
-                  className="w-full h-10 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white shadow-lg shadow-purple-900/25 text-sm"
+                  className="w-full h-10 bg-gradient-to-r from-neon-600 to-neon-500 hover:from-neon-500 hover:to-neon-400 text-white shadow-lg shadow-neon-900/25 text-sm"
                 >
                   <CircleDollarSign className="size-4 mr-1.5" />
                   Abrir Checkout de Pagamento

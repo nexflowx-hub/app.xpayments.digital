@@ -409,18 +409,7 @@ export default function XPaymentsLanding() {
                         placeholder="Minha Loja"
                         value={regStoreName}
                         onChange={(e) => setRegStoreName(e.target.value)}
-                        className="h-11 border-white/[0.06] bg-white/[0.03] pl-10 text-sm text-white placeholder:text-zinc-600 focus-visible:border-neon-500/40 focus-visible:ring-neon-500/15"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="reg-store" className="text-xs font-medium text-zinc-400">Nome da Loja (opcional)</Label>
-                      <Input
-                        id="reg-store"
-                        type="text"
-                        placeholder="Minha Loja"
-                        value={regStoreName}
-                        onChange={(e) => setRegStoreName(e.target.value)}
-                        className="h-11 border-white/[0.06] bg-white/[0.03] pl-10 text-sm text-white placeholder:text-zinc-600 focus-visible:border-neon-500/40 focus-visible:ring-neon-500/15"
+                        className="h-11 border-white/[0.06] bg-white/[0.03] pl-4 text-sm text-white placeholder:text-zinc-600 focus-visible:border-neon-500/40 focus-visible:ring-neon-500/15"
                       />
                     </div>
                     <div className="space-y-2">

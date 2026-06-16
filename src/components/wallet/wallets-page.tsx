@@ -171,8 +171,8 @@ export default function WalletsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="size-7 rounded-md bg-blue-500/10 flex items-center justify-center">
-                      <ArrowDownLeft className="size-3.5 text-blue-400" />
+                    <div className="size-7 rounded-md bg-neon-500/10 flex items-center justify-center">
+                      <ArrowDownLeft className="size-3.5 text-neon-400" />
                     </div>
                     <div>
                       <p className="text-[10px] text-zinc-500 uppercase">Entrada</p>

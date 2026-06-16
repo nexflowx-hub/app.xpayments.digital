@@ -1,0 +1,653 @@
+     1→'use client';
+     2→
+     3→import React, { useState } from 'react';
+     4→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+     5→import { Badge } from '@/components/ui/badge';
+     6→import { Button } from '@/components/ui/button';
+     7→import { Input } from '@/components/ui/input';
+     8→import { Label } from '@/components/ui/label';
+     9→import {
+    10→  Select,
+    11→  SelectContent,
+    12→  SelectItem,
+    13→  SelectTrigger,
+    14→  SelectValue,
+    15→} from '@/components/ui/select';
+    16→import {
+    17→  Dialog,
+    18→  DialogContent,
+    19→  DialogHeader,
+    20→  DialogTitle,
+    21→  DialogDescription,
+    22→} from '@/components/ui/dialog';
+    23→import { Progress } from '@/components/ui/progress';
+    24→import { Separator } from '@/components/ui/separator';
+    25→import {
+    26→  ShieldCheck,
+    27→  Shield,
+    28→  ShieldAlert,
+    29→  Lock,
+    30→  CheckCircle2,
+    31→  ChevronRight,
+    32→  User,
+    33→  MapPin,
+    34→  Globe,
+    35→  ExternalLink,
+    36→  Loader2,
+    37→  Info,
+    38→  Eye,
+    39→} from 'lucide-react';
+    40→import { mockKycProfile, mockTierLimits } from '@/lib/mock-data';
+    41→import { TierLevel } from '@/types/xpayments';
+    42→import { cn } from '@/lib/utils';
+    43→
+    44→// ---------------------------------------------------------------------------
+    45→// Tier config helpers
+    46→// ---------------------------------------------------------------------------
+    47→
+    48→const TIER_ORDER: TierLevel[] = [
+    49→  TierLevel.TIER_0_UNVERIFIED,
+    50→  TierLevel.TIER_1_BASIC,
+    51→  TierLevel.TIER_2_VERIFIED,
+    52→  TierLevel.TIER_3_CORPORATE,
+    53→];
+    54→
+    55→const TIER_BADGE_COLORS: Record<TierLevel, string> = {
+    56→  [TierLevel.TIER_0_UNVERIFIED]: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
+    57→  [TierLevel.TIER_1_BASIC]: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    58→  [TierLevel.TIER_2_VERIFIED]: 'bg-neon-500/20 text-neon-400 border-neon-500/30',
+    59→  [TierLevel.TIER_3_CORPORATE]: 'bg-neon-500/20 text-neon-400 border-neon-500/30',
+    60→};
+    61→
+    62→function getTierIndex(tier: TierLevel): number {
+    63→  return TIER_ORDER.indexOf(tier);
+    64→}
+    65→
+    66→type TierStepStatus = 'completed' | 'current' | 'locked';
+    67→
+    68→function getTierStatus(tierLevel: TierLevel, currentTier: TierLevel): TierStepStatus {
+    69→  const ci = getTierIndex(currentTier);
+    70→  const ti = getTierIndex(tierLevel);
+    71→  if (ti < ci) return 'completed';
+    72→  if (ti === ci) return 'current';
+    73→  return 'locked';
+    74→}
+    75→
+    76→// ---------------------------------------------------------------------------
+    77→// Component
+    78→// ---------------------------------------------------------------------------
+    79→
+    80→export default function KycPage() {
+    81→  const profile = mockKycProfile;
+    82→  const currentTierIndex = getTierIndex(profile.tier);
+    83→  const progressPct = ((currentTierIndex + 1) / TIER_ORDER.length) * 100;
+    84→
+    85→  const [upgradeTarget, setUpgradeTarget] = useState<TierLevel | null>(null);
+    86→  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+    87→  const [submitting, setSubmitting] = useState(false);
+    88→
+    89→  // --- Tier 0 → 1 form state ---
+    90→  const [t1Form, setT1Form] = useState({
+    91→    fullName: '',
+    92→    nickname: '',
+    93→    region: '',
+    94→    contactMethod: '',
+    95→    contactValue: '',
+    96→  });
+    97→
+    98→  // --- Tier 1 → 2 form state ---
+    99→  const [t2Form, setT2Form] = useState({
+   100→    taxId: '',
+   101→    dateOfBirth: '',
+   102→    address: '',
+   103→    city: '',
+   104→    country: '',
+   105→    postalCode: '',
+   106→  });
+   107→
+   108→  const handleTier1Submit = (e: React.FormEvent) => {
+   109→    e.preventDefault();
+   110→    setSubmitting(true);
+   111→    setTimeout(() => {
+   112→      setSubmitting(false);
+   113→      setUpgradeTarget(null);
+   114→    }, 1500);
+   115→  };
+   116→
+   117→  const handleTier2Submit = (e: React.FormEvent) => {
+   118→    e.preventDefault();
+   119→    setSubmitting(true);
+   120→    setTimeout(() => {
+   121→      setSubmitting(false);
+   122→      setUpgradeTarget(null);
+   123→    }, 1500);
+   124→  };
+   125→
+   126→  const handleTier3Verify = () => {
+   127→    setSubmitting(true);
+   128→    setTimeout(() => {
+   129→      setSubmitting(false);
+   130→      setVerificationModalOpen(false);
+   131→      setUpgradeTarget(null);
+   132→    }, 2000);
+   133→  };
+   134→
+   135→  const canUpgrade = (tier: TierLevel): boolean => {
+   136→    const idx = getTierIndex(tier);
+   137→    return idx === currentTierIndex && idx < TIER_ORDER.length - 1;
+   138→  };
+   139→
+   140→  const currentTierLabel = mockTierLimits.find((t) => t.tier === profile.tier)?.label ?? 'Unknown';
+   141→
+   142→  return (
+   143→    <div className="space-y-6">
+   144→      {/* ── Current Tier Header ── */}
+   145→      <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden">
+   146→        <div className="h-1 bg-gradient-to-r from-neon-600 via-neon-500 to-neon-400" />
+   147→        <CardContent className="p-6 space-y-4">
+   148→          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+   149→            <div className="flex items-center gap-4">
+   150→              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-neon-500/15 border border-neon-500/25">
+   151→                <ShieldCheck className="h-7 w-7 text-neon-400" />
+   152→              </div>
+   153→              <div>
+   154→                <p className="text-sm text-zinc-400">Nível de Verificação Atual</p>
+   155→                <div className="flex items-center gap-2 mt-1">
+   156→                  <h2 className="text-xl font-bold text-zinc-100">{currentTierLabel}</h2>
+   157→                  <Badge variant="outline" className={cn('text-xs', TIER_BADGE_COLORS[profile.tier])}>
+   158→                    Tier {currentTierIndex}
+   159→                  </Badge>
+   160→                </div>
+   161→              </div>
+   162→            </div>
+   163→            <div className="text-right">
+   164→              <p className="text-xs text-zinc-500 mb-1">Progresso de Verificação</p>
+   165→              <p className="text-2xl font-bold text-neon-400">{Math.round(progressPct)}%</p>
+   166→            </div>
+   167→          </div>
+   168→          <div className="space-y-2">
+   169→            <Progress value={progressPct} className="h-2.5 bg-zinc-800 [&>div]:bg-gradient-to-r [&>div]:from-neon-600 [&>div]:to-neon-400" />
+   170→            <div className="flex justify-between text-[10px] text-zinc-500 uppercase tracking-wider font-medium">
+   171→              {TIER_ORDER.map((t, i) => (
+   172→                <span
+   173→                  key={t}
+   174→                  className={cn(
+   175→                    i <= currentTierIndex ? 'text-neon-400' : 'text-zinc-600',
+   176→                  )}
+   177→                >
+   178→                  Tier {i}
+   179→                </span>
+   180→              ))}
+   181→            </div>
+   182→          </div>
+   183→        </CardContent>
+   184→      </Card>
+   185→
+   186→      {/* ── Tier Cards ── */}
+   187→      <div className="grid gap-4 md:grid-cols-2">
+   188→        {TIER_ORDER.map((tier) => {
+   189→          const tierInfo = mockTierLimits.find((t) => t.tier === tier);
+   190→          if (!tierInfo) return null;
+   191→          const status = getTierStatus(tier, profile.tier);
+   192→          const tierIndex = getTierIndex(tier);
+   193→          const upgradeable = canUpgrade(tier);
+   194→
+   195→          return (
+   196→            <Card
+   197→              key={tier}
+   198→              className={cn(
+   199→                'bg-zinc-900/50 border-zinc-800 transition-all duration-200',
+   200→                status === 'current' && 'border-neon-500/30 ring-1 ring-neon-500/10',
+   201→                status === 'locked' && 'opacity-60',
+   202→              )}
+   203→            >
+   204→              <CardHeader className="pb-3">
+   205→                <div className="flex items-start justify-between">
+   206→                  <div className="flex items-center gap-3">
+   207→                    <div
+   208→                      className={cn(
+   209→                        'flex h-10 w-10 items-center justify-center rounded-lg',
+   210→                        status === 'completed' && 'bg-neon-500/15 border border-neon-500/25',
+   211→                        status === 'current' && 'bg-neon-500/15 border border-neon-500/25',
+   212→                        status === 'locked' && 'bg-zinc-800 border border-zinc-700',
+   213→                      )}
+   214→                    >
+   215→                      {status === 'completed' ? (
+   216→                        <CheckCircle2 className="h-5 w-5 text-neon-400" />
+   217→                      ) : status === 'current' ? (
+   218→                        <Shield className="h-5 w-5 text-neon-400" />
+   219→                      ) : (
+   220→                        <Lock className="h-5 w-5 text-zinc-500" />
+   221→                      )}
+   222→                    </div>
+   223→                    <div>
+   224→                      <CardTitle className="text-base font-semibold text-zinc-100">
+   225→                        {tierInfo.label}
+   226→                      </CardTitle>
+   227→                      <CardDescription className="text-xs text-zinc-400 mt-0.5">
+   228→                        {tierInfo.description}
+   229→                      </CardDescription>
+   230→                    </div>
+   231→                  </div>
+   232→                  <Badge
+   233→                    variant="outline"
+   234→                    className={cn(
+   235→                      'text-[10px] shrink-0',
+   236→                      status === 'completed' && 'bg-neon-500/15 text-neon-400 border-neon-500/25',
+   237→                      status === 'current' && 'bg-neon-500/15 text-neon-400 border-neon-500/25',
+   238→                      status === 'locked' && 'bg-zinc-800 text-zinc-500 border-zinc-700',
+   239→                    )}
+   240→                  >
+   241→                    {status === 'completed'
+   242→                      ? 'Concluído'
+   243→                      : status === 'current'
+   244→                        ? 'Atual'
+   245→                        : 'Bloqueado'}
+   246→                  </Badge>
+   247→                </div>
+   248→              </CardHeader>
+   249→
+   250→              <CardContent className="space-y-4 pt-0">
+   251→                {/* Data points */}
+   252→                <div>
+   253→                  <p className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium mb-2">
+   254→                    Dados Necessários
+   255→                  </p>
+   256→                  <div className="flex flex-wrap gap-1.5">
+   257→                    {tierIndex === 0 && (
+   258→                      <>
+   259→                        <MiniTag label="Email" />
+   260→                        <MiniTag label="Senha" />
+   261→                      </>
+   262→                    )}
+   263→                    {tierIndex === 1 && (
+   264→                      <>
+   265→                        <MiniTag label="Nome Completo" />
+   266→                        <MiniTag label="XPayments ID" />
+   267→                        <MiniTag label="Região" />
+   268→                        <MiniTag label="Contacto" />
+   269→                      </>
+   270→                    )}
+   271→                    {tierIndex === 2 && (
+   272→                      <>
+   273→                        <MiniTag label="NIF/CPF/TIN" />
+   274→                        <MiniTag label="Data de Nascimento" />
+   275→                        <MiniTag label="Morada Completa" />
+   276→                        <MiniTag label="Código Postal" />
+   277→                      </>
+   278→                    )}
+   279→                    {tierIndex === 3 && (
+   280→                      <>
+   281→                        <MiniTag label="Verificação Externa" />
+   282→                        <MiniTag label="Documento de Identidade" />
+   283→                        <MiniTag label="Proof of Address" />
+   284→                      </>
+   285→                    )}
+   286→                  </div>
+   287→                </div>
+   288→
+   289→                <Separator className="bg-zinc-800" />
+   290→
+   291→                {/* Features unlocked */}
+   292→                <div>
+   293→                  <p className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium mb-2">
+   294→                    Funcionalidades
+   295→                  </p>
+   296→                  <ul className="space-y-1">
+   297→                    {tierInfo.features.map((feat) => (
+   298→                      <li key={feat} className="flex items-center gap-2 text-xs text-zinc-300">
+   299→                        <ChevronRight className="h-3 w-3 text-neon-500 shrink-0" />
+   300→                        {feat}
+   301→                      </li>
+   302→                    ))}
+   303→                  </ul>
+   304→                </div>
+   305→
+   306→                {/* Limits */}
+   307→                {tierIndex > 0 && (
+   308→                  <>
+   309→                    <Separator className="bg-zinc-800" />
+   310→                    <div className="grid grid-cols-3 gap-3">
+   311→                      <LimitPill label="Por Transação" value={`€${tierInfo.maxTransactionLimit.toLocaleString()}`} />
+   312→                      <LimitPill label="Diário" value={`€${tierInfo.dailyLimit.toLocaleString()}`} />
+   313→                      <LimitPill label="Mensal" value={`€${tierInfo.monthlyLimit.toLocaleString()}`} />
+   314→                    </div>
+   315→                  </>
+   316→                )}
+   317→
+   318→                {/* Currencies */}
+   319→                <div className="flex flex-wrap gap-1">
+   320→                  {tierInfo.currencies.map((c) => (
+   321→                    <Badge key={c} variant="secondary" className="text-[10px] bg-zinc-800 text-zinc-300 border-zinc-700 px-2 py-0 h-5">
+   322→                      {c}
+   323→                    </Badge>
+   324→                  ))}
+   325→                </div>
+   326→
+   327→                {/* Upgrade button */}
+   328→                {upgradeable && (
+   329→                  <Button
+   330→                    onClick={() => setUpgradeTarget(tier)}
+   331→                    className="w-full mt-2 gap-2 bg-gradient-to-r from-neon-600 to-neon-500 hover:from-neon-500 hover:to-neon-400 text-white text-sm font-semibold shadow-lg shadow-neon-900/20"
+   332→                  >
+   333→                    <ShieldAlert className="h-4 w-4" />
+   334→                    Avançar para {mockTierLimits.find((t) => t.tier === TIER_ORDER[tierIndex + 1])?.label}
+   335→                  </Button>
+   336→                )}
+   337→              </CardContent>
+   338→            </Card>
+   339→          );
+   340→        })}
+   341→      </div>
+   342→
+   343→      {/* ── Tier 0 → 1 Upgrade Dialog ── */}
+   344→      <Dialog open={upgradeTarget === TierLevel.TIER_0_UNVERIFIED} onOpenChange={() => setUpgradeTarget(null)}>
+   345→        <DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-lg">
+   346→          <DialogHeader>
+   347→            <DialogTitle className="text-zinc-100">Registo — KYC-0 para KYC-1</DialogTitle>
+   348→            <DialogDescription className="text-zinc-400">
+   349→              Preencha os dados abaixo para avançar para o nível básico de verificação.
+   350→            </DialogDescription>
+   351→          </DialogHeader>
+   352→          <form onSubmit={handleTier1Submit} className="space-y-4 pt-2">
+   353→            <div className="space-y-2">
+   354→              <Label htmlFor="t1-fullname" className="text-zinc-300">Nome Completo</Label>
+   355→              <Input
+   356→                id="t1-fullname"
+   357→                placeholder="João da Silva"
+   358→                value={t1Form.fullName}
+   359→                onChange={(e) => setT1Form({ ...t1Form, fullName: e.target.value })}
+   360→                className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:border-neon-500/50 focus-visible:ring-neon-500/20"
+   361→              />
+   362→            </div>
+   363→            <div className="space-y-2">
+   364→              <Label htmlFor="t1-nickname" className="text-zinc-300">XPayments ID (Nickname)</Label>
+   365→              <Input
+   366→                id="t1-nickname"
+   367→                placeholder="joaosilva"
+   368→                value={t1Form.nickname}
+   369→                onChange={(e) => setT1Form({ ...t1Form, nickname: e.target.value })}
+   370→                className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:border-neon-500/50 focus-visible:ring-neon-500/20"
+   371→              />
+   372→            </div>
+   373→            <div className="space-y-2">
+   374→              <Label htmlFor="t1-region" className="text-zinc-300">Região</Label>
+   375→              <Select value={t1Form.region} onValueChange={(v) => setT1Form({ ...t1Form, region: v })}>
+   376→                <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-zinc-100 focus:ring-neon-500/20">
+   377→                  <SelectValue placeholder="Selecionar região" />
+   378→                </SelectTrigger>
+   379→                <SelectContent className="bg-zinc-900 border-zinc-700">
+   380→                  <SelectItem value="EU" className="text-zinc-200 focus:bg-zinc-800">Europa</SelectItem>
+   381→                  <SelectItem value="BR" className="text-zinc-200 focus:bg-zinc-800">Brasil</SelectItem>
+   382→                </SelectContent>
+   383→              </Select>
+   384→            </div>
+   385→            <div className="grid grid-cols-2 gap-4">
+   386→              <div className="space-y-2">
+   387→                <Label htmlFor="t1-contact-method" className="text-zinc-300">Método de Contacto</Label>
+   388→                <Select value={t1Form.contactMethod} onValueChange={(v) => setT1Form({ ...t1Form, contactMethod: v })}>
+   389→                  <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-zinc-100 focus:ring-neon-500/20">
+   390→                    <SelectValue placeholder="Selecionar" />
+   391→                  </SelectTrigger>
+   392→                  <SelectContent className="bg-zinc-900 border-zinc-700">
+   393→                    <SelectItem value="email" className="text-zinc-200 focus:bg-zinc-800">Email</SelectItem>
+   394→                    <SelectItem value="whatsapp" className="text-zinc-200 focus:bg-zinc-800">WhatsApp</SelectItem>
+   395→                    <SelectItem value="telegram" className="text-zinc-200 focus:bg-zinc-800">Telegram</SelectItem>
+   396→                  </SelectContent>
+   397→                </Select>
+   398→              </div>
+   399→              <div className="space-y-2">
+   400→                <Label htmlFor="t1-contact-value" className="text-zinc-300">Valor do Contacto</Label>
+   401→                <Input
+   402→                  id="t1-contact-value"
+   403→                  placeholder="email@exemplo.com"
+   404→                  value={t1Form.contactValue}
+   405→                  onChange={(e) => setT1Form({ ...t1Form, contactValue: e.target.value })}
+   406→                  className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:border-neon-500/50 focus-visible:ring-neon-500/20"
+   407→                />
+   408→              </div>
+   409→            </div>
+   410→            <Button
+   411→              type="submit"
+   412→              disabled={submitting}
+   413→              className="w-full mt-2 gap-2 bg-gradient-to-r from-neon-600 to-neon-500 hover:from-neon-500 hover:to-neon-400 text-white font-semibold shadow-lg shadow-neon-900/20"
+   414→            >
+   415→              {submitting ? (
+   416→                <>
+   417→                  <Loader2 className="h-4 w-4 animate-spin" />
+   418→                  A enviar...
+   419→                </>
+   420→              ) : (
+   421→                <>
+   422→                  <ShieldCheck className="h-4 w-4" />
+   423→                  Submeter Registo
+   424→                </>
+   425→              )}
+   426→            </Button>
+   427→          </form>
+   428→        </DialogContent>
+   429→      </Dialog>
+   430→
+   431→      {/* ── Tier 1 → 2 Upgrade Dialog ── */}
+   432→      <Dialog open={upgradeTarget === TierLevel.TIER_1_BASIC} onOpenChange={() => setUpgradeTarget(null)}>
+   433→        <DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-lg">
+   434→          <DialogHeader>
+   435→            <DialogTitle className="text-zinc-100">Verificação Declarativa — KYC-1 para KYC-2</DialogTitle>
+   436→            <DialogDescription className="text-zinc-400">
+   437→              Forneça os dados fiscais e de morada para aumentar os seus limites.
+   438→            </DialogDescription>
+   439→          </DialogHeader>
+   440→
+   441→          {/* Info Banner */}
+   442→          <div className="flex items-start gap-3 rounded-lg border border-amber-500/25 bg-amber-500/5 p-3">
+   443→            <Info className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+   444→            <p className="text-xs text-amber-200/80 leading-relaxed">
+   445→              Os dados não são armazenados localmente, são transmitidos ao{' '}
+   446→              <span className="font-semibold text-amber-300">Ghost Middleware</span> para os provedores de liquidez.
+   447→            </p>
+   448→          </div>
+   449→
+   450→          <form onSubmit={handleTier2Submit} className="space-y-4 pt-2">
+   451→            <div className="space-y-2">
+   452→              <Label htmlFor="t2-taxid" className="text-zinc-300">NIF / CPF / TIN</Label>
+   453→              <Input
+   454→                id="t2-taxid"
+   455→                placeholder="123456789"
+   456→                value={t2Form.taxId}
+   457→                onChange={(e) => setT2Form({ ...t2Form, taxId: e.target.value })}
+   458→                className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:border-neon-500/50 focus-visible:ring-neon-500/20"
+   459→              />
+   460→            </div>
+   461→            <div className="space-y-2">
+   462→              <Label htmlFor="t2-dob" className="text-zinc-300">Data de Nascimento</Label>
+   463→              <Input
+   464→                id="t2-dob"
+   465→                type="date"
+   466→                value={t2Form.dateOfBirth}
+   467→                onChange={(e) => setT2Form({ ...t2Form, dateOfBirth: e.target.value })}
+   468→                className="bg-zinc-800/50 border-zinc-700 text-zinc-100 focus-visible:border-neon-500/50 focus-visible:ring-neon-500/20"
+   469→              />
+   470→            </div>
+   471→            <div className="space-y-2">
+   472→              <Label htmlFor="t2-address" className="text-zinc-300">Morada</Label>
+   473→              <Input
+   474→                id="t2-address"
+   475→                placeholder="Rua Principal, 123"
+   476→                value={t2Form.address}
+   477→                onChange={(e) => setT2Form({ ...t2Form, address: e.target.value })}
+   478→                className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:border-neon-500/50 focus-visible:ring-neon-500/20"
+   479→              />
+   480→            </div>
+   481→            <div className="grid grid-cols-3 gap-4">
+   482→              <div className="space-y-2">
+   483→                <Label htmlFor="t2-city" className="text-zinc-300">Cidade</Label>
+   484→                <Input
+   485→                  id="t2-city"
+   486→                  placeholder="Lisboa"
+   487→                  value={t2Form.city}
+   488→                  onChange={(e) => setT2Form({ ...t2Form, city: e.target.value })}
+   489→                  className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:border-neon-500/50 focus-visible:ring-neon-500/20"
+   490→                />
+   491→              </div>
+   492→              <div className="space-y-2">
+   493→                <Label htmlFor="t2-country" className="text-zinc-300">País</Label>
+   494→                <Input
+   495→                  id="t2-country"
+   496→                  placeholder="Portugal"
+   497→                  value={t2Form.country}
+   498→                  onChange={(e) => setT2Form({ ...t2Form, country: e.target.value })}
+   499→                  className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:border-neon-500/50 focus-visible:ring-neon-500/20"
+   500→                />
+   501→              </div>
+   502→              <div className="space-y-2">
+   503→                <Label htmlFor="t2-postal" className="text-zinc-300">Código Postal</Label>
+   504→                <Input
+   505→                  id="t2-postal"
+   506→                  placeholder="1000-001"
+   507→                  value={t2Form.postalCode}
+   508→                  onChange={(e) => setT2Form({ ...t2Form, postalCode: e.target.value })}
+   509→                  className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:border-neon-500/50 focus-visible:ring-neon-500/20"
+   510→                />
+   511→              </div>
+   512→            </div>
+   513→            <Button
+   514→              type="submit"
+   515→              disabled={submitting}
+   516→              className="w-full mt-2 gap-2 bg-gradient-to-r from-neon-600 to-neon-500 hover:from-neon-500 hover:to-neon-400 text-white font-semibold shadow-lg shadow-neon-900/20"
+   517→            >
+   518→              {submitting ? (
+   519→                <>
+   520→                  <Loader2 className="h-4 w-4 animate-spin" />
+   521→                  A verificar...
+   522→                </>
+   523→              ) : (
+   524→                <>
+   525→                  <ShieldCheck className="h-4 w-4" />
+   526→                  Submeter Verificação
+   527→                </>
+   528→              )}
+   529→            </Button>
+   530→          </form>
+   531→        </DialogContent>
+   532→      </Dialog>
+   533→
+   534→      {/* ── Tier 2 → 3 Verification Dialog ── */}
+   535→      <Dialog open={upgradeTarget === TierLevel.TIER_2_VERIFIED} onOpenChange={() => setUpgradeTarget(null)}>
+   536→        <DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-md">
+   537→          <DialogHeader>
+   538→            <DialogTitle className="text-zinc-100">Verificação Externa — KYC-2 para KYC-3</DialogTitle>
+   539→            <DialogDescription className="text-zinc-400">
+   540→              A verificação de conta corporativa é realizada por um provedor externo autorizado.
+   541→            </DialogDescription>
+   542→          </DialogHeader>
+   543→
+   544→          <div className="space-y-4 pt-2">
+   545→            <div className="flex items-start gap-3 rounded-lg border border-neon-500/20 bg-neon-500/5 p-4">
+   546→              <Shield className="h-5 w-5 text-neon-400 shrink-0 mt-0.5" />
+   547→              <div className="space-y-2">
+   548→                <p className="text-sm font-medium text-zinc-200">Verificação Segura</p>
+   549→                <p className="text-xs text-zinc-400 leading-relaxed">
+   550→                  Será redirecionado para o provedor <span className="font-semibold text-neon-400">Onramp.Money</span> onde
+   551→                  deverá submeter documentação de identidade e proof of address. Após a verificação, a sua conta será
+   552→                  automaticamente atualizada para o nível corporativo.
+   553→                </p>
+   554→              </div>
+   555→            </div>
+   556→
+   557→            <div className="rounded-lg border border-zinc-800 bg-zinc-800/50 p-4 space-y-2">
+   558→              <p className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium">Documentos Necessários</p>
+   559→              <ul className="space-y-1.5">
+   560→                {[
+   561→                  'Documento de identidade (Passaporte / BI / CC)',
+   562→                  'Comprovativo de morada (últimos 3 meses)',
+   563→                  'Documentos da empresa (se aplicável)',
+   564→                ].map((doc) => (
+   565→                  <li key={doc} className="flex items-center gap-2 text-xs text-zinc-300">
+   566→                    <CheckCircle2 className="h-3 w-3 text-zinc-500" />
+   567→                    {doc}
+   568→                  </li>
+   569→                ))}
+   570→              </ul>
+   571→            </div>
+   572→
+   573→            <Button
+   574→              onClick={() => setVerificationModalOpen(true)}
+   575→              disabled={submitting}
+   576→              className="w-full gap-2 bg-gradient-to-r from-neon-600 to-neon-500 hover:from-neon-500 hover:to-neon-400 text-white font-semibold shadow-lg shadow-neon-900/20"
+   577→            >
+   578→              <ExternalLink className="h-4 w-4" />
+   579→              Iniciar Verificação
+   580→            </Button>
+   581→          </div>
+   582→        </DialogContent>
+   583→      </Dialog>
+   584→
+   585→      {/* ── Verification Simulation Modal ── */}
+   586→      <Dialog open={verificationModalOpen} onOpenChange={setVerificationModalOpen}>
+   587→        <DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-md">
+   588→          <DialogHeader>
+   589→            <DialogTitle className="text-zinc-100">Redirecionamento Externo</DialogTitle>
+   590→            <DialogDescription className="text-zinc-400">
+   591→              Será redirecionado para a página de verificação do provedor.
+   592→            </DialogDescription>
+   593→          </DialogHeader>
+   594→          <div className="space-y-4 pt-2">
+   595→            <div className="rounded-lg border border-zinc-800 bg-zinc-800/50 p-4 space-y-2">
+   596→              <p className="text-xs text-zinc-500">URL do Provedor</p>
+   597→              <div className="flex items-center gap-2">
+   598→                <Globe className="h-4 w-4 text-neon-400 shrink-0" />
+   599→                <code className="text-xs text-neon-300 font-mono truncate">
+   600→                  https://verify.onramp.money/xpayments/{mockKycProfile.data.tier3?.provider?.toLowerCase() ?? 'xyz'}
+   601→                </code>
+   602→              </div>
+   603→            </div>
+   604→
+   605→            <p className="text-xs text-zinc-400 text-center leading-relaxed">
+   606→              Este é um ambiente de demonstração. Nenhum redirecionamento real será efectuado.
+   607→            </p>
+   608→
+   609→            <Button
+   610→              onClick={handleTier3Verify}
+   611→              disabled={submitting}
+   612→              className="w-full gap-2 bg-gradient-to-r from-neon-600 to-neon-500 hover:from-neon-500 hover:to-neon-400 text-white font-semibold shadow-lg shadow-neon-900/20"
+   613→            >
+   614→              {submitting ? (
+   615→                <>
+   616→                  <Loader2 className="h-4 w-4 animate-spin" />
+   617→                  Simulando Verificação...
+   618→                </>
+   619→              ) : (
+   620→                <>
+   621→                  <CheckCircle2 className="h-4 w-4" />
+   622→                  Simular Verificação Concluída
+   623→                </>
+   624→              )}
+   625→            </Button>
+   626→          </div>
+   627→        </DialogContent>
+   628→      </Dialog>
+   629→    </div>
+   630→  );
+   631→}
+   632→
+   633→// ---------------------------------------------------------------------------
+   634→// Sub-components
+   635→// ---------------------------------------------------------------------------
+   636→
+   637→function MiniTag({ label }: { label: string }) {
+   638→  return (
+   639→    <span className="inline-flex items-center rounded-md bg-zinc-800/80 border border-zinc-700/60 px-2 py-0.5 text-[10px] font-medium text-zinc-400">
+   640→      {label}
+   641→    </span>
+   642→  );
+   643→}
+   644→
+   645→function LimitPill({ label, value }: { label: string; value: string }) {
+   646→  return (
+   647→    <div className="rounded-lg bg-zinc-800/60 border border-zinc-700/50 px-3 py-2 text-center">
+   648→      <p className="text-[10px] text-zinc-500 uppercase tracking-wider">{label}</p>
+   649→      <p className="text-sm font-semibold text-zinc-200 mt-0.5">{value}</p>
+   650→    </div>
+   651→  );
+   652→}
+   653→

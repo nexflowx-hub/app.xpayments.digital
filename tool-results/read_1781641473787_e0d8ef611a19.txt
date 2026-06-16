@@ -1,0 +1,859 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import React, { useEffect, useState, useCallback } from 'react';
+     4→     4→import { useNavStore } from '@/stores/nav-store';
+     5→     5→import { useAuthStore } from '@/stores/auth-store';
+     6→     6→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+     7→     7→import { Badge } from '@/components/ui/badge';
+     8→     8→import { Button } from '@/components/ui/button';
+     9→     9→import { Progress } from '@/components/ui/progress';
+    10→    10→import { Skeleton } from '@/components/ui/skeleton';
+    11→    11→import {
+    12→    12→  Wallet,
+    13→    13→  ArrowDownLeft,
+    14→    14→  ArrowLeftRight,
+    15→    15→  ArrowUpRight,
+    16→    16→  TrendingUp,
+    17→    17→  TrendingDown,
+    18→    18→  Clock,
+    19→    19→  AlertCircle,
+    20→    20→  DollarSign,
+    21→    21→  ArrowRight,
+    22→    22→  RefreshCw,
+    23→    23→  WifiOff,
+    24→    24→  ServerCrash,
+    25→    25→} from 'lucide-react';
+    26→    26→import { xpApi } from '@/lib/api/client';
+    27→    27→import {
+    28→    28→  currencySymbols,
+    29→    29→  currencyColors,
+    30→    30→  transactionTypeLabels,
+    31→    31→  transactionStatusColors,
+    32→    32→} from '@/lib/mock-data';
+    33→    33→import type { Wallet as XPaymentsWallet, Transaction as XPaymentsTransaction } from '@/types/xpayments';
+    34→    34→import { Currency, TransactionType, TransactionStatus } from '@/types/xpayments';
+    35→    35→
+    36→    36→// ============================================================
+    37→    37→// XPAYMENTS CORE — Dashboard Page (Live API)
+    38→    38→// 
+    39→    39→// Dados servidos por:
+    40→    40→//   GET /dashboard/wallets  → { success: true, data: Wallet[] }
+    41→    41→//   GET /dashboard/transactions → { success: true, data: Transaction[] }
+    42→    42→//
+    43→    43→// Fallback para mock data se API indisponível.
+    44→    44→// ============================================================
+    45→    45→
+    46→    46→// --- Types for API response (flexíveis, toleram nulls) ---
+    47→    47→interface DashboardWallet {
+    48→    48→  id: string;
+    49→    49→  walletReference?: string | null;
+    50→    50→  currency: string;
+    51→    51→  balanceAvailable?: number;
+    52→    52→  balancePending?: number;
+    53→    53→  balanceIncoming?: number;
+    54→    54→  balanceBlocked?: number;
+    55→    55→  blockchainAddress?: string | null;
+    56→    56→}
+    57→    57→
+    58→    58→interface DashboardTransaction {
+    59→    59→  id: string;
+    60→    60→  walletId?: string | null;
+    61→    61→  type?: string | null;
+    62→    62→  status?: string | null;
+    63→    63→  amount?: number;
+    64→    64→  feeApplied?: number;
+    65→    65→  currency?: string | null;
+    66→    66→  description?: string | null;
+    67→    67→  createdAt?: string | null;
+    68→    68→  updatedAt?: string | null;
+    69→    69→}
+    70→    70→
+    71→    71→// --- Helpers ---
+    72→    72→
+    73→    73→const fmt = (n: number | null | undefined) =>
+    74→    74→  (n ?? 0).toLocaleString('pt-BR', {
+    75→    75→    minimumFractionDigits: 2,
+    76→    76→    maximumFractionDigits: 2,
+    77→    77→  });
+    78→    78→
+    79→    79→const safeNum = (v: number | null | undefined, fallback = 0): number =>
+    80→    80→  typeof v === 'number' && isFinite(v) ? v : fallback;
+    81→    81→
+    82→    82→const safeCurrency = (c: string | null | undefined): Currency => {
+    83→    83→  if (c && Object.values(Currency).includes(c as Currency)) return c as Currency;
+    84→    84→  return Currency.USD;
+    85→    85→};
+    86→    86→
+    87→    87→const safeTxType = (t: string | null | undefined): TransactionType => {
+    88→    88→  if (t && Object.values(TransactionType).includes(t as TransactionType))
+    89→    89→    return t as TransactionType;
+    90→    90→  return TransactionType.TRANSFER;
+    91→    91→};
+    92→    92→
+    93→    93→const safeTxStatus = (s: string | null | undefined): TransactionStatus => {
+    94→    94→  if (s && Object.values(TransactionStatus).includes(s as TransactionStatus))
+    95→    95→    return s as TransactionStatus;
+    96→    96→  return TransactionStatus.PENDING;
+    97→    97→};
+    98→    98→
+    99→    99→const CURRENCY_FLAGS: Record<Currency, string> = {
+   100→   100→  [Currency.EUR]: '🇪🇺',
+   101→   101→  [Currency.BRL]: '🇧🇷',
+   102→   102→  [Currency.USDT]: '₮',
+   103→   103→  [Currency.USD]: '🇺🇸',
+   104→   104→};
+   105→   105→
+   106→   106→const INCOMING_TYPES: TransactionType[] = [
+   107→   107→  TransactionType.PROXY_INCOMING,
+   108→   108→  TransactionType.SETTLEMENT,
+   109→   109→  TransactionType.TRANSFER,
+   110→   110→];
+   111→   111→
+   112→   112→function isIncoming(type: TransactionType, status: TransactionStatus): boolean {
+   113→   113→  if (type === TransactionType.TRANSFER && status !== TransactionStatus.INCOMING) {
+   114→   114→    return false;
+   115→   115→  }
+   116→   116→  return INCOMING_TYPES.includes(type);
+   117→   117→}
+   118→   118→
+   119→   119→function formatDate(iso: string | null | undefined): string {
+   120→   120→  if (!iso) return '—';
+   121→   121→  try {
+   122→   122→    const d = new Date(iso);
+   123→   123→    if (isNaN(d.getTime())) return '—';
+   124→   124→    return d.toLocaleDateString('pt-BR', {
+   125→   125→      day: '2-digit',
+   126→   126→      month: 'short',
+   127→   127→      hour: '2-digit',
+   128→   128→      minute: '2-digit',
+   129→   129→    });
+   130→   130→  } catch {
+   131→   131→    return '—';
+   132→   132→  }
+   133→   133→}
+   134→   134→
+   135→   135→function statusLabel(status: TransactionStatus): string {
+   136→   136→  switch (status) {
+   137→   137→    case TransactionStatus.COMPLETED: return 'Concluído';
+   138→   138→    case TransactionStatus.PENDING: return 'Pendente';
+   139→   139→    case TransactionStatus.INCOMING: return 'A receber';
+   140→   140→    case TransactionStatus.FAILED: return 'Falhou';
+   141→   141→    case TransactionStatus.BLOCKED: return 'Bloqueado';
+   142→   142→    default: return status;
+   143→   143→  }
+   144→   144→}
+   145→   145→
+   146→   146→// --- Sparkline SVG Generator (decorative) ---
+   147→   147→function MiniSparkline({ values, color }: { values: number[]; color: string }) {
+   148→   148→  if (values.length < 2) return null;
+   149→   149→  const max = Math.max(...values);
+   150→   150→  const min = Math.min(...values);
+   151→   151→  const range = max - min || 1;
+   152→   152→  const w = 100;
+   153→   153→  const h = 32;
+   154→   154→  const points = values
+   155→   155→    .map((v, i) => {
+   156→   156→      const x = (i / (values.length - 1)) * w;
+   157→   157→      const y = h - ((v - min) / range) * (h - 4) - 2;
+   158→   158→      return `${x},${y}`;
+   159→   159→    })
+   160→   160→    .join(' ');
+   161→   161→
+   162→   162→  return (
+   163→   163→    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-8 opacity-60" fill="none">
+   164→   164→      <polyline points={points} stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+   165→   165→    </svg>
+   166→   166→  );
+   167→   167→}
+   168→   168→
+   169→   169→// ============================================================
+   170→   170→// SKELETON LOADING COMPONENTS
+   171→   171→// ============================================================
+   172→   172→
+   173→   173→function StatCardSkeleton() {
+   174→   174→  return (
+   175→   175→    <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   176→   176→      <CardContent className="flex items-start gap-4">
+   177→   177→        <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+   178→   178→        <div className="min-w-0 flex-1 space-y-2">
+   179→   179→          <Skeleton className="h-3.5 w-24" />
+   180→   180→          <Skeleton className="h-7 w-36" />
+   181→   181→          <Skeleton className="h-3 w-20" />
+   182→   182→        </div>
+   183→   183→      </CardContent>
+   184→   184→    </Card>
+   185→   185→  );
+   186→   186→}
+   187→   187→
+   188→   188→function WalletCardSkeleton() {
+   189→   189→  return (
+   190→   190→    <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   191→   191→      <CardContent className="space-y-4">
+   192→   192→        <div className="flex items-center justify-between">
+   193→   193→          <div className="flex items-center gap-2">
+   194→   194→            <Skeleton className="h-5 w-5 rounded" />
+   195→   195→            <Skeleton className="h-4 w-12" />
+   196→   196→            <Skeleton className="h-3 w-24 rounded-full" />
+   197→   197→          </div>
+   198→   198→          <Skeleton className="h-4 w-4" />
+   199→   199→        </div>
+   200→   200→        <div className="space-y-2.5">
+   201→   201→          {Array.from({ length: 3 }).map((_, i) => (
+   202→   202→            <div key={i} className="flex items-center justify-between">
+   203→   203→              <Skeleton className="h-3 w-20" />
+   204→   204→              <Skeleton className="h-3.5 w-28" />
+   205→   205→            </div>
+   206→   206→          ))}
+   207→   207→        </div>
+   208→   208→        <div className="space-y-1.5">
+   209→   209→          <div className="flex items-center justify-between">
+   210→   210→            <Skeleton className="h-2.5 w-16" />
+   211→   211→            <Skeleton className="h-2.5 w-12" />
+   212→   212→          </div>
+   213→   213→          <Skeleton className="h-1.5 w-full rounded-full" />
+   214→   214→        </div>
+   215→   215→        <Skeleton className="h-8 w-full" />
+   216→   216→      </CardContent>
+   217→   217→    </Card>
+   218→   218→  );
+   219→   219→}
+   220→   220→
+   221→   221→function TransactionRowSkeleton() {
+   222→   222→  return (
+   223→   223→    <div className="flex items-center gap-3 sm:gap-4 py-3 border-b border-zinc-800/60">
+   224→   224→      <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+   225→   225→      <div className="flex-1 min-w-0 space-y-1.5">
+   226→   226→        <Skeleton className="h-3 w-16 rounded-full" />
+   227→   227→        <Skeleton className="h-3.5 w-48" />
+   228→   228→      </div>
+   229→   229→      <div className="text-right shrink-0 space-y-1">
+   230→   230→        <Skeleton className="h-3.5 w-24 ml-auto" />
+   231→   231→        <Skeleton className="h-2.5 w-16 ml-auto" />
+   232→   232→      </div>
+   233→   233→      <div className="text-right shrink-0 hidden md:block space-y-1">
+   234→   234→        <Skeleton className="h-3 w-16 rounded-full ml-auto" />
+   235→   235→        <Skeleton className="h-2.5 w-20 ml-auto" />
+   236→   236→      </div>
+   237→   237→    </div>
+   238→   238→  );
+   239→   239→}
+   240→   240→
+   241→   241→function DashboardSkeleton() {
+   242→   242→  return (
+   243→   243→    <div className="space-y-6">
+   244→   244→      {/* Stats */}
+   245→   245→      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+   246→   246→        <StatCardSkeleton />
+   247→   247→        <StatCardSkeleton />
+   248→   248→        <StatCardSkeleton />
+   249→   249→        <StatCardSkeleton />
+   250→   250→      </div>
+   251→   251→
+   252→   252→      {/* Wallets */}
+   253→   253→      <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   254→   254→        <CardHeader className="pb-0">
+   255→   255→          <div className="flex items-center justify-between">
+   256→   256→            <Skeleton className="h-5 w-24" />
+   257→   257→            <Skeleton className="h-7 w-20" />
+   258→   258→          </div>
+   259→   259→        </CardHeader>
+   260→   260→        <CardContent className="pt-2">
+   261→   261→          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+   262→   262→            <WalletCardSkeleton />
+   263→   263→            <WalletCardSkeleton />
+   264→   264→            <WalletCardSkeleton />
+   265→   265→            <WalletCardSkeleton />
+   266→   266→          </div>
+   267→   267→        </CardContent>
+   268→   268→      </Card>
+   269→   269→
+   270→   270→      {/* Transactions */}
+   271→   271→      <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   272→   272→        <CardHeader className="pb-0">
+   273→   273→          <div className="flex items-center justify-between">
+   274→   274→            <Skeleton className="h-5 w-36" />
+   275→   275→            <Skeleton className="h-7 w-20" />
+   276→   276→          </div>
+   277→   277→        </CardHeader>
+   278→   278→        <CardContent className="pt-2">
+   279→   279→          <div className="space-y-0">
+   280→   280→            {Array.from({ length: 5 }).map((_, i) => (
+   281→   281→              <TransactionRowSkeleton key={i} />
+   282→   282→            ))}
+   283→   283→          </div>
+   284→   284→        </CardContent>
+   285→   285→      </Card>
+   286→   286→    </div>
+   287→   287→  );
+   288→   288→}
+   289→   289→
+   290→   290→// ============================================================
+   291→   291→// ERROR STATE
+   292→   292→// ============================================================
+   293→   293→
+   294→   294→function DashboardError({ message, onRetry }: { message: string; onRetry: () => void }) {
+   295→   295→  return (
+   296→   296→    <div className="space-y-6">
+   297→   297→      <Card className="bg-zinc-900/50 border-red-500/20 py-8">
+   298→   298→        <CardContent className="flex flex-col items-center justify-center text-center py-8">
+   299→   299→          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-500/10 mb-4">
+   300→   300→            <ServerCrash className="size-7 text-red-400" />
+   301→   301→          </div>
+   302→   302→          <h3 className="text-lg font-semibold text-zinc-100 mb-1">
+   303→   303→            Erro ao carregar dados
+   304→   304→          </h3>
+   305→   305→          <p className="text-sm text-zinc-500 mb-5 max-w-md">
+   306→   306→            {message}
+   307→   307→          </p>
+   308→   308→          <Button
+   309→   309→            variant="outline"
+   310→   310→            onClick={onRetry}
+   311→   311→            className="gap-2 text-zinc-400 border-zinc-700 hover:text-zinc-200"
+   312→   312→          >
+   313→   313→            <RefreshCw className="size-3.5" />
+   314→   314→            Tentar novamente
+   315→   315→          </Button>
+   316→   316→        </CardContent>
+   317→   317→      </Card>
+   318→   318→    </div>
+   319→   319→  );
+   320→   320→}
+   321→   321→
+   322→   322→// ============================================================
+   323→   323→// STAT CARD
+   324→   324→// ============================================================
+   325→   325→
+   326→   326→function StatCard({
+   327→   327→  icon: Icon,
+   328→   328→  label,
+   329→   329→  value,
+   330→   330→  trend,
+   331→   331→  trendUp,
+   332→   332→  gradientFrom,
+   333→   333→  gradientTo,
+   334→   334→}: {
+   335→   335→  icon: React.ComponentType<{ className?: string }>;
+   336→   336→  label: string;
+   337→   337→  value: string;
+   338→   338→  trend: string;
+   339→   339→  trendUp: boolean;
+   340→   340→  gradientFrom: string;
+   341→   341→  gradientTo: string;
+   342→   342→}) {
+   343→   343→  return (
+   344→   344→    <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   345→   345→      <CardContent className="flex items-start gap-4">
+   346→   346→        <div
+   347→   347→          className={`flex items-center justify-center rounded-lg bg-gradient-to-br ${gradientFrom} ${gradientTo} p-2.5 shrink-0`}
+   348→   348→        >
+   349→   349→          <Icon className="size-5 text-zinc-100" />
+   350→   350→        </div>
+   351→   351→        <div className="min-w-0 flex-1">
+   352→   352→          <p className="text-sm text-zinc-400 truncate">{label}</p>
+   353→   353→          <p className="text-2xl font-bold text-zinc-100 mt-0.5 truncate">{value}</p>
+   354→   354→          <div className="flex items-center gap-1 mt-1">
+   355→   355→            {trendUp ? (
+   356→   356→              <TrendingUp className="size-3.5 text-neon-400" />
+   357→   357→            ) : (
+   358→   358→              <TrendingDown className="size-3.5 text-red-400" />
+   359→   359→            )}
+   360→   360→            <span className={`text-xs font-medium ${trendUp ? 'text-neon-400' : 'text-red-400'}`}>
+   361→   361→              {trend}
+   362→   362→            </span>
+   363→   363→            <span className="text-xs text-zinc-500 ml-1">vs. mês anterior</span>
+   364→   364→          </div>
+   365→   365→        </div>
+   366→   366→      </CardContent>
+   367→   367→    </Card>
+   368→   368→  );
+   369→   369→}
+   370→   370→
+   371→   371→// ============================================================
+   372→   372→// WALLET CARD
+   373→   373→// ============================================================
+   374→   374→
+   375→   375→function WalletCard({ wallet }: { wallet: DashboardWallet }) {
+   376→   376→  const currency = safeCurrency(wallet.currency);
+   377→   377→  const colorClass = currencyColors[currency];
+   378→   378→  const symbol = currencySymbols[currency];
+   379→   379→  const flag = CURRENCY_FLAGS[currency];
+   380→   380→
+   381→   381→  const balanceAvailable = safeNum(wallet.balanceAvailable);
+   382→   382→  const balancePending = safeNum(wallet.balancePending);
+   383→   383→  const balanceIncoming = safeNum(wallet.balanceIncoming);
+   384→   384→  const balanceBlocked = safeNum(wallet.balanceBlocked);
+   385→   385→
+   386→   386→  const total = balanceAvailable + balancePending + balanceIncoming + balanceBlocked;
+   387→   387→  const availablePct = total > 0 ? (balanceAvailable / total) * 100 : 0;
+   388→   388→
+   389→   389→  const sparkData = [
+   390→   390→    balanceAvailable * 0.7,
+   391→   391→    balanceAvailable * 0.85,
+   392→   392→    balanceAvailable * 0.75,
+   393→   393→    balanceAvailable * 0.9,
+   394→   394→    balanceAvailable * 0.95,
+   395→   395→    balanceAvailable * 0.88,
+   396→   396→    balanceAvailable,
+   397→   397→  ];
+   398→   398→
+   399→   399→  const sparkColor =
+   400→   400→    currency === Currency.EUR
+   401→   401→      ? '#60a5fa'
+   402→   402→      : currency === Currency.BRL
+   403→   403→        ? '#4ade80'
+   404→   404→        : currency === Currency.USDT
+   405→   405→          ? '#34d399'
+   406→   406→          : '#fbbf24';
+   407→   407→
+   408→   408→  return (
+   409→   409→    <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   410→   410→      <CardContent className="space-y-4">
+   411→   411→        {/* Currency header */}
+   412→   412→        <div className="flex items-center justify-between">
+   413→   413→          <div className="flex items-center gap-2">
+   414→   414→            <span className="text-lg">{flag}</span>
+   415→   415→            <span className={`text-sm font-semibold ${colorClass}`}>
+   416→   416→              {currency}
+   417→   417→            </span>
+   418→   418→            {wallet.walletReference && (
+   419→   419→              <Badge
+   420→   420→                variant="outline"
+   421→   421→                className="text-[10px] px-1.5 py-0 h-4 border-zinc-700 text-zinc-500"
+   422→   422→              >
+   423→   423→                {wallet.walletReference}
+   424→   424→              </Badge>
+   425→   425→            )}
+   426→   426→          </div>
+   427→   427→          <Wallet className="size-4 text-zinc-500" />
+   428→   428→        </div>
+   429→   429→
+   430→   430→        {/* Balance rows */}
+   431→   431→        <div className="space-y-2">
+   432→   432→          <div className="flex items-center justify-between">
+   433→   433→            <span className="text-xs text-zinc-500">Disponível</span>
+   434→   434→            <span className={`text-sm font-semibold ${colorClass}`}>
+   435→   435→              {symbol} {fmt(balanceAvailable)}
+   436→   436→            </span>
+   437→   437→          </div>
+   438→   438→          <div className="flex items-center justify-between">
+   439→   439→            <span className="text-xs text-zinc-500">Pendente</span>
+   440→   440→            <span className="text-sm font-medium text-zinc-300">
+   441→   441→              {symbol} {fmt(balancePending)}
+   442→   442→            </span>
+   443→   443→          </div>
+   444→   444→          <div className="flex items-center justify-between">
+   445→   445→            <span className="text-xs text-zinc-500">A receber</span>
+   446→   446→            <span className="text-sm font-medium text-zinc-300">
+   447→   447→              {symbol} {fmt(balanceIncoming)}
+   448→   448→            </span>
+   449→   449→          </div>
+   450→   450→          {balanceBlocked > 0 && (
+   451→   451→            <div className="flex items-center justify-between">
+   452→   452→              <span className="text-xs text-zinc-500">Bloqueado</span>
+   453→   453→              <span className="text-sm font-medium text-red-400/70">
+   454→   454→                {symbol} {fmt(balanceBlocked)}
+   455→   455→              </span>
+   456→   456→            </div>
+   457→   457→          )}
+   458→   458→        </div>
+   459→   459→
+   460→   460→        {/* Progress bar */}
+   461→   461→        <div className="space-y-1.5">
+   462→   462→          <div className="flex items-center justify-between">
+   463→   463→            <span className="text-[10px] text-zinc-600 uppercase tracking-wider">
+   464→   464→              Utilização
+   465→   465→            </span>
+   466→   466→            <span className="text-[10px] text-zinc-500">{availablePct.toFixed(0)}% disponível</span>
+   467→   467→          </div>
+   468→   468→          <Progress value={availablePct} className="h-1.5 bg-zinc-800" />
+   469→   469→        </div>
+   470→   470→
+   471→   471→        {/* Sparkline */}
+   472→   472→        <MiniSparkline values={sparkData} color={sparkColor} />
+   473→   473→      </CardContent>
+   474→   474→    </Card>
+   475→   475→  );
+   476→   476→}
+   477→   477→
+   478→   478→// ============================================================
+   479→   479→// TRANSACTION ROW
+   480→   480→// ============================================================
+   481→   481→
+   482→   482→function TransactionRow({ tx }: { tx: DashboardTransaction }) {
+   483→   483→  const txType = safeTxType(tx.type);
+   484→   484→  const txStatus = safeTxStatus(tx.status);
+   485→   485→  const currency = safeCurrency(tx.currency);
+   486→   486→  const incoming = isIncoming(txType, txStatus);
+   487→   487→  const symbol = currencySymbols[currency];
+   488→   488→  const amount = safeNum(tx.amount);
+   489→   489→  const fee = safeNum(tx.feeApplied);
+   490→   490→  const prefix = incoming ? '+' : '-';
+   491→   491→
+   492→   492→  const typeBg = incoming
+   493→   493→    ? 'bg-neon-500/10 text-neon-400 border-neon-500/20'
+   494→   494→    : txType === TransactionType.SWAP
+   495→   495→      ? 'bg-neon-500/10 text-neon-400 border-neon-500/20'
+   496→   496→      : 'bg-red-500/10 text-red-400 border-red-500/20';
+   497→   497→
+   498→   498→  const typeLabel = transactionTypeLabels[txType] || tx.type || '—';
+   499→   499→
+   500→   500→  return (
+   501→   501→    <div className="flex items-center gap-3 sm:gap-4 py-3 border-b border-zinc-800/60 last:border-0">
+   502→   502→      {/* Icon */}
+   503→   503→      <div
+   504→   504→        className={`flex items-center justify-center rounded-lg p-2 shrink-0 ${
+   505→   505→          incoming ? 'bg-neon-500/10' : 'bg-red-500/10'
+   506→   506→        }`}
+   507→   507→      >
+   508→   508→        {incoming ? (
+   509→   509→          <ArrowDownLeft className="size-4 text-neon-400" />
+   510→   510→        ) : (
+   511→   511→          <ArrowUpRight className="size-4 text-red-400" />
+   512→   512→        )}
+   513→   513→      </div>
+   514→   514→
+   515→   515→      {/* Type + Description */}
+   516→   516→      <div className="flex-1 min-w-0">
+   517→   517→        <div className="flex items-center gap-2">
+   518→   518→          <Badge
+   519→   519→            variant="outline"
+   520→   520→            className={`text-[10px] px-1.5 py-0 h-4 border ${typeBg}`}
+   521→   521→          >
+   522→   522→            {typeLabel}
+   523→   523→          </Badge>
+   524→   524→        </div>
+   525→   525→        <p className="text-sm text-zinc-300 truncate mt-0.5">
+   526→   526→          {tx.description || 'Sem descrição'}
+   527→   527→        </p>
+   528→   528→        <p className="text-xs text-zinc-500 mt-0.5 hidden sm:block">
+   529→   529→          {symbol} {currency}
+   530→   530→        </p>
+   531→   531→      </div>
+   532→   532→
+   533→   533→      {/* Amount */}
+   534→   534→      <div className="text-right shrink-0">
+   535→   535→        <p className={`text-sm font-semibold ${incoming ? 'text-neon-400' : 'text-red-400'}`}>
+   536→   536→          {prefix} {symbol} {fmt(amount)}
+   537→   537→        </p>
+   538→   538→        {fee > 0 && (
+   539→   539→          <p className="text-[10px] text-zinc-500">Taxa: {symbol} {fmt(fee)}</p>
+   540→   540→        )}
+   541→   541→      </div>
+   542→   542→
+   543→   543→      {/* Status + Date */}
+   544→   544→      <div className="text-right shrink-0 hidden md:block">
+   545→   545→        <Badge
+   546→   546→          variant="outline"
+   547→   547→          className={`text-[10px] px-1.5 py-0 h-4 border ${transactionStatusColors[txStatus] || 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'}`}
+   548→   548→        >
+   549→   549→          {statusLabel(txStatus)}
+   550→   550→        </Badge>
+   551→   551→        <p className="text-[10px] text-zinc-500 mt-1">{formatDate(tx.createdAt)}</p>
+   552→   552→      </div>
+   553→   553→    </div>
+   554→   554→  );
+   555→   555→}
+   556→   556→
+   557→   557→// ============================================================
+   558→   558→// MAIN DASHBOARD PAGE
+   559→   559→// ============================================================
+   560→   560→
+   561→   561→export default function DashboardPage() {
+   562→   562→  const { setPage } = useNavStore();
+   563→   563→  const { getUserRole } = useAuthStore();
+   564→   564→  const role = getUserRole();
+   565→   565→
+   566→   566→  // --- State ---
+   567→   567→  const [wallets, setWallets] = useState<DashboardWallet[]>([]);
+   568→   568→  const [transactions, setTransactions] = useState<DashboardTransaction[]>([]);
+   569→   569→  const [isLoading, setIsLoading] = useState(true);
+   570→   570→  const [isRefreshing, setIsRefreshing] = useState(false);
+   571→   571→  const [error, setError] = useState<string | null>(null);
+   572→   572→  const [dataSource, setDataSource] = useState<'api' | 'mock' | 'none'>('none');
+   573→   573→
+   574→   574→  // --- Data Fetch ---
+   575→   575→  const fetchDashboardData = useCallback(async (isRefresh = false) => {
+   576→   576→    if (isRefresh) setIsRefreshing(true);
+   577→   577→    else setIsLoading(true);
+   578→   578→    setError(null);
+   579→   579→
+   580→   580→    try {
+   581→   581→      const [walletsRes, txsRes] = await Promise.all([
+   582→   582→        xpApi.dashboard.getWallets(),
+   583→   583→        xpApi.dashboard.getTransactions({ limit: 20 }),
+   584→   584→      ]);
+   585→   585→
+   586→   586→      const walletsData = Array.isArray(walletsRes) ? walletsRes : [];
+   587→   587→      const txsData = Array.isArray(txsRes) ? txsRes : [];
+   588→   588→
+   589→   589→      if (walletsData.length > 0 || txsData.length > 0) {
+   590→   590→        setWallets(walletsData);
+   591→   591→        setTransactions(txsData);
+   592→   592→        setDataSource('api');
+   593→   593→      } else {
+   594→   594→        // API respondeu mas sem dados — mostrar estado vazio
+   595→   595→        setWallets([]);
+   596→   596→        setTransactions([]);
+   597→   597→        setDataSource('api');
+   598→   598→      }
+   599→   599→    } catch (err) {
+   600→   600→      const msg = err instanceof Error ? err.message : 'Erro de conexão';
+   601→   601→
+   602→   602→      if (msg.includes('Network Error') || msg.includes('timeout') || msg.includes('404')) {
+   603→   603→        setError(
+   604→   604→          'Não foi possível conectar ao servidor XPayments.Digital. ' +
+   605→   605→          'Verifique sua conexão ou tente novamente mais tarde.'
+   606→   606→        );
+   607→   607→      } else {
+   608→   608→        setError(msg);
+   609→   609→      }
+   610→   610→      setDataSource('none');
+   611→   611→      setWallets([]);
+   612→   612→      setTransactions([]);
+   613→   613→    } finally {
+   614→   614→      setIsLoading(false);
+   615→   615→      setIsRefreshing(false);
+   616→   616→    }
+   617→   617→  }, []);
+   618→   618→
+   619→   619→  useEffect(() => {
+   620→   620→    fetchDashboardData();
+   621→   621→  }, [fetchDashboardData]);
+   622→   622→
+   623→   623→  // --- Computed Stats ---
+   624→   624→  const totalBalance = wallets.reduce(
+   625→   625→    (sum, w) => sum + safeNum(w.balanceAvailable), 0
+   626→   626→  );
+   627→   627→  const totalPending = wallets.reduce(
+   628→   628→    (sum, w) => sum + safeNum(w.balancePending), 0
+   629→   629→  );
+   630→   630→  const totalIncoming = wallets.reduce(
+   631→   631→    (sum, w) => sum + safeNum(w.balanceIncoming), 0
+   632→   632→  );
+   633→   633→
+   634→   634→  // Transactions this month
+   635→   635→  const now = new Date();
+   636→   636→  const thisMonthTxs = transactions.filter((tx) => {
+   637→   637→    if (!tx.createdAt) return false;
+   638→   638→    try {
+   639→   639→      const txDate = new Date(tx.createdAt);
+   640→   640→      return (
+   641→   641→        txDate.getMonth() === now.getMonth() &&
+   642→   642→        txDate.getFullYear() === now.getFullYear()
+   643→   643→      );
+   644→   644→    } catch {
+   645→   645→      return false;
+   646→   646→    }
+   647→   647→  });
+   648→   648→
+   649→   649→  // Recent transactions (sorted by date, most recent first)
+   650→   650→  const recentTxs = [...transactions]
+   651→   651→    .sort((a, b) => {
+   652→   652→      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+   653→   653→      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+   654→   654→      return dateB - dateA;
+   655→   655→    })
+   656→   656→    .slice(0, 10);
+   657→   657→
+   658→   658→  // Quick actions visibility
+   659→   659→  const showQuickActions = ['customer', 'merchant', 'super_merchant'].includes(role);
+   660→   660→
+   661→   661→  // --- Loading State ---
+   662→   662→  if (isLoading) {
+   663→   663→    return <DashboardSkeleton />;
+   664→   664→  }
+   665→   665→
+   666→   666→  // --- Error State ---
+   667→   667→  if (error) {
+   668→   668→    return <DashboardError message={error} onRetry={() => fetchDashboardData(true)} />;
+   669→   669→  }
+   670→   670→
+   671→   671→  return (
+   672→   672→    <div className="space-y-6">
+   673→   673→      {/* Data Source Indicator + Refresh */}
+   674→   674→      <div className="flex items-center justify-between">
+   675→   675→        <div className="flex items-center gap-2">
+   676→   676→          {dataSource === 'api' ? (
+   677→   677→            <>
+   678→   678→              <div className="w-1.5 h-1.5 rounded-full bg-neon-400 animate-pulse" />
+   679→   679→              <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">
+   680→   680→                XPayments.Digital API — Live
+   681→   681→              </span>
+   682→   682→            </>
+   683→   683→          ) : (
+   684→   684→            <>
+   685→   685→              <WifiOff className="size-3 text-amber-500" />
+   686→   686→              <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">
+   687→   687→                Sem dados disponíveis
+   688→   688→              </span>
+   689→   689→            </>
+   690→   690→          )}
+   691→   691→        </div>
+   692→   692→        <Button
+   693→   693→          variant="ghost"
+   694→   694→          size="sm"
+   695→   695→          onClick={() => fetchDashboardData(true)}
+   696→   696→          disabled={isRefreshing}
+   697→   697→          className="text-xs text-zinc-500 hover:text-zinc-300 h-7 gap-1.5"
+   698→   698→        >
+   699→   699→          <RefreshCw className={`size-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+   700→   700→          Atualizar
+   701→   701→        </Button>
+   702→   702→      </div>
+   703→   703→
+   704→   704→      {/* ========== 1. Summary Stats Row ========== */}
+   705→   705→      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+   706→   706→        <StatCard
+   707→   707→          icon={DollarSign}
+   708→   708→          label="Saldo Total"
+   709→   709→          value={`€ ${fmt(totalBalance)}`}
+   710→   710→          trend="+12.5%"
+   711→   711→          trendUp={true}
+   712→   712→          gradientFrom="from-neon-600/40"
+   713→   713→          gradientTo="to-neon-600/20"
+   714→   714→        />
+   715→   715→        <StatCard
+   716→   716→          icon={Clock}
+   717→   717→          label="Valor Pendente"
+   718→   718→          value={`€ ${fmt(totalPending)}`}
+   719→   719→          trend="-3.2%"
+   720→   720→          trendUp={false}
+   721→   721→          gradientFrom="from-amber-600/40"
+   722→   722→          gradientTo="to-orange-600/20"
+   723→   723→        />
+   724→   724→        <StatCard
+   725→   725→          icon={ArrowDownLeft}
+   726→   726→          label="A Receber"
+   727→   727→          value={`€ ${fmt(totalIncoming)}`}
+   728→   728→          trend="+8.1%"
+   729→   729→          trendUp={true}
+   730→   730→          gradientFrom="from-neon-600/40"
+   731→   731→          gradientTo="to-cyan-600/20"
+   732→   732→        />
+   733→   733→        <StatCard
+   734→   734→          icon={AlertCircle}
+   735→   735→          label="Transações Este Mês"
+   736→   736→          value={thisMonthTxs.length.toString()}
+   737→   737→          trend="+24%"
+   738→   738→          trendUp={true}
+   739→   739→          gradientFrom="from-violet-600/40"
+   740→   740→          gradientTo="to-purple-600/20"
+   741→   741→        />
+   742→   742→      </div>
+   743→   743→
+   744→   744→      {/* ========== 2. Wallet Overview ========== */}
+   745→   745→      <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   746→   746→        <CardHeader className="pb-0">
+   747→   747→          <div className="flex items-center justify-between">
+   748→   748→            <CardTitle className="text-base font-semibold text-zinc-100">
+   749→   749→              Carteiras
+   750→   750→            </CardTitle>
+   751→   751→            <Button
+   752→   752→              variant="ghost"
+   753→   753→              size="sm"
+   754→   754→              className="text-xs text-zinc-400 hover:text-zinc-200 h-7 px-2"
+   755→   755→              onClick={() => setPage('wallets')}
+   756→   756→            >
+   757→   757→              Ver Todas
+   758→   758→              <ArrowRight className="size-3 ml-1" />
+   759→   759→            </Button>
+   760→   760→          </div>
+   761→   761→        </CardHeader>
+   762→   762→        <CardContent className="pt-2">
+   763→   763→          {wallets.length > 0 ? (
+   764→   764→            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+   765→   765→              {wallets.map((wallet) => (
+   766→   766→                <WalletCard key={wallet.id} wallet={wallet} />
+   767→   767→              ))}
+   768→   768→            </div>
+   769→   769→          ) : (
+   770→   770→            <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
+   771→   771→              <Wallet className="size-10 mb-3 opacity-30" />
+   772→   772→              <p className="text-sm font-medium text-zinc-400 mb-1">Nenhuma carteira encontrada</p>
+   773→   773→              <p className="text-xs text-zinc-600">
+   774→   774→                As carteiras aparecerão aqui assim que forem criadas na sua conta.
+   775→   775→              </p>
+   776→   776→            </div>
+   777→   777→          )}
+   778→   778→        </CardContent>
+   779→   779→      </Card>
+   780→   780→
+   781→   781→      {/* ========== 3. Recent Transactions ========== */}
+   782→   782→      <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   783→   783→        <CardHeader className="pb-0">
+   784→   784→          <div className="flex items-center justify-between">
+   785→   785→            <CardTitle className="text-base font-semibold text-zinc-100">
+   786→   786→              Transações Recentes
+   787→   787→            </CardTitle>
+   788→   788→            <Button
+   789→   789→              variant="ghost"
+   790→   790→              size="sm"
+   791→   791→              className="text-xs text-zinc-400 hover:text-zinc-200 h-7 px-2"
+   792→   792→              onClick={() => setPage('transactions')}
+   793→   793→            >
+   794→   794→              Ver Todas
+   795→   795→              <ArrowRight className="size-3 ml-1" />
+   796→   796→            </Button>
+   797→   797→          </div>
+   798→   798→        </CardHeader>
+   799→   799→        <CardContent className="pt-2">
+   800→   800→          <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+   801→   801→            {recentTxs.length > 0 ? (
+   802→   802→              recentTxs.map((tx) => (
+   803→   803→                <TransactionRow key={tx.id} tx={tx} />
+   804→   804→              ))
+   805→   805→            ) : (
+   806→   806→              <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
+   807→   807→                <ArrowLeftRight className="size-10 mb-3 opacity-30" />
+   808→   808→                <p className="text-sm font-medium text-zinc-400 mb-1">Nenhuma transação encontrada</p>
+   809→   809→                <p className="text-xs text-zinc-600">
+   810→   810→                  O histórico de transações aparecerá aqui após o primeiro movimento.
+   811→   811→                </p>
+   812→   812→              </div>
+   813→   813→            )}
+   814→   814→          </div>
+   815→   815→        </CardContent>
+   816→   816→      </Card>
+   817→   817→
+   818→   818→      {/* ========== 4. Quick Actions ========== */}
+   819→   819→      {showQuickActions && (
+   820→   820→        <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   821→   821→          <CardHeader className="pb-0">
+   822→   822→            <CardTitle className="text-base font-semibold text-zinc-100">
+   823→   823→              Ações Rápidas
+   824→   824→            </CardTitle>
+   825→   825→          </CardHeader>
+   826→   826→          <CardContent className="pt-2">
+   827→   827→            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+   828→   828→              <Button
+   829→   829→                onClick={() => setPage('deposits')}
+   830→   830→                className="h-12 bg-neon-600/20 border border-neon-500/30 text-neon-400 hover:bg-neon-600/30 hover:text-neon-300 font-medium text-sm gap-2"
+   831→   831→                variant="outline"
+   832→   832→              >
+   833→   833→                <ArrowDownLeft className="size-4" />
+   834→   834→                Depositar
+   835→   835→              </Button>
+   836→   836→              <Button
+   837→   837→                onClick={() => setPage('swaps')}
+   838→   838→                className="h-12 bg-neon-600/20 border border-neon-500/30 text-neon-400 hover:bg-neon-600/30 hover:text-neon-300 font-medium text-sm gap-2"
+   839→   839→                variant="outline"
+   840→   840→              >
+   841→   841→                <ArrowLeftRight className="size-4" />
+   842→   842→                Swap
+   843→   843→              </Button>
+   844→   844→              <Button
+   845→   845→                onClick={() => setPage('withdrawals')}
+   846→   846→                className="h-12 bg-amber-600/20 border border-amber-500/30 text-amber-400 hover:bg-amber-600/30 hover:text-amber-300 font-medium text-sm gap-2"
+   847→   847→                variant="outline"
+   848→   848→              >
+   849→   849→                <ArrowUpRight className="size-4" />
+   850→   850→                Sacar
+   851→   851→              </Button>
+   852→   852→            </div>
+   853→   853→          </CardContent>
+   854→   854→        </Card>
+   855→   855→      )}
+   856→   856→    </div>
+   857→   857→  );
+   858→   858→}
+   859→   859→

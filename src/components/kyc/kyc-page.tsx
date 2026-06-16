@@ -443,7 +443,7 @@ export default function KycPage() {
             <Info className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-200/80 leading-relaxed">
               Os dados não são armazenados localmente, são transmitidos ao{' '}
-              <span className="font-semibold text-amber-300">Ghost Middleware</span> para os provedores de liquidez.
+              <span className="font-semibold text-amber-300">provedor autorizado</span> para processamento seguro.
             </p>
           </div>
 
@@ -547,7 +547,7 @@ export default function KycPage() {
               <div className="space-y-2">
                 <p className="text-sm font-medium text-zinc-200">Verificação Segura</p>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  Será redirecionado para o provedor <span className="font-semibold text-neon-400">Onramp.Money</span> onde
+                  Será redirecionado para o nosso <span className="font-semibold text-neon-400">parceiro de verificação certificado</span> onde
                   deverá submeter documentação de identidade e proof of address. Após a verificação, a sua conta será
                   automaticamente atualizada para o nível corporativo.
                 </p>
@@ -597,7 +597,7 @@ export default function KycPage() {
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-neon-400 shrink-0" />
                 <code className="text-xs text-neon-300 font-mono truncate">
-                  https://verify.onramp.money/xpayments/{mockKycProfile.data.tier3?.provider?.toLowerCase() ?? 'xyz'}
+                  https://verify.xpayments.digital/kyc/{mockKycProfile.data.tier3?.provider?.toLowerCase() ?? 'xyz'}
                 </code>
               </div>
             </div>

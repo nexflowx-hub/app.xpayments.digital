@@ -79,11 +79,18 @@ const mockCheckouts: CheckoutData[] = [
 ];
 
 function formatCurrency(amount: number, currency: string): string {
-  if (currency === 'USDT' || currency === 'BTC') {
-    const symbol = currency === 'USDT' ? '₮' : '₿';
-    return `${symbol} ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const code = (currency || '').trim();
+  if (code === 'USDT') {
+    return `₮ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(amount);
+  if (code === 'BTC') {
+    return `₿ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 8 })}`;
+  }
+  try {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: code }).format(amount);
+  } catch {
+    return `${code} ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+  }
 }
 
 function formatDate(dateStr: string): string {
@@ -299,18 +306,18 @@ export default function MerchantCheckoutsPage() {
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {[
-              { label: 'Visa', color: 'text-blue-400' },
+              { label: 'Visa', color: 'text-sky-300' },
               { label: 'Mastercard', color: 'text-orange-400' },
               { label: 'MBWAY', color: 'text-red-400' },
-              { label: 'PIX', color: 'text-teal-400' },
+              { label: 'PIX', color: 'text-neon-300' },
               { label: 'USDT', color: 'text-neon-400' },
               { label: 'BTC', color: 'text-amber-400' },
-              { label: 'Amex', color: 'text-sky-400' },
+              { label: 'Amex', color: 'text-cyan-300' },
               { label: 'Multibanco', color: 'text-red-300' },
               { label: 'Bizum', color: 'text-violet-400' },
-              { label: 'EUR', color: 'text-indigo-300' },
+              { label: 'EUR', color: 'text-zinc-200' },
               { label: 'USD', color: 'text-green-400' },
-              { label: 'BRL', color: 'text-emerald-400' },
+              { label: 'BRL', color: 'text-neon-400' },
             ].map((method) => (
               <div
                 key={method.label}

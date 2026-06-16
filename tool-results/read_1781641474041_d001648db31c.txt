@@ -1,0 +1,746 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import React, { useState, useEffect, useCallback } from 'react';
+     4→     4→import {
+     5→     5→  Card,
+     6→     6→  CardContent,
+     7→     7→  CardHeader,
+     8→     8→  CardTitle,
+     9→     9→  CardDescription,
+    10→    10→} from '@/components/ui/card';
+    11→    11→import { Badge } from '@/components/ui/badge';
+    12→    12→import { Button } from '@/components/ui/button';
+    13→    13→import { Skeleton } from '@/components/ui/skeleton';
+    14→    14→import { Separator } from '@/components/ui/separator';
+    15→    15→import {
+    16→    16→  Table,
+    17→    17→  TableBody,
+    18→    18→  TableCell,
+    19→    19→  TableHead,
+    20→    20→  TableHeader,
+    21→    21→  TableRow,
+    22→    22→} from '@/components/ui/table';
+    23→    23→import {
+    24→    24→  Wallet,
+    25→    25→  ArrowDownLeft,
+    26→    26→  ArrowUpRight,
+    27→    27→  RefreshCw,
+    28→    28→  AlertCircle,
+    29→    29→  ChevronLeft,
+    30→    30→  ChevronRight,
+    31→    31→  Building2,
+    32→    32→  Clock,
+    33→    33→  ArrowDownUp,
+    34→    34→  FileText,
+    35→    35→  ShieldCheck,
+    36→    36→  Eye,
+    37→    37→  Inbox,
+    38→    38→} from 'lucide-react';
+    39→    39→import { xpApi } from '@/lib/api/client';
+    40→    40→import { useBaaSStore } from '@/stores/baas-store';
+    41→    41→import { useAuthStore } from '@/stores/auth-store';
+    42→    42→
+    43→    43→// ── Types ──
+    44→    44→
+    45→    45→interface StoreBalance {
+    46→    46→  available: number;
+    47→    47→  pending: number;
+    48→    48→  incoming: number;
+    49→    49→  currency: string;
+    50→    50→}
+    51→    51→
+    52→    52→interface StatementEntry {
+    53→    53→  id: string;
+    54→    54→  type: string;
+    55→    55→  amount: number;
+    56→    56→  currency: string;
+    57→    57→  status: string;
+    58→    58→  description: string;
+    59→    59→  date: string;
+    60→    60→  reference?: string;
+    61→    61→}
+    62→    62→
+    63→    63→interface StatementResponse {
+    64→    64→  entries: StatementEntry[];
+    65→    65→  total: number;
+    66→    66→  page: number;
+    67→    67→  pageSize: number;
+    68→    68→  totalPages: number;
+    69→    69→}
+    70→    70→
+    71→    71→// ── Helpers ──
+    72→    72→
+    73→    73→function formatCurrency(amount: number, currency: string): string {
+    74→    74→  return new Intl.NumberFormat('pt-BR', {
+    75→    75→    style: 'currency',
+    76→    76→    currency: currency.toUpperCase(),
+    77→    77→    minimumFractionDigits: 2,
+    78→    78→    maximumFractionDigits: 2,
+    79→    79→  }).format(amount);
+    80→    80→}
+    81→    81→
+    82→    82→function formatDate(iso: string): string {
+    83→    83→  const d = new Date(iso);
+    84→    84→  return d.toLocaleDateString('pt-BR', {
+    85→    85→    day: '2-digit',
+    86→    86→    month: '2-digit',
+    87→    87→    year: 'numeric',
+    88→    88→  });
+    89→    89→}
+    90→    90→
+    91→    91→function formatDateTime(iso: string): string {
+    92→    92→  const d = new Date(iso);
+    93→    93→  return d.toLocaleDateString('pt-BR', {
+    94→    94→    day: '2-digit',
+    95→    95→    month: 'short',
+    96→    96→    year: 'numeric',
+    97→    97→    hour: '2-digit',
+    98→    98→    minute: '2-digit',
+    99→    99→  });
+   100→   100→}
+   101→   101→
+   102→   102→function getTransactionIcon(type: string) {
+   103→   103→  switch (type?.toLowerCase()) {
+   104→   104→    case 'credit':
+   105→   105→    case 'deposit':
+   106→   106→    case 'incoming':
+   107→   107→    case 'settlement':
+   108→   108→    case 'refund':
+   109→   109→      return ArrowDownLeft;
+   110→   110→    case 'debit':
+   111→   111→    case 'withdrawal':
+   112→   112→    case 'payment':
+   113→   113→    case 'fee':
+   114→   114→    case 'chargeback':
+   115→   115→      return ArrowUpRight;
+   116→   116→    case 'transfer':
+   117→   117→    case 'swap':
+   118→   118→    default:
+   119→   119→      return ArrowDownUp;
+   120→   120→  }
+   121→   121→}
+   122→   122→
+   123→   123→function isCreditType(type: string): boolean {
+   124→   124→  const creditTypes = ['credit', 'deposit', 'incoming', 'settlement', 'refund'];
+   125→   125→  return creditTypes.includes(type?.toLowerCase());
+   126→   126→}
+   127→   127→
+   128→   128→function getStatusConfig(status: string) {
+   129→   129→  switch (status?.toLowerCase()) {
+   130→   130→    case 'completed':
+   131→   131→    case 'confirmed':
+   132→   132→    case 'settled':
+   133→   133→      return {
+   134→   134→        label: 'Concluído',
+   135→   135→        className: 'border-neon-500/30 bg-neon-500/10 text-neon-400',
+   136→   136→      };
+   137→   137→    case 'pending':
+   138→   138→    case 'processing':
+   139→   139→      return {
+   140→   140→        label: 'Pendente',
+   141→   141→        className: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
+   142→   142→      };
+   143→   143→    case 'incoming':
+   144→   144→      return {
+   145→   145→        label: 'A receber',
+   146→   146→        className: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400',
+   147→   147→      };
+   148→   148→    case 'failed':
+   149→   149→    case 'rejected':
+   150→   150→    case 'cancelled':
+   151→   151→      return {
+   152→   152→        label: 'Falhou',
+   153→   153→        className: 'border-red-500/30 bg-red-500/10 text-red-400',
+   154→   154→      };
+   155→   155→    case 'blocked':
+   156→   156→    case 'held':
+   157→   157→      return {
+   158→   158→        label: 'Bloqueado',
+   159→   159→        className: 'border-orange-500/30 bg-orange-500/10 text-orange-400',
+   160→   160→      };
+   161→   161→    default:
+   162→   162→      return {
+   163→   163→        label: status || '—',
+   164→   164→        className: 'border-zinc-600/30 bg-zinc-500/10 text-zinc-400',
+   165→   165→      };
+   166→   166→  }
+   167→   167→}
+   168→   168→
+   169→   169→const PAGE_SIZE = 10;
+   170→   170→
+   171→   171→// ── Balance Card Skeleton ──
+   172→   172→
+   173→   173→function BalanceCardSkeleton() {
+   174→   174→  return (
+   175→   175→    <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   176→   176→      <CardContent className="space-y-3">
+   177→   177→        <Skeleton className="h-3 w-24 bg-zinc-800" />
+   178→   178→        <Skeleton className="h-8 w-36 bg-zinc-800" />
+   179→   179→        <Skeleton className="h-2 w-20 bg-zinc-800" />
+   180→   180→      </CardContent>
+   181→   181→    </Card>
+   182→   182→  );
+   183→   183→}
+   184→   184→
+   185→   185→// ── Statement Row Skeleton ──
+   186→   186→
+   187→   187→function StatementRowSkeleton() {
+   188→   188→  return (
+   189→   189→    <TableRow className="border-zinc-800/60">
+   190→   190→      <TableCell>
+   191→   191→        <Skeleton className="h-4 w-20 bg-zinc-800" />
+   192→   192→      </TableCell>
+   193→   193→      <TableCell>
+   194→   194→        <div className="space-y-1.5">
+   195→   195→          <Skeleton className="h-4 w-40 bg-zinc-800" />
+   196→   196→          <Skeleton className="h-3 w-24 bg-zinc-800" />
+   197→   197→        </div>
+   198→   198→      </TableCell>
+   199→   199→      <TableCell className="hidden sm:table-cell">
+   200→   200→        <Skeleton className="h-4 w-28 bg-zinc-800" />
+   201→   201→      </TableCell>
+   202→   202→      <TableCell className="text-right">
+   203→   203→        <Skeleton className="h-4 w-24 bg-zinc-800 ml-auto" />
+   204→   204→      </TableCell>
+   205→   205→      <TableCell className="text-right hidden md:table-cell">
+   206→   206→        <Skeleton className="h-5 w-16 bg-zinc-800 ml-auto" />
+   207→   207→      </TableCell>
+   208→   208→    </TableRow>
+   209→   209→  );
+   210→   210→}
+   211→   211→
+   212→   212→// ── Main Component ──
+   213→   213→
+   214→   214→export default function AccountManagerDashboard() {
+   215→   215→  const scope = useBaaSStore((s) => s.scope);
+   216→   216→  const user = useAuthStore((s) => s.user);
+   217→   217→  const storeId = scope?.storeId;
+   218→   218→  const storeName = scope?.storeName;
+   219→   219→
+   220→   220→  const [balance, setBalance] = useState<StoreBalance | null>(null);
+   221→   221→  const [statement, setStatement] = useState<StatementResponse | null>(null);
+   222→   222→  const [loadingBalance, setLoadingBalance] = useState(true);
+   223→   223→  const [loadingStatement, setLoadingStatement] = useState(true);
+   224→   224→  const [errorBalance, setErrorBalance] = useState<string | null>(null);
+   225→   225→  const [errorStatement, setErrorStatement] = useState<string | null>(null);
+   226→   226→  const [currentPage, setCurrentPage] = useState(1);
+   227→   227→
+   228→   228→  // ── Fetch Balance ──
+   229→   229→
+   230→   230→  const fetchBalance = useCallback(async () => {
+   231→   231→    if (!storeId) {
+   232→   232→      setLoadingBalance(false);
+   233→   233→      return;
+   234→   234→    }
+   235→   235→    setLoadingBalance(true);
+   236→   236→    setErrorBalance(null);
+   237→   237→    try {
+   238→   238→      const data = await xpApi.baas.getStoreBalance();
+   239→   239→      setBalance(data);
+   240→   240→    } catch (err) {
+   241→   241→      console.error('[BaaS Dashboard] Failed to fetch balance:', err);
+   242→   242→      setErrorBalance('Não foi possível carregar o saldo. Tente novamente.');
+   243→   243→    } finally {
+   244→   244→      setLoadingBalance(false);
+   245→   245→    }
+   246→   246→  }, [storeId]);
+   247→   247→
+   248→   248→  // ── Fetch Statement ──
+   249→   249→
+   250→   250→  const fetchStatement = useCallback(
+   251→   251→    async (page: number = 1) => {
+   252→   252→      if (!storeId) {
+   253→   253→        setLoadingStatement(false);
+   254→   254→        return;
+   255→   255→      }
+   256→   256→      setLoadingStatement(true);
+   257→   257→      setErrorStatement(null);
+   258→   258→      try {
+   259→   259→        const data = await xpApi.baas.getStatement({
+   260→   260→          page,
+   261→   261→          pageSize: PAGE_SIZE,
+   262→   262→        });
+   263→   263→        setStatement(data);
+   264→   264→      } catch (err) {
+   265→   265→        console.error('[BaaS Dashboard] Failed to fetch statement:', err);
+   266→   266→        setErrorStatement(
+   267→   267→          'Não foi possível carregar o extrato. Tente novamente.'
+   268→   268→        );
+   269→   269→      } finally {
+   270→   270→        setLoadingStatement(false);
+   271→   271→      }
+   272→   272→    },
+   273→   273→    [storeId]
+   274→   274→  );
+   275→   275→
+   276→   276→  // ── Effects ──
+   277→   277→
+   278→   278→  useEffect(() => {
+   279→   279→    fetchBalance();
+   280→   280→  }, [fetchBalance]);
+   281→   281→
+   282→   282→  useEffect(() => {
+   283→   283→    fetchStatement(currentPage);
+   284→   284→  }, [fetchStatement, currentPage]);
+   285→   285→
+   286→   286→  const handleRetryAll = () => {
+   287→   287→    fetchBalance();
+   288→   288→    fetchStatement(currentPage);
+   289→   289→  };
+   290→   290→
+   291→   291→  const handlePageChange = (page: number) => {
+   292→   292→    setCurrentPage(page);
+   293→   293→  };
+   294→   294→
+   295→   295→  // ── Render ──
+   296→   296→
+   297→   297→  const displayName = storeName || user?.organizationName || 'Loja';
+   298→   298→  const displayStoreId = storeId || '—';
+   299→   299→
+   300→   300→  return (
+   301→   301→    <div className="space-y-6 max-w-5xl mx-auto">
+   302→   302→      {/* ========== Store Info Header ========== */}
+   303→   303→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+   304→   304→        <div className="flex items-center gap-3">
+   305→   305→          <div className="flex items-center justify-center rounded-xl bg-neon-500/10 p-2.5">
+   306→   306→            <Building2 className="size-5 text-neon-400" />
+   307→   307→          </div>
+   308→   308→          <div>
+   309→   309→            <h2 className="text-lg font-semibold text-zinc-100">
+   310→   310→              {displayName}
+   311→   311→            </h2>
+   312→   312→            <div className="flex items-center gap-2 mt-0.5">
+   313→   313→              <Badge
+   314→   314→                variant="outline"
+   315→   315→                className="text-[10px] px-1.5 py-0 h-4 border-zinc-700 text-zinc-500 font-mono"
+   316→   316→              >
+   317→   317→                ID: {displayStoreId}
+   318→   318→              </Badge>
+   319→   319→              <Badge
+   320→   320→                variant="outline"
+   321→   321→                className="text-[10px] px-2 py-0 h-4 border-neon-500/30 bg-neon-500/10 text-neon-400"
+   322→   322→              >
+   323→   323→                <Eye className="size-2.5 mr-1" />
+   324→   324→                Visão da Loja: {displayName}
+   325→   325→              </Badge>
+   326→   326→            </div>
+   327→   327→          </div>
+   328→   328→        </div>
+   329→   329→        <Button
+   330→   330→          variant="ghost"
+   331→   331→          size="sm"
+   332→   332→          onClick={handleRetryAll}
+   333→   333→          disabled={loadingBalance || loadingStatement}
+   334→   334→          className="text-zinc-400 hover:text-zinc-200 h-8 px-3 gap-2"
+   335→   335→        >
+   336→   336→          <RefreshCw
+   337→   337→            className={`size-3.5 ${
+   338→   338→              loadingBalance || loadingStatement
+   339→   339→                ? 'animate-spin'
+   340→   340→                : ''
+   341→   341→            }`}
+   342→   342→          />
+   343→   343→          <span className="text-xs">Atualizar</span>
+   344→   344→        </Button>
+   345→   345→      </div>
+   346→   346→
+   347→   347→      {/* ========== Balance Cards ========== */}
+   348→   348→      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+   349→   349→        {loadingBalance ? (
+   350→   350→          <>
+   351→   351→            <BalanceCardSkeleton />
+   352→   352→            <BalanceCardSkeleton />
+   353→   353→            <BalanceCardSkeleton />
+   354→   354→          </>
+   355→   355→        ) : errorBalance ? (
+   356→   356→          <div className="sm:col-span-3">
+   357→   357→            <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   358→   358→              <CardContent className="flex flex-col sm:flex-row items-center justify-center gap-4 py-6">
+   359→   359→                <AlertCircle className="size-5 text-red-400 shrink-0" />
+   360→   360→                <div className="text-center sm:text-left">
+   361→   361→                  <p className="text-sm text-red-400 font-medium">
+   362→   362→                    {errorBalance}
+   363→   363→                  </p>
+   364→   364→                  <p className="text-xs text-zinc-500 mt-1">
+   365→   365→                    Verifique a sua conexão ou tente mais tarde.
+   366→   366→                  </p>
+   367→   367→                </div>
+   368→   368→                <Button
+   369→   369→                  variant="outline"
+   370→   370→                  size="sm"
+   371→   371→                  onClick={fetchBalance}
+   372→   372→                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 h-8 px-3 text-xs shrink-0"
+   373→   373→                >
+   374→   374→                  <RefreshCw className="size-3 mr-1" />
+   375→   375→                  Tentar novamente
+   376→   376→                </Button>
+   377→   377→              </CardContent>
+   378→   378→            </Card>
+   379→   379→          </div>
+   380→   380→        ) : (
+   381→   381→          <>
+   382→   382→            {/* Available Balance */}
+   383→   383→            <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   384→   384→              <CardContent className="space-y-3">
+   385→   385→                <div className="flex items-center gap-2">
+   386→   386→                  <div className="flex items-center justify-center rounded-lg bg-neon-500/10 p-1.5">
+   387→   387→                    <Wallet className="size-3.5 text-neon-400" />
+   388→   388→                  </div>
+   389→   389→                  <span className="text-xs text-zinc-400 font-medium uppercase tracking-wider">
+   390→   390→                    Disponível
+   391→   391→                  </span>
+   392→   392→                </div>
+   393→   393→                <p className="text-2xl font-bold text-neon-400 tracking-tight">
+   394→   394→                  {balance
+   395→   395→                    ? formatCurrency(balance.available, balance.currency)
+   396→   396→                    : '—'}
+   397→   397→                </p>
+   398→   398→                <p className="text-[10px] text-zinc-500">
+   399→   399→                  Saldo disponível para movimentações
+   400→   400→                </p>
+   401→   401→              </CardContent>
+   402→   402→            </Card>
+   403→   403→
+   404→   404→            {/* Pending Balance */}
+   405→   405→            <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   406→   406→              <CardContent className="space-y-3">
+   407→   407→                <div className="flex items-center gap-2">
+   408→   408→                  <div className="flex items-center justify-center rounded-lg bg-amber-500/10 p-1.5">
+   409→   409→                    <Clock className="size-3.5 text-amber-400" />
+   410→   410→                  </div>
+   411→   411→                  <span className="text-xs text-zinc-400 font-medium uppercase tracking-wider">
+   412→   412→                    Pendente
+   413→   413→                  </span>
+   414→   414→                </div>
+   415→   415→                <p className="text-2xl font-bold text-amber-400 tracking-tight">
+   416→   416→                  {balance
+   417→   417→                    ? formatCurrency(balance.pending, balance.currency)
+   418→   418→                    : '—'}
+   419→   419→                </p>
+   420→   420→                <p className="text-[10px] text-zinc-500">
+   421→   421→                  Valores em processamento
+   422→   422→                </p>
+   423→   423→              </CardContent>
+   424→   424→            </Card>
+   425→   425→
+   426→   426→            {/* Incoming Balance */}
+   427→   427→            <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   428→   428→              <CardContent className="space-y-3">
+   429→   429→                <div className="flex items-center gap-2">
+   430→   430→                  <div className="flex items-center justify-center rounded-lg bg-neon-500/10 p-1.5">
+   431→   431→                    <ArrowDownLeft className="size-3.5 text-neon-400" />
+   432→   432→                  </div>
+   433→   433→                  <span className="text-xs text-zinc-400 font-medium uppercase tracking-wider">
+   434→   434→                    A Receber
+   435→   435→                  </span>
+   436→   436→                </div>
+   437→   437→                <p className="text-2xl font-bold text-neon-400 tracking-tight">
+   438→   438→                  {balance
+   439→   439→                    ? formatCurrency(balance.incoming, balance.currency)
+   440→   440→                    : '—'}
+   441→   441→                </p>
+   442→   442→                <p className="text-[10px] text-zinc-500">
+   443→   443→                  Receitas previstas
+   444→   444→                </p>
+   445→   445→              </CardContent>
+   446→   446→            </Card>
+   447→   447→          </>
+   448→   448→        )}
+   449→   449→      </div>
+   450→   450→
+   451→   451→      {/* ========== Prominent Total Balance (when available) ========== */}
+   452→   452→      {!loadingBalance && balance && !errorBalance && (
+   453→   453→        <div className="flex justify-center">
+   454→   454→          <div className="flex flex-col items-center gap-2 px-8 py-4">
+   455→   455→            <span className="text-xs text-zinc-500 uppercase tracking-widest font-medium">
+   456→   456→              Saldo Total
+   457→   457→            </span>
+   458→   458→            <span className="text-4xl sm:text-5xl font-bold text-zinc-100 tracking-tight">
+   459→   459→              {formatCurrency(
+   460→   460→                balance.available + balance.pending + balance.incoming,
+   461→   461→                balance.currency
+   462→   462→              )}
+   463→   463→            </span>
+   464→   464→            <div className="flex items-center gap-4 mt-1">
+   465→   465→              <span className="text-[10px] text-neon-500">
+   466→   466→                {formatCurrency(balance.available, balance.currency)} disponível
+   467→   467→              </span>
+   468→   468→              <span className="text-[10px] text-zinc-600">•</span>
+   469→   469→              <span className="text-[10px] text-amber-500">
+   470→   470→                {formatCurrency(balance.pending, balance.currency)} pendente
+   471→   471→              </span>
+   472→   472→              <span className="text-[10px] text-zinc-600">•</span>
+   473→   473→              <span className="text-[10px] text-neon-500">
+   474→   474→                {formatCurrency(balance.incoming, balance.currency)} a receber
+   475→   475→              </span>
+   476→   476→            </div>
+   477→   477→          </div>
+   478→   478→        </div>
+   479→   479→      )}
+   480→   480→
+   481→   481→      <Separator className="bg-zinc-800/60" />
+   482→   482→
+   483→   483→      {/* ========== Bank Statement (Extrato Bancário) ========== */}
+   484→   484→      <Card className="bg-zinc-900/50 border-zinc-800 py-4">
+   485→   485→        <CardHeader className="pb-2">
+   486→   486→          <div className="flex items-center justify-between">
+   487→   487→            <div className="flex items-center gap-3">
+   488→   488→              <div className="flex items-center justify-center rounded-lg bg-neon-500/10 p-2">
+   489→   489→                <FileText className="size-4 text-neon-400" />
+   490→   490→              </div>
+   491→   491→              <div>
+   492→   492→                <CardTitle className="text-base font-semibold text-zinc-100">
+   493→   493→                  Extrato Bancário
+   494→   494→                </CardTitle>
+   495→   495→                <CardDescription className="text-xs text-zinc-500 mt-0.5">
+   496→   496→                  Histórico de movimentações da loja
+   497→   497→                </CardDescription>
+   498→   498→              </div>
+   499→   499→            </div>
+   500→   500→            {statement && !loadingStatement && (
+   501→   501→              <Badge
+   502→   502→                variant="outline"
+   503→   503→                className="text-[10px] px-2 py-0 h-5 border-zinc-700 text-zinc-500"
+   504→   504→              >
+   505→   505→                {statement.total} movimentações
+   506→   506→              </Badge>
+   507→   507→            )}
+   508→   508→          </div>
+   509→   509→        </CardHeader>
+   510→   510→        <CardContent>
+   511→   511→          {loadingStatement ? (
+   512→   512→            /* ── Loading State ── */
+   513→   513→            <div className="space-y-1">
+   514→   514→              <Table>
+   515→   515→                <TableHeader>
+   516→   516→                  <TableRow className="border-zinc-800/60 hover:bg-transparent">
+   517→   517→                    <TableHead className="text-[10px] text-zinc-500 uppercase tracking-wider h-9">
+   518→   518→                      Data
+   519→   519→                    </TableHead>
+   520→   520→                    <TableHead className="text-[10px] text-zinc-500 uppercase tracking-wider h-9">
+   521→   521→                      Descrição
+   522→   522→                    </TableHead>
+   523→   523→                    <TableHead className="text-[10px] text-zinc-500 uppercase tracking-wider h-9 hidden sm:table-cell">
+   524→   524→                      Referência
+   525→   525→                    </TableHead>
+   526→   526→                    <TableHead className="text-[10px] text-zinc-500 uppercase tracking-wider h-9 text-right">
+   527→   527→                      Valor
+   528→   528→                    </TableHead>
+   529→   529→                    <TableHead className="text-[10px] text-zinc-500 uppercase tracking-wider h-9 text-right hidden md:table-cell">
+   530→   530→                      Estado
+   531→   531→                    </TableHead>
+   532→   532→                  </TableRow>
+   533→   533→                </TableHeader>
+   534→   534→                <TableBody>
+   535→   535→                  {Array.from({ length: 5 }).map((_, i) => (
+   536→   536→                    <StatementRowSkeleton key={i} />
+   537→   537→                  ))}
+   538→   538→                </TableBody>
+   539→   539→              </Table>
+   540→   540→            </div>
+   541→   541→          ) : errorStatement ? (
+   542→   542→            /* ── Error State ── */
+   543→   543→            <div className="flex flex-col items-center justify-center py-12 gap-4">
+   544→   544→              <div className="flex items-center justify-center rounded-full bg-red-500/10 p-3">
+   545→   545→                <AlertCircle className="size-6 text-red-400" />
+   546→   546→              </div>
+   547→   547→              <div className="text-center">
+   548→   548→                <p className="text-sm text-red-400 font-medium">
+   549→   549→                  {errorStatement}
+   550→   550→                </p>
+   551→   551→                <p className="text-xs text-zinc-500 mt-1">
+   552→   552→                  Não foi possível obter os dados do extrato.
+   553→   553→                </p>
+   554→   554→              </div>
+   555→   555→              <Button
+   556→   556→                variant="outline"
+   557→   557→                size="sm"
+   558→   558→                onClick={() => fetchStatement(currentPage)}
+   559→   559→                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 h-8 px-4 text-xs gap-2"
+   560→   560→              >
+   561→   561→                <RefreshCw className="size-3" />
+   562→   562→                Tentar novamente
+   563→   563→              </Button>
+   564→   564→            </div>
+   565→   565→          ) : !statement || statement.entries.length === 0 ? (
+   566→   566→            /* ── Empty State ── */
+   567→   567→            <div className="flex flex-col items-center justify-center py-16 gap-4">
+   568→   568→              <div className="flex items-center justify-center rounded-full bg-zinc-800 p-4">
+   569→   569→                <Inbox className="size-8 text-zinc-600" />
+   570→   570→              </div>
+   571→   571→              <div className="text-center">
+   572→   572→                <p className="text-sm text-zinc-400 font-medium">
+   573→   573→                  Nenhuma movimentação encontrada
+   574→   574→                </p>
+   575→   575→                <p className="text-xs text-zinc-500 mt-1">
+   576→   576→                  O extrato desta loja está vazio. As movimentações
+   577→   577→                  aparecerão aqui assim que houver atividade.
+   578→   578→                </p>
+   579→   579→              </div>
+   580→   580→            </div>
+   581→   581→          ) : (
+   582→   582→            /* ── Statement Table ── */
+   583→   583→            <>
+   584→   584→              <div className="max-h-[480px] overflow-y-auto custom-scrollbar">
+   585→   585→                <Table>
+   586→   586→                  <TableHeader>
+   587→   587→                    <TableRow className="border-zinc-800/60 hover:bg-transparent">
+   588→   588→                      <TableHead className="text-[10px] text-zinc-500 uppercase tracking-wider h-9">
+   589→   589→                        Data
+   590→   590→                      </TableHead>
+   591→   591→                      <TableHead className="text-[10px] text-zinc-500 uppercase tracking-wider h-9">
+   592→   592→                        Descrição
+   593→   593→                      </TableHead>
+   594→   594→                      <TableHead className="text-[10px] text-zinc-500 uppercase tracking-wider h-9 hidden sm:table-cell">
+   595→   595→                        Referência
+   596→   596→                      </TableHead>
+   597→   597→                      <TableHead className="text-[10px] text-zinc-500 uppercase tracking-wider h-9 text-right">
+   598→   598→                        Valor
+   599→   599→                      </TableHead>
+   600→   600→                      <TableHead className="text-[10px] text-zinc-500 uppercase tracking-wider h-9 text-right hidden md:table-cell">
+   601→   601→                        Estado
+   602→   602→                      </TableHead>
+   603→   603→                    </TableRow>
+   604→   604→                  </TableHeader>
+   605→   605→                  <TableBody>
+   606→   606→                    {statement.entries.map((entry) => {
+   607→   607→                      const isCredit = isCreditType(entry.type);
+   608→   608→                      const Icon = getTransactionIcon(entry.type);
+   609→   609→                      const statusConfig = getStatusConfig(entry.status);
+   610→   610→
+   611→   611→                      return (
+   612→   612→                        <TableRow
+   613→   613→                          key={entry.id}
+   614→   614→                          className="border-zinc-800/60 hover:bg-zinc-800/30"
+   615→   615→                        >
+   616→   616→                          {/* Date */}
+   617→   617→                          <TableCell className="py-3">
+   618→   618→                            <span className="text-xs text-zinc-400">
+   619→   619→                              {formatDate(entry.date)}
+   620→   620→                            </span>
+   621→   621→                          </TableCell>
+   622→   622→
+   623→   623→                          {/* Description */}
+   624→   624→                          <TableCell className="py-3">
+   625→   625→                            <div className="flex items-center gap-2.5">
+   626→   626→                              <div
+   627→   627→                                className={`flex items-center justify-center rounded-lg p-1.5 shrink-0 ${
+   628→   628→                                  isCredit
+   629→   629→                                    ? 'bg-neon-500/10'
+   630→   630→                                    : 'bg-red-500/10'
+   631→   631→                                }`}
+   632→   632→                              >
+   633→   633→                                <Icon
+   634→   634→                                  className={`size-3.5 ${
+   635→   635→                                    isCredit
+   636→   636→                                      ? 'text-neon-400'
+   637→   637→                                      : 'text-red-400'
+   638→   638→                                  }`}
+   639→   639→                                />
+   640→   640→                              </div>
+   641→   641→                              <div className="min-w-0">
+   642→   642→                                <p className="text-sm text-zinc-200 truncate">
+   643→   643→                                  {entry.description || '—'}
+   644→   644→                                </p>
+   645→   645→                                <p className="text-[10px] text-zinc-500 mt-0.5 capitalize">
+   646→   646→                                  {entry.type}
+   647→   647→                                </p>
+   648→   648→                              </div>
+   649→   649→                            </div>
+   650→   650→                          </TableCell>
+   651→   651→
+   652→   652→                          {/* Reference */}
+   653→   653→                          <TableCell className="py-3 hidden sm:table-cell">
+   654→   654→                            {entry.reference ? (
+   655→   655→                              <span className="text-xs text-zinc-500 font-mono">
+   656→   656→                                {entry.reference}
+   657→   657→                              </span>
+   658→   658→                            ) : (
+   659→   659→                              <span className="text-xs text-zinc-600">—</span>
+   660→   660→                            )}
+   661→   661→                          </TableCell>
+   662→   662→
+   663→   663→                          {/* Amount */}
+   664→   664→                          <TableCell className="py-3 text-right">
+   665→   665→                            <span
+   666→   666→                              className={`text-sm font-semibold ${
+   667→   667→                                isCredit
+   668→   668→                                  ? 'text-neon-400'
+   669→   669→                                  : 'text-red-400'
+   670→   670→                              }`}
+   671→   671→                            >
+   672→   672→                              {isCredit ? '+' : '-'}{' '}
+   673→   673→                              {formatCurrency(entry.amount, entry.currency)}
+   674→   674→                            </span>
+   675→   675→                          </TableCell>
+   676→   676→
+   677→   677→                          {/* Status */}
+   678→   678→                          <TableCell className="py-3 text-right hidden md:table-cell">
+   679→   679→                            <Badge
+   680→   680→                              variant="outline"
+   681→   681→                              className={`text-[10px] px-2 py-0 h-5 border ${statusConfig.className}`}
+   682→   682→                            >
+   683→   683→                              {statusConfig.label}
+   684→   684→                            </Badge>
+   685→   685→                          </TableCell>
+   686→   686→                        </TableRow>
+   687→   687→                      );
+   688→   688→                    })}
+   689→   689→                  </TableBody>
+   690→   690→                </Table>
+   691→   691→              </div>
+   692→   692→
+   693→   693→              {/* ── Pagination ── */}
+   694→   694→              {statement.totalPages > 1 && (
+   695→   695→                <div className="flex items-center justify-between mt-4 pt-4 border-t border-zinc-800/60">
+   696→   696→                  <p className="text-xs text-zinc-500">
+   697→   697→                    Página {statement.page} de {statement.totalPages}
+   698→   698→                  </p>
+   699→   699→                  <div className="flex items-center gap-2">
+   700→   700→                    <Button
+   701→   701→                      variant="outline"
+   702→   702→                      size="sm"
+   703→   703→                      onClick={() =>
+   704→   704→                        handlePageChange(statement.page - 1)
+   705→   705→                      }
+   706→   706→                      disabled={statement.page <= 1 || loadingStatement}
+   707→   707→                      className="h-7 px-2.5 border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 disabled:opacity-40"
+   708→   708→                    >
+   709→   709→                      <ChevronLeft className="size-3.5" />
+   710→   710→                      <span className="text-xs">Anterior</span>
+   711→   711→                    </Button>
+   712→   712→                    <Button
+   713→   713→                      variant="outline"
+   714→   714→                      size="sm"
+   715→   715→                      onClick={() =>
+   716→   716→                        handlePageChange(statement.page + 1)
+   717→   717→                      }
+   718→   718→                      disabled={
+   719→   719→                        statement.page >= statement.totalPages ||
+   720→   720→                        loadingStatement
+   721→   721→                      }
+   722→   722→                      className="h-7 px-2.5 border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 disabled:opacity-40"
+   723→   723→                    >
+   724→   724→                      <span className="text-xs">Seguinte</span>
+   725→   725→                      <ChevronRight className="size-3.5" />
+   726→   726→                    </Button>
+   727→   727→                  </div>
+   728→   728→                </div>
+   729→   729→              )}
+   730→   730→            </>
+   731→   731→          )}
+   732→   732→        </CardContent>
+   733→   733→      </Card>
+   734→   734→
+   735→   735→      {/* ========== Footer Notice ========== */}
+   736→   736→      <div className="flex items-center justify-center gap-2 py-4">
+   737→   737→        <ShieldCheck className="size-3.5 text-zinc-600" />
+   738→   738→        <p className="text-[11px] text-zinc-600 text-center">
+   739→   739→          Acesso limitado à visão da loja — Dados sujeitos ao contexto do
+   740→   740→          Account Manager atribuído
+   741→   741→        </p>
+   742→   742→      </div>
+   743→   743→    </div>
+   744→   744→  );
+   745→   745→}
+   746→   746→

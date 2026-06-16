@@ -286,9 +286,9 @@ export interface XPaymentsApiResponse<T> {
 }
 
 /**
- * @deprecated Use XPaymentsApiResponse instead.
+ * @deprecated Use XPaymentsApiResponse interface instead. Kept for backward compatibility.
  */
-export type XPaymentsApiResponse<T> = XPaymentsApiResponse<T>;
+export type XPaymentsApiResult<T> = XPaymentsApiResponse<T>;
 
 export interface PaginatedResponse<T> {
   data: T[];

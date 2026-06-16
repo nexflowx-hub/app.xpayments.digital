@@ -71,12 +71,19 @@ interface StatementResponse {
 // ── Helpers ──
 
 function formatCurrency(amount: number, currency: string): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: currency.toUpperCase(),
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  const code = (currency || '').trim().toUpperCase();
+  if (code === 'USDT') return `₮ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (code === 'BTC') return `₿ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 8 })}`;
+  try {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return `${code} ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+  }
 }
 
 function formatDate(iso: string): string {
