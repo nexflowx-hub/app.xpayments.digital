@@ -29,7 +29,7 @@ import {
   currencyColors,
   transactionTypeLabels,
   transactionStatusColors,
-} from '@/lib/mock-data';
+} from '@/lib/formatting';
 import type { Wallet as XPaymentsWallet, Transaction as XPaymentsTransaction } from '@/types/xpayments';
 import { Currency, TransactionType, TransactionStatus } from '@/types/xpayments';
 

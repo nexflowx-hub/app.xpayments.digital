@@ -2,7 +2,8 @@
 
 import React, { useState, useCallback } from 'react';
 import { useAuthStore, ROLE_LABELS } from '@/stores/auth-store';
-import { xpApi } from '@/lib/api/client';
+import { xpApi, type MerchantLoginResponse, type AdminLoginResponse } from '@/lib/api/client';
+import { XPaymentsApiError } from '@/lib/api/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -29,9 +30,9 @@ import {
 } from 'lucide-react';
 import CryptoCards from '@/components/shared/crypto-cards';
 import { cn } from '@/lib/utils';
-import type { AuthUser } from '@/types/xpayments';
+import type { AuthUser, UserRole } from '@/types/xpayments';
 
-// --- Dev Mode Mock Users (apenas para dev) ---
+// --- Dev Mode Mock Users (apenas para dev local, SEM API) ---
 const devUsers: Record<string, AuthUser> = {
   customer: {
     id: 'usr_cust_001',
@@ -61,6 +62,14 @@ const devUsers: Record<string, AuthUser> = {
     organizationId: 'org_xpcorp',
     organizationName: 'XPayments Corp',
   },
+  admin: {
+    id: 'usr_admin_001',
+    email: 'admin@xpayments.digital',
+    nickname: 'XPaymentsAdmin',
+    fullName: 'Admin XPayments',
+    role: 'admin',
+    tier: 'TIER_3_CORPORATE',
+  },
   operator: {
     id: 'usr_ops_001',
     email: 'ops@xpayments.digital',
@@ -70,7 +79,7 @@ const devUsers: Record<string, AuthUser> = {
   },
 };
 
-const devRoles = ['customer', 'merchant', 'super_merchant', 'operator'] as const;
+const devRoles = ['customer', 'merchant', 'super_merchant', 'admin', 'operator'] as const;
 
 const FEATURES = [
   { icon: Layers, title: 'Multi-Wallet', desc: 'EUR, BRL, USD, USDT — gestão centralizada em multi-moeda' },
@@ -88,6 +97,7 @@ const NAV_LINKS = [
 
 export default function XPaymentsLanding() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [isAdminLogin, setIsAdminLogin] = useState(false);
   const [loginId, setLoginId] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [regEmail, setRegEmail] = useState('');
@@ -99,7 +109,18 @@ export default function XPaymentsLanding() {
 
   const { setAuth, isLoading, setLoading } = useAuthStore();
 
-  // ── Login real via API ──
+  // ── Helper: mapeia role do backend para UserRole do frontend ──
+  const mapRole = (backendRole?: string): UserRole => {
+    if (!backendRole) return 'merchant';
+    const upper = backendRole.toUpperCase();
+    if (upper === 'SUPER_ADMIN' || upper === 'ADMIN') return 'admin';
+    if (upper === 'OPERATOR') return 'operator';
+    if (upper === 'SUPER_MERCHANT') return 'super_merchant';
+    if (upper === 'CUSTOMER') return 'customer';
+    return 'merchant';
+  };
+
+  // ── Login Merchant via API real ──
   const handleLogin = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -107,33 +128,71 @@ export default function XPaymentsLanding() {
       setLoading(true);
 
       try {
-        const response = await xpApi.auth.login({
-          email: loginId,
-          password: loginPassword,
-        });
+        if (isAdminLogin) {
+          // ── Admin Login: POST /api/v1/admin/login ──
+          const response = await xpApi.admin.login({
+            email: loginId,
+            password: loginPassword,
+          });
 
-        const token = response?.token || response?.access_token;
-        const userData = response?.user || response;
+          // Response: { adminId, name, role, token }
+          const adminData = response as AdminLoginResponse;
+          if (!adminData.token) {
+            setLoginError('Resposta inválida do servidor');
+            return;
+          }
 
-        if (!token || !userData) {
-          setLoginError('Resposta inválida do servidor');
-          setLoading(false);
-          return;
+          const user: AuthUser = {
+            id: adminData.adminId,
+            fullName: adminData.name,
+            email: loginId,
+            role: mapRole(adminData.role),
+            tier: 'TIER_3_CORPORATE',
+          };
+
+          setAuth(adminData.token, user);
+        } else {
+          // ── Merchant Login: POST /api/v1/auth/login ──
+          const response = await xpApi.auth.login({
+            email: loginId,
+            password: loginPassword,
+          });
+
+          // Response: { merchantId, name, tier, token }
+          const merchantData = response as MerchantLoginResponse;
+          if (!merchantData.token) {
+            setLoginError('Resposta inválida do servidor');
+            return;
+          }
+
+          const user: AuthUser = {
+            id: merchantData.merchantId,
+            fullName: merchantData.name,
+            email: loginId,
+            role: 'merchant',
+            tier: merchantData.tier || 'TIER_1_BASIC',
+          };
+
+          setAuth(merchantData.token, user);
         }
 
-        setAuth(token, userData);
         window.dispatchEvent(new CustomEvent('xp:authenticated'));
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Erro de conexão';
-        setLoginError(message);
+        if (err instanceof XPaymentsApiError) {
+          setLoginError(err.message);
+        } else if (err instanceof Error) {
+          setLoginError(err.message);
+        } else {
+          setLoginError('Erro de conexão com o servidor');
+        }
       } finally {
         setLoading(false);
       }
     },
-    [loginId, loginPassword, setAuth, setLoading],
+    [loginId, loginPassword, isAdminLogin, setAuth, setLoading],
   );
 
-  // ── Register real via API ──
+  // ── Register via API real ──
   const handleRegister = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -144,30 +203,28 @@ export default function XPaymentsLanding() {
       setLoginError('');
       setLoading(true);
       try {
-        const response = await xpApi.auth.register({
+        await xpApi.auth.register({
           email: regEmail,
           password: regPassword,
           storeName: regStoreName || undefined,
         });
 
-        const token = response?.token;
-        const userData = response?.user;
-
-        if (token && userData) {
-          setAuth(token, userData);
-          window.dispatchEvent(new CustomEvent('xp:authenticated'));
-        } else {
-          setLoginError('Conta criada com sucesso! Faça login para continuar.');
-          setAuthMode('login');
-        }
+        // Registration successful — switch to login
+        setLoginError('Conta criada com sucesso! Faça login para continuar.');
+        setAuthMode('login');
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Erro ao criar conta';
-        setLoginError(msg);
+        if (err instanceof XPaymentsApiError) {
+          setLoginError(err.message);
+        } else if (err instanceof Error) {
+          setLoginError(err.message);
+        } else {
+          setLoginError('Erro ao criar conta');
+        }
       } finally {
         setLoading(false);
       }
     },
-    [regEmail, regPassword, regStoreName, setAuth, setLoading],
+    [regEmail, regPassword, regStoreName, setLoading],
   );
 
   // ── Dev Mode (sem API) ──
@@ -324,7 +381,7 @@ export default function XPaymentsLanding() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setAuthMode('register'); setLoginError(''); }}
+                  onClick={() => { setAuthMode('register'); setLoginError(''); setIsAdminLogin(false); }}
                   className={`flex-1 py-3 text-sm font-semibold transition-all ${
                     authMode === 'register' ? 'text-neon-400 bg-neon-500/[0.06] border-b-2 border-neon-400' : 'text-zinc-500 hover:text-zinc-300'
                   }`}
@@ -332,6 +389,27 @@ export default function XPaymentsLanding() {
                   Criar Conta
                 </button>
               </div>
+
+              {/* Admin Login Toggle — only visible in login mode */}
+              {authMode === 'login' && (
+                <div className="flex items-center justify-between px-5 pt-3">
+                  <span className="text-[10px] text-zinc-600">Acesso Admin / Operador</span>
+                  <button
+                    type="button"
+                    onClick={() => { setIsAdminLogin(!isAdminLogin); setLoginError(''); }}
+                    className={cn(
+                      'relative h-5 w-9 rounded-full transition-colors',
+                      isAdminLogin ? 'bg-neon-500/30' : 'bg-zinc-800',
+                    )}
+                    aria-label={isAdminLogin ? 'Modo Merchant' : 'Modo Admin'}
+                  >
+                    <span className={cn(
+                      'absolute top-0.5 left-0.5 h-4 w-4 rounded-full transition-transform',
+                      isAdminLogin ? 'translate-x-4 bg-neon-400' : 'bg-zinc-500',
+                    )} />
+                  </button>
+                </div>
+              )}
 
               <div className="p-5 sm:p-6">
                 {loginError && (
@@ -393,7 +471,7 @@ export default function XPaymentsLanding() {
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <>
-                          Acessar Plataforma
+                          {isAdminLogin ? 'Acessar como Admin' : 'Acessar Plataforma'}
                           <ArrowRight className="h-4 w-4" />
                         </>
                       )}

@@ -4,7 +4,7 @@
 >
 > A ponte entre o sistema financeiro tradicional e a economia digital.
 
-[![Deploy on Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/XPaymentsDigital/xpayments-digital.git&env=NEXT_PUBLIC_API_URL,https://api.xpayments.digital/api/v1)
+[![Deploy on Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/XPaymentsDigital/xpayments-digital.git&env=NEXT_PUBLIC_API_URL,https://api.xpayments.digital)
 
 ---
 
@@ -14,7 +14,7 @@
 2. [Stack Tecnológico](#2-stack-tecnológico)
 3. [Estrutura do Projeto](#3-estrutura-do-projeto)
 4. [Variáveis de Ambiente](#4-variáveis-de-ambiente)
-5. [API Client — Axios com JWT Interceptors](#5-api-client--axios-com-jwt-interceptors)
+5. [API Client — Native Fetch com JWT](#5-api-client--native-fetch-com-jwt)
 6. [Rotas da API — Mapeamento Completo](#6-rotas-da-api--mapeamento-completo)
 7. [Sistema de Tipos TypeScript](#7-sistema-de-tipos-typescript)
 8. [Stores — Estado Global (Zustand)](#8-stores--estado-global-zustand)
@@ -59,7 +59,7 @@ Todas as páginas estão conectadas à API real. Não existem dados simulados no
 | Estilização | Tailwind CSS | 4.x |
 | Componentes | shadcn/ui (estilo New York) | latest |
 | Estado Global | Zustand (com persist) | 5.x |
-| HTTP Client | Axios (com interceptors) | 1.x |
+| HTTP Client | Fetch (native, wrapper próprio) | — |
 | ORM (dev) | Prisma / SQLite | 6.x |
 | Toasts | Sonner | 2.x |
 | Gráficos | Recharts | 2.x |
@@ -88,7 +88,6 @@ src/
 ├── components/
 │   ├── layout/
 │   │   ├── xp-landing.tsx      # Landing page + formulário login/register
-│   │   ├── xp-login.tsx        # Tela de login dedicada
 │   │   └── xp-sidebar.tsx      # Sidebar com RBAC filtering
 │   ├── dashboard/
 │   │   ├── dashboard-page.tsx  # Painel principal (wallets + transações)
@@ -114,7 +113,8 @@ src/
 │   └── ui/                     # Componentes shadcn/ui (~40 componentes)
 ├── lib/
 │   ├── api/
-│   │   └── client.ts           # Axios instance + xpApi modules + JWT storage
+│   │   └── client.ts           # Fetch wrapper + xpApi modules + XPaymentsApiError
+│   ├── formatting.ts          # Helpers de exibição (símbolos, labels, cores)
 │   └── utils.ts                # cn() helper (clsx + tailwind-merge)
 ├── stores/
 │   ├── auth-store.ts           # Auth state + RBAC permissions matrix
@@ -137,7 +137,7 @@ src/
 
 | Variável | Obrigatória | Descrição |
 |----------|-------------|-----------|
-| `NEXT_PUBLIC_API_URL` | **Sim** | URL base da API, **inclui `/api/v1`**. Ex: `https://api.xpayments.digital/api/v1` |
+| `NEXT_PUBLIC_API_URL` | **Sim** | URL base da API (sem `/api/v1`). Ex: `https://api.xpayments.digital`. O client acrescenta `/api/v1` automaticamente. |
 | `DATABASE_URL` | Não (dev) | String de conexão Prisma (SQLite local, apenas para desenvolvimento) |
 | `NEXTAUTH_SECRET` | Não | Reservado para fluxo futuro |
 | `NEXTAUTH_URL` | Não | Reservado para fluxo futuro |
@@ -145,24 +145,37 @@ src/
 **Arquivo de referência**: `.env.example`
 
 ```
-NEXT_PUBLIC_API_URL="https://api.xpayments.digital/api/v1"
+NEXT_PUBLIC_API_URL="https://api.xpayments.digital"
 ```
 
-> **Atenção**: `NEXT_PUBLIC_API_URL` já inclui o prefixo `/api/v1`. O client Axios concatena as rotas diretamente a partir deste base URL. Nunca adicione `/api/v1` nas chamadas individuais.
+> **Atenção**: `NEXT_PUBLIC_API_URL` **não** inclui `/api/v1`. O client adiciona automaticamente `/api/v1` ao construir as URLs de request. Nunca adicione `/api/v1` na variável de ambiente nem nas chamadas individuais.
 
 ---
 
-## 5. API Client — Axios com JWT Interceptors
+## 5. API Client — Native Fetch com JWT
 
-O client HTTP é implementado em `src/lib/api/client.ts` utilizando **Axios** com dois interceptors:
+O client HTTP é implementado em `src/lib/api/client.ts` utilizando **`fetch` nativo** (sem dependência de Axios), com um wrapper central `request<T>()` que encapsula toda a lógica de autenticação e tratamento de erros.
 
-### Request Interceptor
-Injeta automaticamente o header `Authorization: Bearer <token>` em todas as requisições, lendo o token do `sessionStorage` (chave `xp_token`).
+### Base URL & Prefixo
 
-### Response Interceptor
-Intercepta respostas com status **401** (Unauthorized), limpando o token e disparando o evento customizado `xp:unauthorized`, que aciona o logout global.
+```
+NEXT_PUBLIC_API_URL = "https://api.xpayments.digital"
+                            ↓ (client adiciona automaticamente)
+               https://api.xpayments.digital/api/v1/auth/login
+```
 
-### Formato de Resposta da API
+O client lê `NEXT_PUBLIC_API_URL`, remove trailing slashes e concatena `/api/v1` + o path relativo da rota.
+
+### Injeção JWT
+
+O wrapper `request()` faz um **lazy import** de `useAuthStore` (para evitar dependência circular) e lê o token diretamente do Zustand store em cada request:
+
+```typescript
+const token = useAuthStore.getState().token;
+headers['Authorization'] = `Bearer ${token}`;
+```
+
+### Unwrap de Resposta
 
 Todas as respostas do backend seguem o envelope padrão:
 
@@ -174,7 +187,39 @@ interface XPaymentsApiResponse<T> {
 }
 ```
 
-O client faz o unwrap automaticamente — as funções do `xpApi` retornam `payload.data` diretamente.
+O client faz o unwrap automaticamente — quando `json.success === true`, retorna `json.data` diretamente. Se o envelope não estiver presente (fallback), retorna o JSON integral.
+
+### Tratamento de Erros — `XPaymentsApiError`
+
+Classe customizada para erros de API, exportada de `client.ts`:
+
+```typescript
+class XPaymentsApiError extends Error {
+  status: number;        // HTTP status (ex: 404, 422)
+  code?: string;         // Código de erro do backend (ex: "INSUFFICIENT_BALANCE")
+  details?: Record<string, unknown>; // Detalhes adicionais do erro
+}
+```
+
+Qualquer resposta com `!response.ok` lança `XPaymentsApiError` com a mensagem, status, código e detalhes extraídos do corpo JSON.
+
+### Auto-Logout (401)
+
+Quando uma resposta retorna status **401**, o client executa automaticamente:
+
+1. `clearStoredToken()` + `clearStoredUser()` — limpa sessionStorage
+2. `useAuthStore.getState().logout()` — limpa estado Zustand
+3. `window.dispatchEvent(new CustomEvent('xp:unauthorized'))` — evento global
+
+O componente raiz (`page.tsx`) escuta `xp:unauthorized` e redireciona para a landing page.
+
+### Métodos Convenience
+
+| Método | Descrição |
+|--------|-----------|
+| `get<T>(path, params?)` | GET com query params opcionais |
+| `post<T>(path, body?)` | POST com body JSON |
+| `patch<T>(path, body?)` | PATCH com body JSON |
 
 ### Helpers de Armazenamento
 
@@ -187,19 +232,26 @@ O client faz o unwrap automaticamente — as funções do `xpApi` retornam `payl
 | `setStoredUser<T>(user)` | Grava user serializado no sessionStorage |
 | `clearStoredUser()` | Remove user do sessionStorage |
 
+### Ficheiros Removidos (pós-migração)
+
+- `src/lib/mock-data.ts` — dados mock eliminados; helpers de UI movidos para `src/lib/formatting.ts`
+- `src/components/shared/tradingview-widget.tsx` — widget não utilizado, removido
+- `src/components/layout/xp-login.tsx` — tela de login dedicada não utilizada, removida
+
 ---
 
 ## 6. Rotas da API — Mapeamento Completo
 
-Todas as rotas são relativas a `NEXT_PUBLIC_API_URL` (que já contém `/api/v1`).
+Todas as rotas são relativas a `/api/v1` (o client acrescenta automaticamente).
 
 ### Autenticação
 
 | Método | Rota | Módulo | Descrição |
 |--------|------|--------|-----------|
-| `POST` | `/auth/login` | `xpApi.auth.login` | Login com email/password |
+| `POST` | `/auth/login` | `xpApi.auth.login` | Login merchant com email/password |
 | `POST` | `/auth/register` | `xpApi.auth.register` | Registro de nova conta |
 | `GET` | `/auth/me` | `xpApi.auth.me` | Perfil do utilizador autenticado |
+| `POST` | `/admin/login` | `xpApi.admin.login` | Login admin/operator com email/password |
 
 ### Público (sem autenticação)
 
@@ -394,15 +446,62 @@ A sidebar filtra os itens de navegação com base na role + permissão individua
 
 ## 10. Fluxo de Autenticação
 
+O formulário de autenticação está integrado na landing page (`xp-landing.tsx`) com um toggle **Login / Registro** e um switch **Admin** para alternar entre fluxos de merchant e admin.
+
+### Merchant Login
+
 ```
-┌──────────┐     POST /auth/login      ┌──────────┐
-│  Landing  │ ──────────────────────▶   │  Backend  │
-│  Page     │ ◀──────────────────────   │  API      │
-└──────────┘  { token, user, merchantId }└──────────┘
-      │
-      ▼
+POST /api/v1/auth/login   { email, password }
+        ↓
+Response: { merchantId, name, tier, token }
+        ↓
+mapRole() → "merchant"
+        ↓
+setAuth(token, user) → Zustand + sessionStorage → Dashboard
+```
+
+### Admin / Operator Login
+
+Ativado pelo **toggle switch** "Acessar como Admin" na landing page:
+
+```
+POST /api/v1/admin/login   { email, password }
+        ↓
+Response: { adminId, name, role, token }
+        ↓
+mapRole(role) → mapeia role do backend (ver tabela abaixo)
+        ↓
+setAuth(token, user) → Zustand + sessionStorage → Dashboard
+```
+
+### Registro
+
+```
+POST /api/v1/auth/register   { email, password, storeName? }
+        ↓
+Response: { userId?, merchantId?, token?, message }
+        ↓
+Se token presente → setAuth() + Dashboard
+Se não → mensagem de confirmação (verificar email, etc.)
+```
+
+### Mapeamento de Roles (Backend → Frontend)
+
+A função `mapRole()` na landing page converte as roles do backend para o enum `UserRole` do frontend:
+
+| Role do Backend | Role do Frontend | Descrição |
+|----------------|-----------------|-----------|
+| `SUPER_ADMIN` / `ADMIN` | `admin` | Acesso total (Admin) |
+| `OPERATOR` | `operator` | Operações internas (sem depósitos/swaps/payouts) |
+| `SUPER_MERCHANT` | `super_merchant` | Merchant com sub-clientes |
+| `CUSTOMER` | `customer` | Utilizador sem organização |
+| *(outros)* | `merchant` | Fallback padrão |
+
+### Fluxo Pós-Login (comum)
+
+```
 ┌──────────────────────────────────────┐
-│ 1. setAuth(token, user)              │  ← Zustand store
+│ 1. setAuth(token, user)              │  ← Zustand store (useAuthStore)
 │ 2. sessionStorage.setItem('xp_token') │  ← Armazenamento
 │ 3. sessionStorage.setItem('xp_user')  │  ← Armazenamento
 │ 4. dispatch('xp:authenticated')      │  ← Evento customizado
@@ -416,11 +515,15 @@ A sidebar filtra os itens de navegação com base na role + permissão individua
 |--------|-------------------|--------|
 | `xp:authenticated` | Após login bem-sucedido | Navega para Dashboard |
 | `xp:logout` | Ao encerrar sessão | Volta à Landing Page |
-| `xp:unauthorized` | Quando interceptor recebe 401 | Logout automático + limpa sessão |
+| `xp:unauthorized` | Quando o client recebe 401 | Logout automático + limpa sessão |
 
 ### Auto-Logout
 
-O response interceptor do Axios captura qualquer resposta com status `401`, executa `clearStoredToken()` + `clearStoredUser()` e dispara `xp:unauthorized`. O componente raiz (`page.tsx`) escuta este evento e executa o logout via `useAuthStore`.
+O wrapper `request()` em `client.ts` captura qualquer resposta com status `401`, executa `clearStoredToken()` + `clearStoredUser()` + `useAuthStore.getState().logout()` e dispara `xp:unauthorized`. O componente raiz (`page.tsx`) escuta este evento e redireciona para a landing page.
+
+### Dev Mode
+
+A landing page inclui botões de **Dev Mode** (visíveis apenas em ambiente local) que permitem login instantâneo sem API, útil para desenvolvimento e teste de permissões RBAC.
 
 ---
 
@@ -617,7 +720,7 @@ A landing page utiliza a estética **Dark Control Tower** com tom de fundo `#0A0
 - **Mercado**: Ticker tape de cripto com dados do Binance via proxy local + cards de preço com sparklines
 - **Moedas Suportadas**: Seção nativa dark-themed exibindo EUR, BRL, USDT e USD com ícones e descrições
 
-> O widget TradingView foi removido e substituído pela seção nativa "Moedas Suportadas" com design consistente com o tema dark.
+> O widget TradingView (`tradingview-widget.tsx`) e o ficheiro de dados mock (`mock-data.ts`) foram removidos. Os helpers de formatação de UI (símbolos, labels, cores) foram migrados para `src/lib/formatting.ts`. Todas as páginas do dashboard agora consomem dados reais da API (exibindo estados vazios quando sem dados).
 
 ---
 
@@ -627,7 +730,7 @@ A landing page utiliza a estética **Dark Control Tower** com tom de fundo `#0A0
 
 Variável de ambiente obrigatória:
 ```
-NEXT_PUBLIC_API_URL=https://api.xpayments.digital/api/v1
+NEXT_PUBLIC_API_URL=https://api.xpayments.digital
 ```
 
 O projeto utiliza `output: "standalone"` no `next.config.ts`, permitindo também deploy em qualquer ambiente com suporte a Node.js/Bun.

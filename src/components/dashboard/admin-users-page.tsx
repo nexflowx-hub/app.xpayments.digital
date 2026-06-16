@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,6 @@ import {
   Calendar,
   UserCircle,
 } from 'lucide-react';
-import { mockUsers } from '@/lib/mock-data';
 import { TierLevel, AccountStatus } from '@/types/xpayments';
 import { cn } from '@/lib/utils';
 
@@ -82,24 +81,24 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
-  const filteredUsers = useMemo(() => {
-    return mockUsers.filter((u) => {
-      if (tierFilter !== 'all' && u.tier !== tierFilter) return false;
-      if (statusFilter !== 'all' && u.status !== statusFilter) return false;
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        const matchesSearch =
-          u.nickname?.toLowerCase().includes(q) ||
-          u.email?.toLowerCase().includes(q) ||
-          u.fullName?.toLowerCase().includes(q) ||
-          u.id.toLowerCase().includes(q);
-        if (!matchesSearch) return false;
-      }
-      return true;
-    });
-  }, [search, tierFilter, statusFilter]);
+  const users = [] as any[];
 
-  const selectedUser = mockUsers.find((u) => u.id === selectedUserId);
+  const filteredUsers = users.filter((u: any) => {
+    if (tierFilter !== 'all' && u.tier !== tierFilter) return false;
+    if (statusFilter !== 'all' && u.status !== statusFilter) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        u.nickname?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.fullName?.toLowerCase().includes(q) ||
+        u.id.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+    }
+    return true;
+  });
+
+  const selectedUser = users.find((u: any) => u.id === selectedUserId);
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);

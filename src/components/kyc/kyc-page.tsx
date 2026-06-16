@@ -37,7 +37,6 @@ import {
   Info,
   Eye,
 } from 'lucide-react';
-import { mockKycProfile, mockTierLimits } from '@/lib/mock-data';
 import { TierLevel } from '@/types/xpayments';
 import { cn } from '@/lib/utils';
 
@@ -78,8 +77,10 @@ function getTierStatus(tierLevel: TierLevel, currentTier: TierLevel): TierStepSt
 // ---------------------------------------------------------------------------
 
 export default function KycPage() {
-  const profile = mockKycProfile;
-  const currentTierIndex = getTierIndex(profile.tier);
+  const profile = null as any;
+  const tierLimits = [] as any[];
+  const defaultTier = TierLevel.TIER_0_UNVERIFIED;
+  const currentTierIndex = getTierIndex(profile?.tier ?? defaultTier);
   const progressPct = ((currentTierIndex + 1) / TIER_ORDER.length) * 100;
 
   const [upgradeTarget, setUpgradeTarget] = useState<TierLevel | null>(null);
@@ -137,7 +138,7 @@ export default function KycPage() {
     return idx === currentTierIndex && idx < TIER_ORDER.length - 1;
   };
 
-  const currentTierLabel = mockTierLimits.find((t) => t.tier === profile.tier)?.label ?? 'Unknown';
+  const currentTierLabel = tierLimits.find((t: any) => t.tier === profile?.tier)?.label ?? 'Unknown';
 
   return (
     <div className="space-y-6">
@@ -154,7 +155,7 @@ export default function KycPage() {
                 <p className="text-sm text-zinc-400">Nível de Verificação Atual</p>
                 <div className="flex items-center gap-2 mt-1">
                   <h2 className="text-xl font-bold text-zinc-100">{currentTierLabel}</h2>
-                  <Badge variant="outline" className={cn('text-xs', TIER_BADGE_COLORS[profile.tier])}>
+                  <Badge variant="outline" className={cn('text-xs', TIER_BADGE_COLORS[profile?.tier ?? defaultTier])}>
                     Tier {currentTierIndex}
                   </Badge>
                 </div>
@@ -186,9 +187,9 @@ export default function KycPage() {
       {/* ── Tier Cards ── */}
       <div className="grid gap-4 md:grid-cols-2">
         {TIER_ORDER.map((tier) => {
-          const tierInfo = mockTierLimits.find((t) => t.tier === tier);
+          const tierInfo = tierLimits.find((t: any) => t.tier === tier);
           if (!tierInfo) return null;
-          const status = getTierStatus(tier, profile.tier);
+          const status = getTierStatus(tier, profile?.tier ?? defaultTier);
           const tierIndex = getTierIndex(tier);
           const upgradeable = canUpgrade(tier);
 
@@ -331,7 +332,7 @@ export default function KycPage() {
                     className="w-full mt-2 gap-2 bg-gradient-to-r from-neon-600 to-neon-500 hover:from-neon-500 hover:to-neon-400 text-white text-sm font-semibold shadow-lg shadow-neon-900/20"
                   >
                     <ShieldAlert className="h-4 w-4" />
-                    Avançar para {mockTierLimits.find((t) => t.tier === TIER_ORDER[tierIndex + 1])?.label}
+                    Avançar para {tierLimits.find((t: any) => t.tier === TIER_ORDER[tierIndex + 1])?.label}
                   </Button>
                 )}
               </CardContent>
@@ -597,7 +598,7 @@ export default function KycPage() {
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-neon-400 shrink-0" />
                 <code className="text-xs text-neon-300 font-mono truncate">
-                  https://verify.xpayments.digital/kyc/{mockKycProfile.data.tier3?.provider?.toLowerCase() ?? 'xyz'}
+                  https://verify.xpayments.digital/kyc/{profile?.data?.tier3?.provider?.toLowerCase() ?? 'xyz'}
                 </code>
               </div>
             </div>

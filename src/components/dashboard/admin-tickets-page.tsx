@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,7 @@ import {
   Filter,
   Loader2,
 } from 'lucide-react';
-import { mockTickets, ticketTypeLabels, ticketStatusColors } from '@/lib/mock-data';
+import { ticketTypeLabels, ticketStatusColors } from '@/lib/formatting';
 import { TicketStatus, TicketType } from '@/types/xpayments';
 import { cn } from '@/lib/utils';
 
@@ -75,25 +75,19 @@ export default function AdminTicketsPage() {
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const tickets = [] as any[];
+
   // Compute stats
-  const stats = useMemo(() => {
-    const open = mockTickets.filter((t) => t.status === TicketStatus.OPEN).length;
-    const inProgress = mockTickets.filter((t) => t.status === TicketStatus.IN_PROGRESS).length;
-    const resolved = mockTickets.filter((t) => t.status === TicketStatus.RESOLVED).length;
-    const total = mockTickets.length;
-    return { open, inProgress, resolved, total };
-  }, []);
+  const stats = { open: 0, inProgress: 0, resolved: 0, total: 0 };
 
   // Filtered tickets
-  const filteredTickets = useMemo(() => {
-    return mockTickets.filter((t) => {
-      if (statusFilter !== 'all' && t.status !== statusFilter) return false;
-      if (typeFilter !== 'all' && t.type !== typeFilter) return false;
-      return true;
-    });
-  }, [statusFilter, typeFilter]);
+  const filteredTickets = tickets.filter((t: any) => {
+    if (statusFilter !== 'all' && t.status !== statusFilter) return false;
+    if (typeFilter !== 'all' && t.type !== typeFilter) return false;
+    return true;
+  });
 
-  const selectedTicket = mockTickets.find((t) => t.id === selectedTicketId);
+  const selectedTicket = tickets.find((t: any) => t.id === selectedTicketId);
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);

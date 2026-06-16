@@ -6,10 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
-  mockWallets,
   currencySymbols,
   currencyColors,
-} from '@/lib/mock-data';
+} from '@/lib/formatting';
 import type { Currency } from '@/types/xpayments';
 import {
   Wallet,
@@ -43,13 +42,13 @@ export default function WalletsPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const totalPortfolio = useMemo(() => {
-    return mockWallets.reduce((sum, w) => {
-      return sum + w.balanceAvailable * (APPROX_RATES[w.currency] || 1);
+    return [].reduce((sum: number, w: any) => {
+      return sum + (w.balanceAvailable ?? 0) * (APPROX_RATES[w.currency] || 1);
     }, 0);
   }, []);
 
   const totalIncoming = useMemo(() => {
-    return mockWallets.reduce((sum, w) => sum + w.balanceIncoming, 0);
+    return [].reduce((sum: number, w: any) => sum + (w.balanceIncoming ?? 0), 0);
   }, []);
 
   const handleCopyAddress = (address: string, walletId: string) => {
@@ -80,7 +79,7 @@ export default function WalletsPage() {
               <Wallet className="size-4 text-neon-400" />
               <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Carteiras</span>
             </div>
-            <p className="text-2xl font-bold text-zinc-100">{mockWallets.length}</p>
+            <p className="text-2xl font-bold text-zinc-100">{0}</p>
             <p className="text-xs text-zinc-500 mt-1">Ativas</p>
           </CardContent>
         </Card>
@@ -110,7 +109,7 @@ export default function WalletsPage() {
 
       {/* Wallet Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
-        {mockWallets.map((wallet) => {
+        {([] as any[]).map((wallet: any) => {
           const isExpanded = expandedId === wallet.id;
           const colorClass = currencyColors[wallet.currency];
           const symbol = currencySymbols[wallet.currency];

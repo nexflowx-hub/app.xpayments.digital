@@ -31,7 +31,6 @@ import {
   Check,
   Plus,
 } from 'lucide-react';
-import { mockOrganizations } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
@@ -57,7 +56,8 @@ export default function AdminOrganizationsPage() {
   const [selectedOrgIndex, setSelectedOrgIndex] = useState<number | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const selectedOrg = selectedOrgIndex !== null ? mockOrganizations[selectedOrgIndex] : null;
+  const organizations = [] as any[];
+  const selectedOrg = selectedOrgIndex !== null ? organizations[selectedOrgIndex] : null;
 
   const handleCopyKey = (orgId: string, apiKey: string | null) => {
     if (!apiKey) return;
@@ -76,7 +76,7 @@ export default function AdminOrganizationsPage() {
               <Building2 className="h-5 w-5 text-neon-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-zinc-100">{mockOrganizations.length}</p>
+              <p className="text-2xl font-bold text-zinc-100">{organizations.length}</p>
               <p className="text-xs text-zinc-500">Organizações</p>
             </div>
           </CardContent>
@@ -88,7 +88,7 @@ export default function AdminOrganizationsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-zinc-100">
-                {mockOrganizations.filter((o) => o.apiKey).length}
+                {organizations.filter((o: any) => o.apiKey).length}
               </p>
               <p className="text-xs text-zinc-500">API Keys Ativas</p>
             </div>
@@ -138,7 +138,7 @@ export default function AdminOrganizationsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockOrganizations.map((org, idx) => (
+                {organizations.map((org: any, idx: number) => (
                   <TableRow
                     key={org.id}
                     className="border-zinc-800 hover:bg-zinc-800/30 transition-colors"

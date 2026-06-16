@@ -17,7 +17,6 @@ import {
   CheckCircle2,
   Pencil,
 } from 'lucide-react';
-import { mockFeeSchedules } from '@/lib/mock-data';
 import { TierLevel, TransactionType, Currency } from '@/types/xpayments';
 import { cn } from '@/lib/utils';
 
@@ -75,11 +74,12 @@ const TIER_ORDER: TierLevel[] = [
 export default function AdminFeesPage() {
   // Group fees by tier
   const groupedFees = useMemo(() => {
-    const groups = new Map<TierLevel, typeof mockFeeSchedules>();
+    const feeSchedules = [] as any[];
+    const groups = new Map<TierLevel, any[]>();
     for (const tier of TIER_ORDER) {
       groups.set(
         tier,
-        mockFeeSchedules.filter((f) => f.tier === tier),
+        feeSchedules.filter((f: any) => f.tier === tier),
       );
     }
     return groups;

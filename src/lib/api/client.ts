@@ -1,63 +1,43 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import type { ApiError, PayoutRequest, DepositProofRequest } from '@/types/xpayments';
-
 // ============================================================
-// XPAYMENTS.DIGITAL - API Client (Axios com JWT Interceptors)
-// 
-// REGRA DE OURO: A variável NEXT_PUBLIC_API_URL já inclui /api/v1
-// Ex: https://api.xpayments.digital/api/v1
-// As rotas são concatenadas diretamente a partir daqui.
-// NUNCA usar 'localhost' hardcoded.
+// XPAYMENTS.DIGITAL - API Client (Native Fetch + JWT)
+//
+// REGRA DE OURO:
+//   - NEXT_PUBLIC_API_URL = "https://api.xpayments.digital" (sem /api/v1)
+//   - O cliente adiciona automaticamente /api/v1 ao base URL
+//   - O Zustand (useAuthStore) fornece o JWT para todas as requests
+//   - NUNCA usar 'localhost' hardcoded
+//   - Formato de resposta do backend: { success: boolean, data: T }
 // ============================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+import type { PayoutRequest, DepositProofRequest } from '@/types/xpayments';
 
-if (!API_BASE_URL) {
+// ── Base URL ──
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'https://api.xpayments.digital').replace(/\/+$/, '');
+const API_V1 = `${API_BASE}/api/v1`;
+
+if (!process.env.NEXT_PUBLIC_API_URL) {
   console.warn(
     '[XPayments] NEXT_PUBLIC_API_URL não está definida. ' +
-    'As chamadas à API irão falhar. Defina no .env ou na Vercel.'
+    'A usar fallback: https://api.xpayments.digital'
   );
 }
 
-const xpClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-  },
-});
+// ── Custom Error ──
+export class XPaymentsApiError extends Error {
+  status: number;
+  code?: string;
+  details?: Record<string, unknown>;
 
-// --- Request Interceptor: Injeta JWT automaticamente ---
-xpClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    if (typeof window !== 'undefined') {
-      const token = getStoredToken();
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// --- Response Interceptor: Trata erros de auth globalmente ---
-xpClient.interceptors.response.use(
-  (response) => response,
-  (error: AxiosError<ApiError>) => {
-    if (error.response?.status === 401) {
-      if (typeof window !== 'undefined') {
-        clearStoredToken();
-        clearStoredUser();
-        window.dispatchEvent(new CustomEvent('xp:unauthorized'));
-      }
-    }
-    return Promise.reject(error);
+  constructor(message: string, status: number, code?: string, details?: Record<string, unknown>) {
+    super(message);
+    this.name = 'XPaymentsApiError';
+    this.status = status;
+    this.code = code;
+    this.details = details;
   }
-);
+}
 
-// --- Helpers de Armazenamento Seguro ---
+// ── Helpers de Armazenamento Seguro ──
 
 export function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -95,254 +75,252 @@ export function clearStoredUser(): void {
   sessionStorage.removeItem('xp_user');
 }
 
+// ── Core Fetch Wrapper ──
+// Lê o JWT diretamente do Zustand store (useAuthStore.getState().token)
+// e injeta no cabeçalho Authorization: Bearer <token>
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  // Lazy import to avoid circular dependency at module load time
+  // auth-store imports storage helpers from this file (loaded first)
+  // we import useAuthStore only when request() is actually called
+  const { useAuthStore } = await import('@/stores/auth-store');
+
+  const token = useAuthStore.getState().token;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const url = `${API_V1}${path}`;
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  // ── 401 Unauthorized: limpar sessão e disparar evento global ──
+  if (response.status === 401) {
+    if (typeof window !== 'undefined') {
+      clearStoredToken();
+      clearStoredUser();
+      useAuthStore.getState().logout();
+      window.dispatchEvent(new CustomEvent('xp:unauthorized'));
+    }
+    throw new XPaymentsApiError('Sessão expirada ou não autorizada', 401, 'UNAUTHORIZED');
+  }
+
+  // ── Outros erros HTTP ──
+  if (!response.ok) {
+    let errorMessage = `Erro ${response.status}`;
+    let errorCode: string | undefined;
+    let errorDetails: Record<string, unknown> | undefined;
+
+    try {
+      const errorBody = await response.json();
+      errorMessage = errorBody.message || errorBody.error || errorMessage;
+      errorCode = errorBody.code;
+      errorDetails = errorBody.details;
+    } catch {
+      // response body is not JSON
+    }
+
+    throw new XPaymentsApiError(errorMessage, response.status, errorCode, errorDetails);
+  }
+
+  // ── Parse response: unwrap { success, data } envelope ──
+  const json = await response.json();
+
+  if (json?.success && json?.data !== undefined) {
+    return json.data as T;
+  }
+
+  // Fallback: some endpoints might return raw data
+  return json as T;
+}
+
+// ── Convenience methods ──
+
+function get<T>(path: string, params?: Record<string, string | number | undefined>): Promise<T> {
+  let url = path;
+  if (params) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.set(key, String(value));
+      }
+    });
+    const qs = searchParams.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return request<T>(url, { method: 'GET' });
+}
+
+function post<T>(path: string, body?: unknown): Promise<T> {
+  return request<T>(path, {
+    method: 'POST',
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
+function patch<T>(path: string, body?: unknown): Promise<T> {
+  return request<T>(path, {
+    method: 'PATCH',
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
 // ============================================================
 // API Modules
-// Todas as rotas são relativas a NEXT_PUBLIC_API_URL (/api/v1)
+// Todas as rotas são relativas a /api/v1
 // O backend devolve respostas no formato { success: boolean, data: T }
 // ============================================================
+
+// ── Auth Response Types ──
+
+export interface MerchantLoginResponse {
+  merchantId: string;
+  name: string;
+  tier: string;
+  token: string;
+}
+
+export interface AdminLoginResponse {
+  adminId: string;
+  name: string;
+  role: string;
+  token: string;
+}
+
+export interface RegisterResponse {
+  userId?: string;
+  merchantId?: string;
+  token?: string;
+  message?: string;
+}
 
 export const xpApi = {
   // ── AUTH ──
   auth: {
-    login: async (data: { email?: string; password: string }) => {
-      const res = await xpClient.post('/auth/login', data);
-      // Our API wraps responses: { success, data: { merchantId, token, user } }
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data; // { merchantId, token, user }
-      }
-      return payload;
-    },
-    register: async (data: { email: string; password: string; storeName?: string }) => {
-      const res = await xpClient.post('/auth/register', data);
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
-    me: async () => {
-      const res = await xpClient.get('/auth/me');
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
+    /** POST /auth/login — Login de Merchant/Lojista */
+    login: (data: { email: string; password: string }) =>
+      post<MerchantLoginResponse>('/auth/login', data),
+
+    /** POST /auth/register — Registo de novo Merchant */
+    register: (data: { email: string; password: string; storeName?: string }) =>
+      post<RegisterResponse>('/auth/register', data),
+
+    /** GET /auth/me — Dados do utilizador autenticado */
+    me: () =>
+      get<unknown>('/auth/me'),
+  },
+
+  // ── ADMIN AUTH ──
+  admin: {
+    /** POST /admin/login — Login de Admin/Operador */
+    login: (data: { email: string; password: string }) =>
+      post<AdminLoginResponse>('/admin/login', data),
   },
 
   // ── PUBLIC (sem autenticação) ──
   public: {
-    // Taxas de câmbio reais para o motor de swap
-    getRates: async () => {
-      const res = await xpClient.get('/public/rates');
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
+    /** GET /public/rates — Taxas de câmbio reais */
+    getRates: () =>
+      get<unknown>('/public/rates'),
   },
 
   // ── WALLETS ──
   wallets: {
-    list: async () => {
-      const res = await xpClient.get('/wallets');
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
-    getById: async (id: string) => {
-      const res = await xpClient.get(`/wallets/${id}`);
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
+    list: () => get<unknown>('/wallets'),
+    getById: (id: string) => get<unknown>(`/wallets/${id}`),
   },
 
   // ── TRANSACTIONS ──
   transactions: {
-    list: async (params?: { walletId?: string; type?: string; status?: string; page?: number; pageSize?: number }) => {
-      const res = await xpClient.get('/transactions', { params });
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
+    list: (params?: { walletId?: string; type?: string; status?: string; page?: number; pageSize?: number }) =>
+      get<unknown>('/transactions', params as Record<string, string | number | undefined>),
   },
 
   // ── DEPOSITS (IN) ──
   deposits: {
-    create: async (data: { walletId: string; currency: string; amount: number }) => {
-      const res = await xpClient.post('/deposits', data);
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
-    submitProof: async (data: DepositProofRequest) => {
-      const res = await xpClient.post(`/deposits/${data.depositId}/proof`, {
+    create: (data: { walletId: string; currency: string; amount: number }) =>
+      post<unknown>('/deposits', data),
+
+    submitProof: (data: DepositProofRequest) =>
+      post<unknown>(`/deposits/${data.depositId}/proof`, {
         proofType: data.proofType,
         proofValue: data.proofValue,
-      });
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
+      }),
   },
 
   // ── SWAPS ──
   swaps: {
-    execute: async (data: { fromWalletId: string; toWalletId: string; amount: number }) => {
-      const res = await xpClient.post('/swaps', data);
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
+    execute: (data: { fromWalletId: string; toWalletId: string; amount: number }) =>
+      post<unknown>('/swaps', data),
   },
 
   // ── PAYOUTS (OUT) ──
   payouts: {
-    create: async (data: PayoutRequest) => {
-      const res = await xpClient.post('/payouts', data);
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
+    create: (data: PayoutRequest) =>
+      post<unknown>('/payouts', data),
   },
 
   // ── KYC ──
   kyc: {
-    getProfile: async () => {
-      const res = await xpClient.get('/kyc/profile');
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
-    upgrade: async (data: { tier: string; data: Record<string, unknown> }) => {
-      const res = await xpClient.post('/kyc/upgrade', data);
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
+    getProfile: () => get<unknown>('/kyc/profile'),
+
+    upgrade: (data: { tier: string; data: Record<string, unknown> }) =>
+      post<unknown>('/kyc/upgrade', data),
   },
 
   // ── MERCHANT: API Keys (S2S) ──
   merchant: {
-    getApiKeys: async () => {
-      const res = await xpClient.get('/merchant/api-keys');
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
-    generateApiKey: async (data?: { storeName?: string }) => {
-      const res = await xpClient.post('/merchant/api-keys/generate', data);
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
-    getPaymentLinks: async () => {
-      const res = await xpClient.get('/merchant/links');
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
-    createPaymentLink: async (data: { amount: number; currency: string; description?: string }) => {
-      const res = await xpClient.post('/merchant/links', data);
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
+    getApiKeys: () => get<unknown>('/merchant/api-keys'),
+
+    generateApiKey: (data?: { storeName?: string }) =>
+      post<unknown>('/merchant/api-keys/generate', data),
+
+    getPaymentLinks: () => get<unknown>('/merchant/links'),
+
+    createPaymentLink: (data: { amount: number; currency: string; description?: string }) =>
+      post<unknown>('/merchant/links', data),
   },
 
   // ── TICKETS (Admin/Operator) ──
   tickets: {
-    list: async (params?: { status?: string; type?: string; page?: number }) => {
-      const res = await xpClient.get('/tickets', { params });
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
-    update: async (id: string, data: { status: string; resolutionNotes?: string }) => {
-      const res = await xpClient.patch(`/tickets/${id}`, data);
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
+    list: (params?: { status?: string; type?: string; page?: number }) =>
+      get<unknown>('/tickets', params as Record<string, string | number | undefined>),
+
+    update: (id: string, data: { status: string; resolutionNotes?: string }) =>
+      patch<unknown>(`/tickets/${id}`, data),
   },
 
   // ── ORGANIZATIONS (Admin) ──
   organizations: {
-    list: async () => {
-      const res = await xpClient.get('/organizations');
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
+    list: () => get<unknown>('/organizations'),
   },
 
   // ── USERS (Admin) ──
   users: {
-    list: async (params?: { page?: number }) => {
-      const res = await xpClient.get('/users', { params });
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
+    list: (params?: { page?: number }) =>
+      get<unknown>('/users', params as Record<string, string | number | undefined>),
   },
 
   // ── DASHBOARD (dados agregados) ──
-  // O backend devolve { success: boolean, data: [...] }
   dashboard: {
-    getWallets: async () => {
-      const res = await xpClient.get('/dashboard/wallets');
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
-    getTransactions: async (params?: { limit?: number }) => {
-      const res = await xpClient.get('/dashboard/transactions', { params });
-      const payload = res.data;
-      if (payload?.success && payload?.data) {
-        return payload.data;
-      }
-      return payload;
-    },
+    getWallets: () => get<unknown>('/dashboard/wallets'),
+
+    getTransactions: (params?: { limit?: number }) =>
+      get<unknown>('/dashboard/transactions', params as Record<string, string | number | undefined>),
   },
 };
 
-export default xpClient;
+export default xpApi;

@@ -25,12 +25,11 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import {
-  mockTransactions,
   currencySymbols,
   currencyColors,
   transactionTypeLabels,
   transactionStatusColors,
-} from '@/lib/mock-data';
+} from '@/lib/formatting';
 import {
   TransactionType,
   TransactionStatus,
@@ -117,7 +116,7 @@ export default function TransactionsPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const filteredTransactions = useMemo(() => {
-    let result = [...mockTransactions];
+    let result = [] as any[];
 
     // Type filter
     if (typeFilter !== 'all') {
