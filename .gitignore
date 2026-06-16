@@ -58,3 +58,17 @@ server.log
 *.png
 !public/*.png
 !public/*.svg
+
+# Tool artifacts
+/tool-results/
+/download/
+
+# Database files (local dev only)
+/db/*.db
+
+# Worklog (internal dev)
+worklog.md
+
+# Start scripts (dev-only wrappers)
+start-dev.sh
+run-dev.sh
