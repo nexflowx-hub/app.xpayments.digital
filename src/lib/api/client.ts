@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import type { ApiError } from '@/types/xpayments';
+import type { ApiError, PayoutRequest, DepositProofRequest } from '@/types/xpayments';
 
 // ============================================================
 // XPAYMENTS.DIGITAL - API Client (Axios com JWT Interceptors)
@@ -186,6 +186,17 @@ export const xpApi = {
       }
       return payload;
     },
+    submitProof: async (data: DepositProofRequest) => {
+      const res = await xpClient.post(`/deposits/${data.depositId}/proof`, {
+        proofType: data.proofType,
+        proofValue: data.proofValue,
+      });
+      const payload = res.data;
+      if (payload?.success && payload?.data) {
+        return payload.data;
+      }
+      return payload;
+    },
   },
 
   // ── SWAPS ──
@@ -200,10 +211,10 @@ export const xpApi = {
     },
   },
 
-  // ── WITHDRAWALS (OUT) ──
-  withdrawals: {
-    create: async (data: { walletId: string; amount: number; destinationAddress?: string }) => {
-      const res = await xpClient.post('/withdrawals', data);
+  // ── PAYOUTS (OUT) ──
+  payouts: {
+    create: async (data: PayoutRequest) => {
+      const res = await xpClient.post('/payouts', data);
       const payload = res.data;
       if (payload?.success && payload?.data) {
         return payload.data;

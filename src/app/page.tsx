@@ -10,7 +10,7 @@ import DashboardPage from '@/components/dashboard/dashboard-page';
 import WalletsPage from '@/components/wallet/wallets-page';
 import DepositsPage from '@/components/wallet/deposits-page';
 import SwapsPage from '@/components/wallet/swaps-page';
-import WithdrawalsPage from '@/components/wallet/withdrawals-page';
+import PayoutsPage from '@/components/wallet/payouts-page';
 import TransactionsPage from '@/components/wallet/transactions-page';
 import KycPage from '@/components/kyc/kyc-page';
 import AdminTicketsPage from '@/components/dashboard/admin-tickets-page';
@@ -30,7 +30,7 @@ const PAGES: Record<string, React.ComponentType> = {
   wallets: WalletsPage,
   deposits: DepositsPage,
   swaps: SwapsPage,
-  withdrawals: WithdrawalsPage,
+  payouts: PayoutsPage,
   transactions: TransactionsPage,
   kyc: KycPage,
   'admin-tickets': AdminTicketsPage,
@@ -47,7 +47,7 @@ const TITLES: Record<string, string> = {
   wallets: 'Carteiras',
   deposits: 'Depositar',
   swaps: 'Swap',
-  withdrawals: 'Sacar',
+  payouts: 'Payouts',
   transactions: 'Transações',
   kyc: 'Verificação KYC',
   'admin-tickets': 'Tickets / Operações',

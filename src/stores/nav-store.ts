@@ -7,7 +7,7 @@ export type NavPage =
   | 'wallets'
   | 'deposits'
   | 'swaps'
-  | 'withdrawals'
+  | 'payouts'
   | 'transactions'
   | 'kyc'
   | 'admin-tickets'

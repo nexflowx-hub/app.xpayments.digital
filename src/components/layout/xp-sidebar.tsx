@@ -80,8 +80,8 @@ const NAV_ITEMS: NavItemDef[] = [
     permission: 'canSwap',
   },
   {
-    page: 'withdrawals',
-    label: 'Sacar',
+    page: 'payouts',
+    label: 'Payouts',
     icon: ArrowUpRight,
     roles: ['customer', 'merchant', 'super_merchant'],
     permission: 'canWithdraw',
@@ -167,7 +167,7 @@ const SECTION_ORDER: SectionKey[] = ['dashboard', 'wallet', 'kyc', 'merchant', '
 
 const SECTION_MAP: Record<SectionKey, NavPage[]> = {
   dashboard: ['dashboard'],
-  wallet: ['wallets', 'deposits', 'swaps', 'withdrawals', 'transactions'],
+  wallet: ['wallets', 'deposits', 'swaps', 'payouts', 'transactions'],
   kyc: ['kyc'],
   merchant: ['merchant-links', 'merchant-api-keys', 'merchant-checkouts'],
   admin: ['admin-tickets', 'admin-fees', 'admin-users', 'admin-organizations'],

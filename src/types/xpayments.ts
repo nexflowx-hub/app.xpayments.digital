@@ -328,6 +328,9 @@ export interface SwapResponse {
   estimatedTime: string;
 }
 
+/**
+ * @deprecated Use PayoutRequest instead. Kept for backward compatibility.
+ */
 export interface WithdrawRequest {
   walletId: string;
   amount: number;
@@ -341,11 +344,50 @@ export interface WithdrawRequest {
   };
 }
 
+/**
+ * @deprecated Use PayoutResponse instead. Kept for backward compatibility.
+ */
 export interface WithdrawResponse {
   transactionId: string;
   ticketId?: string;
   status: TransactionStatus;
   estimatedArrival: string;
+}
+
+// --- PAYOUTS (New) ---
+
+export type PayoutStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'REJECTED' | 'CANCELLED';
+
+export interface PayoutRequest {
+  amountUSDT: number;
+  requestedCurrency: Currency;
+  destinationInfo: string; // IBAN, Chave PIX, or crypto address
+  status?: PayoutStatus;
+}
+
+export interface PayoutResponse {
+  id: string;
+  amountUSDT: number;
+  requestedCurrency: Currency;
+  destinationInfo: string;
+  status: PayoutStatus;
+  estimatedArrival: string;
+  ticketId?: string; // Created if manual approval needed
+  createdAt: string;
+}
+
+// --- DEPOSIT PROOF (New) ---
+
+export interface DepositProofRequest {
+  depositId: string;
+  proofType: 'tx_hash' | 'receipt';
+  proofValue: string;
+}
+
+export interface DepositProofResponse {
+  depositId: string;
+  status: 'pending_verification' | 'verified' | 'rejected';
+  message: string;
 }
 
 export interface GatewayRoute {

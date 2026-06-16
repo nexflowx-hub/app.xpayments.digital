@@ -346,8 +346,8 @@ export const currencySymbols: Record<Currency, string> = {
 };
 
 export const currencyColors: Record<Currency, string> = {
-  [Currency.EUR]: 'text-blue-400',
-  [Currency.BRL]: 'text-green-400',
+  [Currency.EUR]: 'text-sky-400',
+  [Currency.BRL]: 'text-emerald-400',
   [Currency.USDT]: 'text-neon-400',
   [Currency.USD]: 'text-amber-400',
 };
@@ -364,7 +364,7 @@ export const transactionTypeLabels: Record<TransactionType, string> = {
 export const transactionStatusColors: Record<TransactionStatus, string> = {
   [TransactionStatus.INCOMING]: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   [TransactionStatus.PENDING]: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  [TransactionStatus.COMPLETED]: 'bg-green-500/20 text-green-400 border-green-500/30',
+  [TransactionStatus.COMPLETED]: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
   [TransactionStatus.BLOCKED]: 'bg-red-500/20 text-red-400 border-red-500/30',
   [TransactionStatus.FAILED]: 'bg-red-500/20 text-red-400 border-red-500/30',
 };
@@ -378,7 +378,7 @@ export const ticketTypeLabels: Record<TicketType, string> = {
 
 export const ticketStatusColors: Record<TicketStatus, string> = {
   [TicketStatus.OPEN]: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  [TicketStatus.IN_PROGRESS]: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  [TicketStatus.RESOLVED]: 'bg-green-500/20 text-green-400 border-green-500/30',
+  [TicketStatus.IN_PROGRESS]: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
+  [TicketStatus.RESOLVED]: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
   [TicketStatus.REJECTED]: 'bg-red-500/20 text-red-400 border-red-500/30',
 };

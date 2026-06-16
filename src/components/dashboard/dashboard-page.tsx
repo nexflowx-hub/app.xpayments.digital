@@ -842,7 +842,7 @@ export default function DashboardPage() {
                 Swap
               </Button>
               <Button
-                onClick={() => setPage('withdrawals')}
+                onClick={() => setPage('payouts')}
                 className="h-12 bg-amber-600/20 border border-amber-500/30 text-amber-400 hover:bg-amber-600/30 hover:text-amber-300 font-medium text-sm gap-2"
                 variant="outline"
               >
