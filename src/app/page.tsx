@@ -1,15 +1,42 @@
 "use client";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// XPayments.Digital — Main Page (Auth-Aware Router)
+// ─────────────────────────────────────────────────────────────────────────────
+// This is the single user-visible route (/). It acts as a client-side router:
+//   - Not authenticated → Auth screens (Login / Register / Admin Login)
+//   - Merchant role → Merchant Dashboard with sidebar navigation
+//   - Admin role → Admin Dashboard with admin sidebar navigation
+
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { BalanceOverviewCards } from "@/components/dashboard/balance-overview-cards";
 import { PaymentLinksView } from "@/components/dashboard/payment-links/payment-links-view";
+import { DevelopersApiView } from "@/components/dashboard/views/developers-api-view";
+import { SettingsBillingView } from "@/components/dashboard/views/settings-billing-view";
+import { SupportUpgradesView } from "@/components/dashboard/views/support-upgrades-view";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { AdminOverview } from "@/components/admin/admin-overview";
+import { AdminHeader } from "@/components/admin/admin-header";
+import { AuthLayout } from "@/components/auth/auth-layout";
+import { LoginForm } from "@/components/auth/login-form";
+import { RegisterForm } from "@/components/auth/register-form";
+import { AdminLoginForm } from "@/components/auth/admin-login-form";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, ArrowDownLeft, ArrowUpRight, Shield, Settings, HelpCircle, LayoutDashboard } from "lucide-react";
+import {
+  CreditCard,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Shield,
+  Settings,
+  HelpCircle,
+  LayoutDashboard,
+} from "lucide-react";
 import { useMerchantDashboard } from "@/hooks/use-merchant-dashboard";
-import { useNavigationStore, type DashboardView } from "@/lib/navigation-store";
+import { useNavigationStore } from "@/lib/navigation-store";
+import { useAuthStore } from "@/lib/auth-store";
 
 // ─── Test Merchant UUID ──────────────────────────────────────────────────────
 
@@ -17,7 +44,7 @@ const MERCHANT_ID = "00000000-0000-0000-0000-000000000000";
 
 // ─── Placeholder view for unimplemented pages ────────────────────────────────
 
-function PlaceholderView({ view }: { view: DashboardView }) {
+function PlaceholderView({ view }: { view: string }) {
   const iconMap: Record<string, React.ElementType> = {
     Transactions: ArrowDownLeft,
     Payouts: ArrowUpRight,
@@ -43,6 +70,32 @@ function PlaceholderView({ view }: { view: DashboardView }) {
       <Badge
         variant="outline"
         className="border-usdt/20 bg-usdt/5 text-[10px] font-semibold uppercase tracking-widest text-usdt"
+      >
+        Coming Soon
+      </Badge>
+    </div>
+  );
+}
+
+// ─── Admin Placeholder View ──────────────────────────────────────────────────
+
+function AdminPlaceholderView({ view }: { view: string }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/5">
+        <Shield className="h-6 w-6 text-red-400/50" />
+      </div>
+      <div>
+        <h1 className="text-lg font-semibold tracking-tight text-foreground">
+          {view}
+        </h1>
+        <p className="mt-1.5 text-sm text-muted-foreground max-w-sm">
+          Admin module under development.
+        </p>
+      </div>
+      <Badge
+        variant="outline"
+        className="border-red-500/20 bg-red-500/5 text-[10px] font-semibold uppercase tracking-widest text-red-400"
       >
         Coming Soon
       </Badge>
@@ -122,12 +175,11 @@ function OverviewView() {
   );
 }
 
-// ─── Dashboard Page (View Router) ────────────────────────────────────────────
+// ─── Merchant Dashboard Router ───────────────────────────────────────────────
 
-export default function DashboardPage() {
+function MerchantDashboard() {
   const { activeView } = useNavigationStore();
 
-  // Determine which view to render
   let viewContent: React.ReactNode;
 
   switch (activeView) {
@@ -136,6 +188,15 @@ export default function DashboardPage() {
       break;
     case "Payment Links":
       viewContent = <PaymentLinksView />;
+      break;
+    case "Developers / API":
+      viewContent = <DevelopersApiView />;
+      break;
+    case "Settings / Billing":
+      viewContent = <SettingsBillingView />;
+      break;
+    case "Support & Upgrades":
+      viewContent = <SupportUpgradesView />;
       break;
     default:
       viewContent = <PlaceholderView view={activeView} />;
@@ -147,10 +208,7 @@ export default function DashboardPage() {
       <DashboardSidebar />
       <SidebarInset>
         <DashboardHeader />
-
         <main className="flex-1 px-4 py-6 md:px-6">{viewContent}</main>
-
-        {/* Sticky Footer */}
         <footer className="mt-auto border-t border-border bg-background/60 px-4 py-3 backdrop-blur-sm md:px-6">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground/60">
             <span>© 2025 XPayments.Digital</span>
@@ -160,4 +218,87 @@ export default function DashboardPage() {
       </SidebarInset>
     </SidebarProvider>
   );
+}
+
+// ─── Admin Dashboard Router ──────────────────────────────────────────────────
+
+function AdminDashboard() {
+  const { activeAdminView } = useNavigationStore();
+
+  let viewContent: React.ReactNode;
+
+  switch (activeAdminView) {
+    case "Overview":
+      viewContent = <AdminOverview />;
+      break;
+    default:
+      viewContent = <AdminPlaceholderView view={activeAdminView} />;
+      break;
+  }
+
+  return (
+    <SidebarProvider>
+      <AdminSidebar />
+      <SidebarInset>
+        <AdminHeader />
+        <main className="flex-1 px-4 py-6 md:px-6">{viewContent}</main>
+        <footer className="mt-auto border-t border-border bg-background/60 px-4 py-3 backdrop-blur-sm md:px-6">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground/60">
+            <span>© 2025 XPayments.Digital — Admin Console</span>
+            <span>All actions are logged</span>
+          </div>
+        </footer>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
+
+// ─── Auth Router ─────────────────────────────────────────────────────────────
+
+function AuthRouter() {
+  const { authView } = useAuthStore();
+
+  switch (authView) {
+    case "register":
+      return (
+        <AuthLayout variant="merchant" subtitle="Start accepting payments">
+          <RegisterForm />
+        </AuthLayout>
+      );
+    case "admin-login":
+      return (
+        <AuthLayout
+          variant="admin"
+          subtitle="Administration Console — MFA Required"
+        >
+          <AdminLoginForm />
+        </AuthLayout>
+      );
+    case "login":
+    default:
+      return (
+        <AuthLayout variant="merchant" subtitle="High-Risk Payment Gateway">
+          <LoginForm />
+        </AuthLayout>
+      );
+  }
+}
+
+// ─── Main Page (Root Router) ─────────────────────────────────────────────────
+
+export default function HomePage() {
+  const { isAuthenticated, user } = useAuthStore();
+
+  // Not authenticated → show auth screens
+  if (!isAuthenticated) {
+    return <AuthRouter />;
+  }
+
+  // Admin → admin dashboard
+  if (user?.role === "admin") {
+    return <AdminDashboard />;
+  }
+
+  // Merchant → merchant dashboard (default)
+  return <MerchantDashboard />;
 }

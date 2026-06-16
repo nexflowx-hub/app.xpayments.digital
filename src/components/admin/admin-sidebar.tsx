@@ -1,20 +1,16 @@
 "use client";
 
 import {
-  LayoutDashboard,
-  ArrowDownLeft,
-  ArrowUpRight,
-  Shield,
+  Users,
+  Activity,
+  CheckCircle,
+  Sliders,
+  MessageSquare,
   Settings,
-  HelpCircle,
-  CreditCard,
-  ChevronDown,
   LogOut,
   Zap,
-  Link2,
-  Code2,
-  Wallet,
-  Headphones,
+  ChevronDown,
+  ShieldAlert,
 } from "lucide-react";
 import {
   Sidebar,
@@ -38,38 +34,34 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNavigationStore, type DashboardView } from "@/lib/navigation-store";
+import { useNavigationStore, type AdminView } from "@/lib/navigation-store";
 import { useAuthStore } from "@/lib/auth-store";
 
 // ─── Nav definitions ─────────────────────────────────────────────────────────
 
-const mainNav: {
-  title: DashboardView;
+const operationsNav: {
+  title: AdminView;
   icon: React.ElementType;
   badge?: string;
 }[] = [
-  { title: "Overview", icon: LayoutDashboard },
-  { title: "Transactions", icon: ArrowDownLeft, badge: "12" },
-  { title: "Payouts", icon: ArrowUpRight },
-  { title: "Payment Links", icon: Link2 },
-  { title: "Compliance", icon: Shield },
+  { title: "Overview", icon: Users },
+  { title: "Transactions", icon: Activity, badge: "247" },
+  { title: "Payout Approvals", icon: CheckCircle, badge: "8" },
+  { title: "Gateway Config", icon: Sliders },
 ];
 
-const toolsNav: { title: DashboardView; icon: React.ElementType }[] = [
-  { title: "Developers / API", icon: Code2 },
-  { title: "Settings / Billing", icon: Wallet },
-  { title: "Support & Upgrades", icon: Headphones },
-];
-
-const bottomNav: { title: DashboardView; icon: React.ElementType }[] = [
-  { title: "Settings", icon: Settings },
-  { title: "Help & Support", icon: HelpCircle },
+const supportNav: {
+  title: AdminView;
+  icon: React.ElementType;
+  badge?: string;
+}[] = [
+  { title: "Support Tickets", icon: MessageSquare, badge: "3" },
 ];
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function DashboardSidebar() {
-  const { activeView, setActiveView } = useNavigationStore();
+export function AdminSidebar() {
+  const { activeAdminView, setActiveAdminView } = useNavigationStore();
   const { user, logout } = useAuthStore();
 
   const initials = user?.storeName
@@ -79,14 +71,14 @@ export function DashboardSidebar() {
         .join("")
         .slice(0, 2)
         .toUpperCase()
-    : "MC";
+    : "AD";
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-usdt/15">
-            <Zap className="h-4 w-4 text-usdt" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/15">
+            <Zap className="h-4 w-4 text-red-400" />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-bold tracking-tight text-foreground">
@@ -97,6 +89,12 @@ export function DashboardSidebar() {
             </span>
           </div>
         </div>
+        <div className="mt-2 flex items-center justify-center group-data-[collapsible=icon]:hidden">
+          <span className="inline-flex items-center gap-1 rounded-md bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-400">
+            <ShieldAlert className="h-3 w-3" />
+            Restricted
+          </span>
+        </div>
       </SidebarHeader>
 
       <SidebarSeparator className="mx-3 w-auto" />
@@ -104,21 +102,21 @@ export function DashboardSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 px-4">
-            Main
+            Operations
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNav.map((item) => (
+              {operationsNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    isActive={activeView === item.title}
-                    onClick={() => setActiveView(item.title)}
+                    isActive={activeAdminView === item.title}
+                    onClick={() => setActiveAdminView(item.title)}
                     tooltip={item.title}
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.title}</span>
                     {item.badge && (
-                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-usdt/15 px-1.5 text-[10px] font-semibold text-usdt group-data-[collapsible=icon]:hidden">
+                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500/15 px-1.5 text-[10px] font-semibold text-red-400 group-data-[collapsible=icon]:hidden">
                         {item.badge}
                       </span>
                     )}
@@ -133,43 +131,24 @@ export function DashboardSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 px-4">
-            Tools
+            Support
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {toolsNav.map((item) => (
+              {supportNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    isActive={activeView === item.title}
-                    onClick={() => setActiveView(item.title)}
+                    isActive={activeAdminView === item.title}
+                    onClick={() => setActiveAdminView(item.title)}
                     tooltip={item.title}
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarSeparator className="mx-3 w-auto" />
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 px-4">
-            System
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {bottomNav.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    isActive={activeView === item.title}
-                    onClick={() => setActiveView(item.title)}
-                    tooltip={item.title}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
+                    {item.badge && (
+                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500/15 px-1.5 text-[10px] font-semibold text-red-400 group-data-[collapsible=icon]:hidden">
+                        {item.badge}
+                      </span>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -184,17 +163,17 @@ export function DashboardSidebar() {
           <DropdownMenuTrigger asChild>
             <button className="flex w-full items-center gap-3 rounded-lg p-2 transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:justify-center">
               <Avatar className="h-7 w-7 border border-border">
-                <AvatarFallback className="bg-usdt/15 text-xs font-bold text-usdt">
+                <AvatarFallback className="bg-red-500/15 text-xs font-bold text-red-400">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-1 items-center justify-between group-data-[collapsible=icon]:hidden">
                 <div className="flex flex-col items-start">
                   <span className="text-xs font-medium text-foreground">
-                    {user?.storeName ?? "Merchant Co."}
+                    {user?.storeName ?? "Admin Operator"}
                   </span>
                   <span className="text-[10px] text-muted-foreground">
-                    {user?.email ?? "merchant@example.com"}
+                    {user?.email ?? "admin@xpayments.digital"}
                   </span>
                 </div>
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -208,7 +187,7 @@ export function DashboardSidebar() {
           >
             <DropdownMenuItem className="text-sm text-foreground focus:bg-accent focus:text-accent-foreground">
               <Settings className="mr-2 h-4 w-4" />
-              Account Settings
+              Admin Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem

@@ -112,3 +112,133 @@ Stage Summary:
 - GitHub: Pushed to nexflowx-hub/app.xpayments.digital (main)
 - ESLint: 0 errors, 1 warning (TanStack Table React Compiler)
 - Browser verified: Full Payment Links flow functional
+
+---
+Task ID: 7
+Agent: Sub-Agent (Admin Dashboard Views)
+Task: Build Admin Sidebar and Admin Overview components
+
+Work Log:
+- Read worklog.md and globals.css to understand XPayments "Control Tower" dark design system (graphite backgrounds, neon USDT green, amber pending, red risk, custom color tokens)
+- Studied existing `dashboard-sidebar.tsx` for component structure patterns (Sidebar* components, nav groups, avatar dropdown, Zustand navigation)
+- Studied `navigation-store.ts` for `AdminView` type union and `setActiveAdminView` action
+- Studied `auth-store.ts` for user info and logout action
+- Built `src/components/admin/admin-sidebar.tsx`:
+  - Mirrors merchant sidebar structure but with crimson/red accent system
+  - Red-tinted branding: `bg-red-500/15` icon background, `text-red-400` icon color
+  - "RESTRICTED" badge with ShieldAlert icon under brand name (hidden when collapsed)
+  - Operations nav group: Merchants (Users), Transaction Monitoring (Activity, badge "247"), Payout Approvals (CheckCircle, badge "8"), Gateway Config (Sliders)
+  - Support nav group: Support Tickets (MessageSquare, badge "3")
+  - Admin avatar footer with red-themed AvatarFallback and admin defaults
+  - All nav items use `AdminView` type from navigation store, `setActiveAdminView` for routing
+- Built `src/components/admin/admin-overview.tsx`:
+  - "Merchants Overview" header with description, total count badge, and search input
+  - Full shadcn Table with 7 columns: Store Name (AvatarFallback initials), Email, Tier Level (colored Badge), Status (colored Badge), Balance (Intl.NumberFormat USDT), Created At, Actions
+  - Tier badges: A = bg-usdt/15 text-usdt, B = bg-pending/15 text-pending, C = bg-muted text-muted-foreground
+  - Status badges: Active = emerald, Blocked = red, Pending = amber
+  - Actions dropdown per row: "Change Tier" (sub-menu with A/B/C options in theme colors), "Block Account" (destructive), "View Details" (disabled placeholder)
+  - 5 mock merchants with realistic data (CryptoVault, NovaPay, ForexSignals, VPN Tunnel, Digital Gold)
+  - Search filter on storeName/email with empty state
+  - Responsive: overflow-x-auto wrapper for mobile horizontal scroll
+  - Uses design tokens: border-border, bg-surface, bg-surface-raised, text-muted-foreground, etc.
+
+Stage Summary:
+- New artifacts:
+  - `src/components/admin/admin-sidebar.tsx` — Admin sidebar with red/crimson accents and RESTRICTED badge
+  - `src/components/admin/admin-overview.tsx` — Admin merchants table with search, tier/status badges, action dropdowns
+- Both files use "use client" directive, named exports, shadcn/ui components, lucide-react icons
+- No API calls — mock data only
+- Design system fully respected: dark theme tokens, graphite surfaces, semantic color badges
+
+---
+Task ID: 8-10
+Agent: Sub-Agent (Merchant Dashboard Views)
+Task: Build 3 Merchant Dashboard views — Developers/API, Settings/Billing, Support & Upgrades
+
+Work Log:
+- Read worklog.md and globals.css to understand XPayments "Control Tower" dark design system (graphite backgrounds, neon USDT green, amber pending, red risk, custom color tokens)
+- Verified all required shadcn/ui components available: Tabs, Form, Input, Select, Dialog, Textarea, Badge, Button, Label, Card, Separator
+- Built `src/components/dashboard/views/developers-api-view.tsx`:
+  - Section 1 — API Keys: Two side-by-side cards (responsive, stack on mobile) for Public Key and Secret Key
+  - Public Key displayed in full, Secret Key masked with "••••" and Eye/EyeOff reveal toggle
+  - Each card has a Copy button with useState tracking; shows Check icon (text-usdt) for 2 seconds after copy
+  - Section 2 — Quick Start: 3 shadcn Tabs (cURL, Node.js, PHP) with dark code blocks (`bg-surface border-border rounded-lg p-4`, `<pre><code font-mono text-xs text-foreground/80>`)
+  - Each code block has absolute-positioned Copy button in top-right corner
+  - Section 3 — Webhook Events: 4 events (payment.completed, payment.failed, payout.sent, payout.completed) with descriptions
+  - Each webhook item has subtle left border accent in USDT color (`border-l-2 border-l-usdt`)
+  - All icons from lucide-react: Code2, Copy, Check, Eye, EyeOff, Zap, Webhook
+- Built `src/components/dashboard/views/settings-billing-view.tsx`:
+  - Section 1 — USDT Payout Wallet: Card with React Hook Form + Zod validation
+  - Wallet Address input with font-mono, Network Select (TRC-20 Tron / ERC-20 Ethereum), Label input
+  - Zod superRefine validates TRC-20 (34 chars starting "T") or ERC-20 (42 chars starting "0x")
+  - "Save Wallet" button in USDT green style with success state feedback
+  - Section 2 — Active Payment Methods: 3 mock methods (PIX BRL, Credit Card BRL, SEPA EUR)
+  - Each row: icon, name, currency badge, status badge (Active=green usdt, Pending=amber), fee %, Configure button
+  - Configure button disabled for Pending status methods
+  - Responsive layout: rows stack vertically on mobile, horizontal on desktop
+- Built `src/components/dashboard/views/support-upgrades-view.tsx`:
+  - Section 1 — Support Ticket Form: RHF + Zod form with Subject, Category Select (5 options), Priority Select (Low/Medium/High), Description Textarea
+  - "Submit Ticket" button with Send icon, USDT green style, disabled state after submission
+  - Section 2 — Tier Upgrade: Two-card comparison (Tier B Current vs Tier A Target)
+  - Tier A shows USDT-colored checkmarks, border, and badge; highlights D+0 settlement, 2.49% fee, Priority support, Higher limits
+  - "Request Tier A Upgrade" button opens shadcn Dialog
+  - Dialog: Title, requirements list (4 items with CheckCircle2 icons), textarea for business justification
+  - Dialog has Cancel and "Submit Request" buttons with form validation
+  - Section 3 — Recent Tickets: 3 mock tickets with Subject, Status badge (Open=green, In Progress=amber, Resolved=muted), Priority badge (High=red, Medium=amber, Low=muted), time ago
+  - Responsive layout throughout all sections
+
+Stage Summary:
+- New artifacts:
+  - `src/components/dashboard/views/developers-api-view.tsx` — API keys, code snippets, webhook events
+  - `src/components/dashboard/views/settings-billing-view.tsx` — USDT wallet config, payment methods list
+  - `src/components/dashboard/views/support-upgrades-view.tsx` — Ticket form, tier upgrade dialog, recent tickets
+- All files use "use client" directive, named exports, shadcn/ui components, lucide-react icons
+- All forms use React Hook Form + Zod validation (zodResolver)
+- Dark theme tokens consistently applied: bg-surface, border-border, text-foreground, text-muted-foreground, text-usdt, bg-usdt/15, etc.
+- No API calls — mock data only
+- Responsive design: grid layouts with mobile-first stacking
+
+---
+Task ID: 11
+Agent: Lead Frontend Engineer (Main)
+Task: Auth Flow (Login/Register/Admin), page.tsx router, integration, browser verification
+
+Work Log:
+- Created `src/lib/auth-schemas.ts`: Zod v4 validation schemas for register (storeName/email/password with strength rules), login (email/password), admin login (email/password/mfaCode). Response types: RegisterResponse, LoginResponse, AdminLoginResponse, AuthUser.
+- Created `src/lib/auth-store.ts`: Zustand store with `persist` middleware (localStorage). State: isAuthenticated, user, token, secretKey (not persisted), authView. Actions: setMerchant, setAdmin, setRegistrationData, clearSecretKey, logout. AuthView type union for client-side routing.
+- Updated `src/lib/api-client.ts`: Added 3 auth endpoints to xpaymentsApi: register (POST /api/v1/auth/register), login (POST /api/v1/auth/login), adminLogin (POST /api/v1/admin/login).
+- Created `src/components/auth/auth-layout.tsx`: Full-screen centered layout with subtle CSS grid pattern background, radial glow effect. Two variants: merchant (USDT neon green accents) and admin (crimson/red accents). Branding with Zap icon, "Merchant Portal" / "Restricted Access" badge.
+- Created `src/components/auth/login-form.tsx`: Merchant login with email + password. RHF + Zod validation. API error handling with XPaymentsApiError. Links to Register and Admin Login views.
+- Created `src/components/auth/register-form.tsx`: Merchant registration with storeName/email/password. Password strength indicator (4-bar visual: length/uppercase/number/special). Show/hide password toggle. On success, renders SecretKeyModal: displays publicKey + secretKey with copy buttons, warning about one-time visibility, "Continue to Dashboard" CTA.
+- Created `src/components/auth/admin-login-form.tsx`: Admin login with email + password + 6-digit MFA code. Crimson/red accent design. Restricted zone warning banner. MFA code uses monospace font with wide letter-spacing.
+- Created `src/components/admin/admin-header.tsx`: Admin-specific sticky header with red-tinted badge (ShieldAlert icon + "Admin"), red notification bell, search input.
+- Updated `src/lib/navigation-store.ts`: Added AdminView type union, activeAdminView state, setActiveAdminView action. Added new DashboardView entries: "Developers / API", "Settings / Billing", "Support & Upgrades".
+- Updated `src/components/dashboard/dashboard-sidebar.tsx`: Added "Tools" nav group with Code2, Wallet, Headphones icons for the 3 new views. Logout now connected to useAuthStore.logout(). Avatar initials derived from user.storeName.
+- Updated `src/app/page.tsx`: Complete auth-aware client-side router. AuthRouter (login/register/admin-login based on authView). MerchantDashboard with view router (Overview, Payment Links, Developers/API, Settings/Billing, Support & Upgrades). AdminDashboard with admin sidebar/header and admin view router. Root HomePage checks isAuthenticated + user.role.
+
+Stage Summary:
+- New artifacts (10 files):
+  - `src/lib/auth-schemas.ts` — Zod validation + API response types
+  - `src/lib/auth-store.ts` — Zustand auth state with persistence
+  - `src/components/auth/auth-layout.tsx` — Shared auth layout (merchant/admin variants)
+  - `src/components/auth/login-form.tsx` — Merchant login form
+  - `src/components/auth/register-form.tsx` — Merchant register + secretKey modal
+  - `src/components/auth/admin-login-form.tsx` — Admin login (red/crimson design)
+  - `src/components/admin/admin-header.tsx` — Admin dashboard header
+- Modified artifacts (4 files):
+  - `src/lib/api-client.ts` — Added register/login/adminLogin endpoints
+  - `src/lib/navigation-store.ts` — Added AdminView, new DashboardView entries
+  - `src/components/dashboard/dashboard-sidebar.tsx` — Added Tools nav group, logout integration
+  - `src/app/page.tsx` — Auth-aware router (auth → merchant/admin dashboard)
+- ESLint: 0 errors, 1 pre-existing warning (TanStack Table)
+- Browser verified:
+  - Login form renders with XPayments branding, email/password fields, USDT green accents
+  - Register form renders with 3 fields, password strength indicator, show/hide toggle
+  - Admin login renders with crimson/red design, MFA field, restricted zone warning
+  - Navigation between all 3 auth views works (login ↔ register, login → admin)
+  - Merchant dashboard shows all 8 nav items (including 3 new Tools views)
+  - Developers/API view: API keys, cURL/Node.js/PHP tabs, webhook events
+  - Settings/Billing view: Wallet form with TRC-20/ERC-20 validation, payment methods table
+  - Support & Upgrades view: Ticket form, Tier A upgrade dialog, recent tickets
+  - Admin dashboard: Red-accented sidebar, merchants table with 5 rows, action dropdowns (Change Tier submenu, Block Account)
+  - Zero console errors across all views

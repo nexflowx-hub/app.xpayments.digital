@@ -96,9 +96,71 @@ async function request<T>(
   return json.data;
 }
 
+// ─── Auth Types (re-exported from schemas) ───────────────────────────────────
+
+import type {
+  RegisterResponse,
+  LoginResponse,
+  AdminLoginResponse,
+} from "./auth-schemas";
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export const xpaymentsApi = {
+  // ── Auth Endpoints ───────────────────────────────────────────────────────
+
+  /**
+   * Register a new merchant account.
+   *
+   * POST /api/v1/auth/register
+   *
+   * Body: { storeName, email, password }
+   * Returns: JWT token, user object, publicKey & secretKey
+   */
+  register: (payload: {
+    storeName: string;
+    email: string;
+    password: string;
+  }) =>
+    request<RegisterResponse>("/api/v1/auth/register", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  /**
+   * Authenticate a merchant.
+   *
+   * POST /api/v1/auth/login
+   *
+   * Body: { email, password }
+   * Returns: JWT token, user object
+   */
+  login: (payload: { email: string; password: string }) =>
+    request<LoginResponse>("/api/v1/auth/login", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  /**
+   * Authenticate an admin user (requires MFA).
+   *
+   * POST /api/v1/admin/login
+   *
+   * Body: { email, password, mfaCode }
+   * Returns: JWT token, admin user object
+   */
+  adminLogin: (payload: {
+    email: string;
+    password: string;
+    mfaCode: string;
+  }) =>
+    request<AdminLoginResponse>("/api/v1/admin/login", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  // ── Merchant Endpoints ──────────────────────────────────────────────────
+
   /**
    * Fetch the dashboard balance overview for a merchant.
    *
