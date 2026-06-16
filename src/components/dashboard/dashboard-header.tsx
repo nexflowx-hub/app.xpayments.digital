@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Bell, Search } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -20,15 +21,26 @@ export function DashboardHeader() {
         <Input
           type="search"
           placeholder="Search transactions, payouts..."
-          className="h-8 w-full border-border bg-surface pl-9 text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-usdt/30"
+          className="h-8 w-full border-border bg-surface pl-9 text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-xblue/30"
         />
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-3">
+        {/* Circular Logo */}
+        <div className="flex h-7 w-7 items-center justify-center rounded-full overflow-hidden glow-dual">
+          <Image
+            src="/logo-xpayments.png"
+            alt="XPayments"
+            width={28}
+            height={28}
+            className="h-full w-full object-cover"
+          />
+        </div>
+
         {/* Environment badge */}
         <Badge
           variant="outline"
-          className="hidden border-usdt/20 bg-usdt/5 text-[10px] font-semibold uppercase tracking-wider text-usdt sm:inline-flex"
+          className="hidden border-xblue/20 bg-xblue/5 text-[10px] font-semibold uppercase tracking-wider text-xblue sm:inline-flex"
         >
           Live
         </Badge>

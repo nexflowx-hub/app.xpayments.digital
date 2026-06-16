@@ -295,3 +295,57 @@ Stage Summary:
   - `src/app/page.tsx` — Checkout Preview route
 - ESLint: 0 errors
 - Browser verified: Settings/Billing shows 4 grouped methods with network icons only, Checkout Preview shows white-label card, Admin sidebar shows "Payment Routing", zero console errors
+---
+Task ID: 13
+Agent: Lead Frontend Engineer (Main)
+Task: Official Logo Integration with Circular Crop + Dual Neon Color System
+
+Work Log:
+- Analyzed uploaded XPayments_Logo.png (1024x1024 RGBA PNG) with VLM
+- Logo color palette extracted: Cyan-Blue (#00A2FF) + Lime-Green (#00FF7F), Deep Navy (#0a0e1a), transparent background, neon glow effects
+- Copied logo to public/logo-xpayments.png (replacing previous version)
+- Rewrote globals.css with Dual Neon System:
+  - Background: #0A0E1A (deep navy-black, from logo circle interior)
+  - --usdt: #00FF7F (logo lime-green, was #00E5A0)
+  - --xblue: #00A2FF (logo cyan-blue, new accent token)
+  - --xblue-muted, --xblue-dim variants
+  - Ring color: rgba(0, 162, 255, 0.4) (blue-tinted focus)
+  - Chart-2: #00A2FF (was #06B6D4)
+  - New glow utilities: glow-xblue, glow-xblue-strong, glow-dual (split blue+green)
+  - New text utilities: text-glow-xblue, text-glow-dual
+  - New text-gradient-xpayments: 135deg gradient from #00A2FF to #00FF7F
+  - New border-gradient-xpayments utility
+- Updated auth-layout.tsx: Circular logo (80x80, rounded-full, overflow-hidden, glow-dual), gradient "XPayments" heading, dual neon radial glows, xblue merchant portal badge
+- Updated dashboard-sidebar.tsx: Circular logo (32x32 in sidebar, 8x8 container), gradient "XPayments" text, xblue avatar fallback
+- Updated admin-sidebar.tsx: Circular logo with red glow ring for admin context
+- Updated dashboard-header.tsx: Circular logo (28x28) in header, xblue "Live" badge, xblue search focus ring
+- Updated admin-header.tsx: Circular logo in admin header
+- Updated checkout-preview.tsx: Circular logo in checkout card header + footer, gradient Pay button (from-xblue to-usdt), xblue Secured badge, cleaned checklist text (removed specific provider names)
+- Updated balance-overview-cards.tsx: Available card uses glow-dual, gradient overlay (xblue→usdt), gradient Payout button, Audit state uses text-xblue
+- Updated page.tsx: xblue API Connected badge, xblue Coming Soon badge, gradient "XPayments" in footers (merchant + admin)
+- Updated settings-billing-view.tsx: White-label notice uses xblue accent
+- Updated provider-abstraction.ts: Removed specific provider names from all comments
+- White-label audit: grep for stripe|misticpay|sumup|mollie shows only internal map keys (provider-abstraction.ts) and mock providerUsed values (settings-billing-view.tsx) — both abstracted before rendering
+
+Stage Summary:
+- New artifacts: None (all modifications)
+- Modified artifacts (12 files):
+  - public/logo-xpayments.png — Replaced with user's official logo
+  - src/app/globals.css — Complete dual neon color system
+  - src/components/auth/auth-layout.tsx — Circular logo + gradient heading + dual glows
+  - src/components/dashboard/dashboard-sidebar.tsx — Circular logo + gradient text
+  - src/components/dashboard/dashboard-header.tsx — Circular logo + xblue accents
+  - src/components/admin/admin-sidebar.tsx — Circular logo + red glow
+  - src/components/admin/admin-header.tsx — Circular logo
+  - src/components/dashboard/views/checkout-preview.tsx — Circular logo + gradient button + clean checklist
+  - src/components/dashboard/balance-overview-cards.tsx — Dual glow + gradient CTA
+  - src/app/page.tsx — Gradient footers + xblue badges
+  - src/components/dashboard/views/settings-billing-view.tsx — xblue notice
+  - src/lib/provider-abstraction.ts — Generic comments
+- ESLint: 0 errors, 1 pre-existing warning (TanStack Table)
+- Browser verified (VLM):
+  - Auth screen: Circular logo with glow, gradient "XPayments" heading ✅
+  - Dashboard: Circular logo in sidebar + header, navy-tinted background, blue "Live" badge ✅
+  - Settings/Billing: No provider names, generic method names (PIX Instantâneo, Cartão de Crédito, Transferência Bancária), network icons only ✅
+  - Checkout Preview: Circular logo in header + footer, gradient Pay button, "Secured by XPayments" ✅
+  - Zero console errors ✅

@@ -2,8 +2,8 @@
 // XPayments.Digital — Shared Auth Layout
 // ─────────────────────────────────────────────────────────────────────────────
 // Full-screen dark layout with subtle grid background.
-// Uses the official XPayments logo.
-// Variant "admin" applies crimson accents; default (merchant) uses USDT neon green.
+// Uses the official XPayments circular logo with dual neon glow.
+// Variant "admin" applies crimson accents; default (merchant) uses dual neon.
 
 import type { ReactNode } from "react";
 import Image from "next/image";
@@ -12,7 +12,7 @@ interface AuthLayoutProps {
   children: ReactNode;
   /** Override the default branding subtitle */
   subtitle?: string;
-  /** "admin" applies crimson accents; default (merchant) uses USDT neon green */
+  /** "admin" applies crimson accents; default (merchant) uses dual neon */
   variant?: "merchant" | "admin";
 }
 
@@ -26,7 +26,12 @@ export function AuthLayout({
   const badgeClass =
     variant === "admin"
       ? "border-red-500/20 bg-red-500/5 text-red-400"
-      : "border-usdt/20 bg-usdt/5 text-usdt";
+      : "border-xblue/20 bg-xblue/5 text-xblue";
+
+  const glowClass =
+    variant === "admin"
+      ? "bg-red-500/[0.04]"
+      : "bg-gradient-radial from-xblue/[0.06] via-usdt/[0.03] to-transparent";
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4 py-8">
@@ -40,26 +45,38 @@ export function AuthLayout({
         }}
       />
 
-      {/* Radial glow behind card */}
+      {/* Dual neon radial glow behind card */}
       <div
-        className={`pointer-events-none absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[150px] ${
-          variant === "admin" ? "bg-red-500/[0.04]" : "bg-usdt/[0.03]"
-        }`}
+        className="pointer-events-none absolute left-1/4 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[180px] bg-xblue/[0.04]"
+      />
+      <div
+        className="pointer-events-none absolute right-1/4 top-1/3 h-[500px] w-[500px] translate-x-1/2 -translate-y-1/2 rounded-full blur-[180px] bg-usdt/[0.04]"
       />
 
       {/* Content */}
       <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-6">
-        {/* Branding — Official Logo */}
-        <div className="flex flex-col items-center gap-3">
-          <Image
-            src="/logo-xpayments.png"
-            alt="XPayments.Digital"
-            width={140}
-            height={48}
-            priority
-            className="h-12 w-auto object-contain brightness-0 invert [filter:brightness(0)_invert(1)]"
-          />
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
+        {/* Branding — Official Circular Logo */}
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            {/* Outer glow ring */}
+            <div className="absolute -inset-2 rounded-full bg-gradient-to-br from-xblue/20 via-transparent to-usdt/20 blur-xl" />
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-full overflow-hidden glow-dual">
+              <Image
+                src="/logo-xpayments.png"
+                alt="XPayments.Digital"
+                width={80}
+                height={80}
+                priority
+                className="h-full w-full object-cover"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-gradient-xpayments">
+              XPayments
+            </h1>
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
+          </div>
           <span
             className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-widest ${badgeClass}`}
           >

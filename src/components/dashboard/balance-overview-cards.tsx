@@ -106,7 +106,7 @@ const secondaryStates: SecondaryStateDef[] = [
     id: "audit",
     label: "Under Audit",
     icon: FileSearch,
-    colorClass: "text-cyan-400/70",
+    colorClass: "text-xblue/70",
     dataKey: "AUDIT",
   },
   {
@@ -152,11 +152,11 @@ const variantStyles: Record<
   },
   available: {
     card:
-      "border-usdt/[0.18] bg-card hover:border-usdt/[0.30] transition-colors relative overflow-hidden",
+      "border-usdt/[0.18] bg-card hover:border-xblue/[0.20] transition-colors relative overflow-hidden",
     iconWrapper: "bg-usdt/[0.15]",
     iconColor: "text-usdt",
     amountColor: "text-usdt text-glow-usdt",
-    glow: "glow-usdt",
+    glow: "glow-dual",
   },
 };
 
@@ -226,7 +226,7 @@ function PrimaryCards({ data }: { data: MerchantDashboardBalances }) {
             className={`group relative rounded-xl border py-5 ${style.card} ${style.glow ?? ""}`}
           >
             {def.variant === "available" && (
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-usdt/[0.03] via-transparent to-transparent" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-xblue/[0.04] via-transparent to-usdt/[0.03]" />
             )}
 
             <CardContent className="relative p-5">
@@ -280,7 +280,7 @@ function PrimaryCards({ data }: { data: MerchantDashboardBalances }) {
               {/* CTA — Available only */}
               {def.variant === "available" && (
                 <Button
-                  className="mt-5 h-9 w-full gap-2 rounded-lg border-0 bg-usdt text-xs font-semibold text-background shadow-none transition-all hover:bg-usdt/90 hover:shadow-lg hover:shadow-usdt/20"
+                  className="mt-5 h-9 w-full gap-2 rounded-lg border-0 bg-gradient-to-r from-xblue to-usdt text-xs font-semibold text-background shadow-none transition-all hover:opacity-90 hover:shadow-lg hover:shadow-usdt/20"
                 >
                   <ArrowUpRight className="h-3.5 w-3.5" />
                   Request Payout

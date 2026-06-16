@@ -2,7 +2,7 @@
 // XPayments.Digital — Provider Abstraction Layer (WHITE-LABEL ENFORCEMENT)
 // ─────────────────────────────────────────────────────────────────────────────
 // ARCHITECTURE RULE: The Merchant and End Customer must NEVER see or know
-// which backend gateways/adquirers we use (Stripe, MisticPay, SumUp, Mollie, etc.)
+// which backend payment processors/acquirers we use.
 //
 // This module is the SINGLE SOURCE OF TRUTH for mapping internal provider
 // identifiers to white-label display data. Every frontend component that
@@ -52,7 +52,7 @@ export interface NetworkBadge {
 // ─── Mapping Table ───────────────────────────────────────────────────────────
 
 const PROVIDER_MAP: Record<InternalProvider, DisplayMethod> = {
-  // ── Credit Card Processing (hides Stripe behind "Global Processing") ──
+  // ── Credit Card Processing (abstracted as "Global Processing") ──
   stripe_card_brl: {
     label: "Cartão de Crédito",
     description: "Processamento Global — Visa, Mastercard, Amex",
@@ -89,7 +89,7 @@ const PROVIDER_MAP: Record<InternalProvider, DisplayMethod> = {
     isInstant: false,
   },
 
-  // ── PIX (hides MisticPay/SumUp behind "PIX Instantâneo") ──
+  // ── PIX Instant (abstracted) ──
   misticpay_pix: {
     label: "PIX Instantâneo",
     description: "Pagamento instantâneo via PIX",
@@ -107,7 +107,7 @@ const PROVIDER_MAP: Record<InternalProvider, DisplayMethod> = {
     isInstant: true,
   },
 
-  // ── SEPA (hides Mollie/SumUp behind "Transferência Bancária") ──
+  // ── SEPA Bank Transfer (abstracted) ──
   mollie_sepa: {
     label: "Transferência Bancária",
     description: "SEPA / IBAN — Débito Direto Europeu",
@@ -125,7 +125,7 @@ const PROVIDER_MAP: Record<InternalProvider, DisplayMethod> = {
     isInstant: false,
   },
 
-  // ── Crypto (hides MisticPay behind "Criptomoedas") ──
+  // ── Crypto Payments (abstracted) ──
   misticpay_crypto: {
     label: "Criptomoedas (Web3)",
     description: "Pagamento via Wallet Crypto — USDT, USDC",

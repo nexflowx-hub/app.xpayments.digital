@@ -42,10 +42,13 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* XPayments Custom Colors */
+  /* XPayments Custom Colors — Dual Neon System (from logo) */
   --color-usdt: var(--usdt);
   --color-usdt-muted: var(--usdt-muted);
   --color-usdt-dim: var(--usdt-dim);
+  --color-xblue: var(--xblue);
+  --color-xblue-muted: var(--xblue-muted);
+  --color-xblue-dim: var(--xblue-dim);
   --color-incoming: var(--incoming);
   --color-pending: var(--pending);
   --color-risk: var(--risk);
@@ -56,71 +59,75 @@
 
 /* ============================================================
    XPayments.Digital — Dark Native Theme
-   Graphite/Deep Black backgrounds, Platinum text, Neon USDT Green
+   Dual Neon System: Cyan-Blue (#00A2FF) + Lime-Green (#00FF7F)
+   Matches official XPayments logo color palette
    ============================================================ */
 
 :root {
   --radius: 0.75rem;
 
-  /* Core backgrounds */
-  --background: #0A0A0A;
+  /* Core backgrounds — deep navy-black (from logo circle) */
+  --background: #0A0E1A;
   --foreground: #E4E4E7;
 
   /* Card & elevated surfaces */
-  --card: #111111;
+  --card: #0F1219;
   --card-foreground: #E4E4E7;
-  --surface: #0F0F0F;
-  --surface-raised: #181818;
+  --surface: #0C1018;
+  --surface-raised: #141922;
 
   /* Popover */
-  --popover: #111111;
+  --popover: #0F1219;
   --popover-foreground: #E4E4E7;
 
-  /* Primary — USDT Neon Green */
-  --primary: #00E5A0;
-  --primary-foreground: #0A0A0A;
+  /* Primary — Logo Lime-Green (#00FF7F) */
+  --primary: #00FF7F;
+  --primary-foreground: #0A0E1A;
 
   /* Secondary — subtle elevated */
-  --secondary: #1A1A1A;
+  --secondary: #151B26;
   --secondary-foreground: #A1A1AA;
 
   /* Muted */
-  --muted: #141414;
+  --muted: #111621;
   --muted-foreground: #71717A;
 
   /* Accent — hover/active states */
-  --accent: #1C1C1C;
+  --accent: #161D2A;
   --accent-foreground: #E4E4E7;
 
   /* Destructive */
   --destructive: #EF4444;
 
-  /* Borders & inputs */
+  /* Borders & inputs — dual neon ring */
   --border: rgba(255, 255, 255, 0.06);
   --input: rgba(255, 255, 255, 0.08);
-  --ring: rgba(0, 229, 160, 0.4);
+  --ring: rgba(0, 162, 255, 0.4);
 
-  /* Chart colors */
-  --chart-1: #00E5A0;
-  --chart-2: #06B6D4;
+  /* Chart colors — dual neon palette */
+  --chart-1: #00FF7F;
+  --chart-2: #00A2FF;
   --chart-3: #F59E0B;
   --chart-4: #EF4444;
-  --chart-5: #8B5CF6;
+  --chart-5: #A855F7;
 
   /* Sidebar */
-  --sidebar: #0C0C0C;
+  --sidebar: #080C14;
   --sidebar-foreground: #A1A1AA;
-  --sidebar-primary: #00E5A0;
-  --sidebar-primary-foreground: #0A0A0A;
-  --sidebar-accent: #161616;
+  --sidebar-primary: #00FF7F;
+  --sidebar-primary-foreground: #0A0E1A;
+  --sidebar-accent: #141922;
   --sidebar-accent-foreground: #E4E4E7;
   --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-ring: rgba(0, 229, 160, 0.3);
+  --sidebar-ring: rgba(0, 162, 255, 0.3);
 
-  /* XPayments semantic colors */
-  --usdt: #00E5A0;
-  --usdt-muted: rgba(0, 229, 160, 0.12);
-  --usdt-dim: rgba(0, 229, 160, 0.06);
+  /* XPayments semantic colors — Dual Neon System */
+  --usdt: #00FF7F;
+  --usdt-muted: rgba(0, 255, 127, 0.12);
+  --usdt-dim: rgba(0, 255, 127, 0.06);
+  --xblue: #00A2FF;
+  --xblue-muted: rgba(0, 162, 255, 0.12);
+  --xblue-dim: rgba(0, 162, 255, 0.06);
   --incoming: #94A3B8;
   --pending: #F59E0B;
   --risk: #EF4444;
@@ -154,13 +161,25 @@
   }
 }
 
-/* Neon glow utilities */
+/* Neon glow utilities — Dual Neon System */
 @layer utilities {
   .glow-usdt {
-    box-shadow: 0 0 20px rgba(0, 229, 160, 0.15), 0 0 60px rgba(0, 229, 160, 0.05);
+    box-shadow: 0 0 20px rgba(0, 255, 127, 0.15), 0 0 60px rgba(0, 255, 127, 0.05);
   }
   .glow-usdt-strong {
-    box-shadow: 0 0 20px rgba(0, 229, 160, 0.25), 0 0 80px rgba(0, 229, 160, 0.1);
+    box-shadow: 0 0 20px rgba(0, 255, 127, 0.25), 0 0 80px rgba(0, 255, 127, 0.10);
+  }
+  .glow-xblue {
+    box-shadow: 0 0 20px rgba(0, 162, 255, 0.15), 0 0 60px rgba(0, 162, 255, 0.05);
+  }
+  .glow-xblue-strong {
+    box-shadow: 0 0 20px rgba(0, 162, 255, 0.25), 0 0 80px rgba(0, 162, 255, 0.10);
+  }
+  .glow-dual {
+    box-shadow:
+      -8px 0 30px rgba(0, 162, 255, 0.12),
+      8px 0 30px rgba(0, 255, 127, 0.12),
+      0 0 60px rgba(0, 200, 180, 0.06);
   }
   .glow-risk {
     box-shadow: 0 0 20px rgba(239, 68, 68, 0.12), 0 0 60px rgba(239, 68, 68, 0.04);
@@ -169,6 +188,25 @@
     box-shadow: 0 0 20px rgba(245, 158, 11, 0.12), 0 0 60px rgba(245, 158, 11, 0.04);
   }
   .text-glow-usdt {
-    text-shadow: 0 0 20px rgba(0, 229, 160, 0.4);
+    text-shadow: 0 0 20px rgba(0, 255, 127, 0.4);
+  }
+  .text-glow-xblue {
+    text-shadow: 0 0 20px rgba(0, 162, 255, 0.4);
+  }
+  .text-glow-dual {
+    text-shadow:
+      -2px 0 12px rgba(0, 162, 255, 0.5),
+      2px 0 12px rgba(0, 255, 127, 0.5);
+  }
+  /* Gradient text utility — matches logo's dual neon split */
+  .text-gradient-xpayments {
+    background: linear-gradient(135deg, #00A2FF 0%, #00FF7F 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  /* Border gradient utility */
+  .border-gradient-xpayments {
+    border-image: linear-gradient(135deg, #00A2FF, #00FF7F) 1;
   }
 }

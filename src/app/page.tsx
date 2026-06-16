@@ -70,7 +70,7 @@ function PlaceholderView({ view }: { view: string }) {
       </div>
       <Badge
         variant="outline"
-        className="border-usdt/20 bg-usdt/5 text-[10px] font-semibold uppercase tracking-widest text-usdt"
+        className="border-xblue/20 bg-xblue/5 text-[10px] font-semibold uppercase tracking-widest text-xblue"
       >
         Coming Soon
       </Badge>
@@ -150,10 +150,10 @@ function OverviewView() {
       <Separator className="bg-border" />
 
       {/* API Connected badge */}
-      <div className="flex items-center gap-2 rounded-lg border border-usdt/10 bg-usdt/[0.03] px-4 py-2.5">
+      <div className="flex items-center gap-2 rounded-lg border border-xblue/10 bg-xblue/[0.03] px-4 py-2.5">
         <Badge
           variant="outline"
-          className="border-usdt/20 bg-usdt/5 text-[9px] font-semibold uppercase tracking-widest text-usdt"
+          className="border-xblue/20 bg-xblue/5 text-[9px] font-semibold uppercase tracking-widest text-xblue"
         >
           API Connected
         </Badge>
@@ -215,7 +215,7 @@ function MerchantDashboard() {
         <main className="flex-1 px-4 py-6 md:px-6">{viewContent}</main>
         <footer className="mt-auto border-t border-border bg-background/60 px-4 py-3 backdrop-blur-sm md:px-6">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground/60">
-            <span>© 2025 XPayments.Digital</span>
+            <span>© 2025 <span className="text-gradient-xpayments font-medium">XPayments</span>.Digital</span>
             <span>Settlement Engine v1.0.0</span>
           </div>
         </footer>
@@ -248,7 +248,7 @@ function AdminDashboard() {
         <main className="flex-1 px-4 py-6 md:px-6">{viewContent}</main>
         <footer className="mt-auto border-t border-border bg-background/60 px-4 py-3 backdrop-blur-sm md:px-6">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground/60">
-            <span>© 2025 XPayments.Digital — Admin Console</span>
+            <span>© 2025 <span className="text-gradient-xpayments font-medium">XPayments</span>.Digital — Admin Console</span>
             <span>All actions are logged</span>
           </div>
         </footer>

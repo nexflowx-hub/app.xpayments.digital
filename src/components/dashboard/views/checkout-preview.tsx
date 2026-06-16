@@ -4,7 +4,7 @@
 // XPayments.Digital — Checkout Preview
 // ─────────────────────────────────────────────────────────────────────────────
 // WHITE-LABEL CHECKOUT: The end customer sees ONLY "Secured by XPayments".
-// No Stripe, MisticPay, SumUp, Mollie, or any third-party branding is shown.
+// No third-party branding of any kind is shown.
 // This preview simulates what checkout.xpayments.digital renders for customers.
 
 import { useState } from "react";
@@ -57,15 +57,15 @@ export function CheckoutPreview() {
       <Separator className="bg-border" />
 
       {/* White-Label Notice */}
-      <div className="flex items-start gap-2.5 rounded-lg border border-usdt/10 bg-usdt/[0.03] px-4 py-3">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-usdt" />
+      <div className="flex items-start gap-2.5 rounded-lg border border-xblue/10 bg-xblue/[0.03] px-4 py-3">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-xblue" />
         <div className="flex flex-col gap-1">
           <p className="text-xs font-medium text-foreground">
             White-Label Checkout Active
           </p>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             The checkout page displayed below uses only XPayments branding.
-            No gateway provider names, logos, or identifiers are visible to
+            No backend payment provider names, logos, or identifiers are visible to
             the paying customer. All payment processing is abstracted.
           </p>
         </div>
@@ -75,20 +75,25 @@ export function CheckoutPreview() {
       <div className="mx-auto flex max-w-lg flex-col items-center">
         {/* Checkout Card */}
         <div className="w-full rounded-2xl border border-border bg-card shadow-2xl shadow-black/30">
-          {/* Checkout Header — XPayments branding ONLY */}
+          {/* Checkout Header — XPayments circular logo + branding ONLY */}
           <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <div className="flex items-center gap-2.5">
-              <Image
-                src="/logo-xpayments.png"
-                alt="XPayments"
-                width={100}
-                height={32}
-                className="h-6 w-auto object-contain brightness-0 invert opacity-80"
-              />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full overflow-hidden glow-dual">
+                <Image
+                  src="/logo-xpayments.png"
+                  alt="XPayments"
+                  width={32}
+                  height={32}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <span className="text-sm font-bold text-gradient-xpayments">
+                XPayments
+              </span>
             </div>
             <Badge
               variant="outline"
-              className="border-usdt/20 bg-usdt/5 text-[9px] font-semibold uppercase tracking-widest text-usdt"
+              className="border-xblue/20 bg-xblue/5 text-[9px] font-semibold uppercase tracking-widest text-xblue"
             >
               <Lock className="mr-1 h-2.5 w-2.5" />
               Secured
@@ -137,8 +142,8 @@ export function CheckoutPreview() {
                   id: "card" as const,
                   icon: CreditCard,
                   label: "Cartão",
-                  color: "border-blue-500/30 bg-blue-500/5",
-                  activeColor: "border-blue-500/50 bg-blue-500/10 ring-1 ring-blue-500/20",
+                  color: "border-xblue/30 bg-xblue/5",
+                  activeColor: "border-xblue/50 bg-xblue/10 ring-1 ring-xblue/20",
                 },
                 {
                   id: "pix" as const,
@@ -167,7 +172,7 @@ export function CheckoutPreview() {
                     className={`h-5 w-5 ${
                       activeTab === tab.id
                         ? tab.id === "card"
-                          ? "text-blue-400"
+                          ? "text-xblue"
                           : tab.id === "pix"
                             ? "text-emerald-400"
                             : "text-usdt"
@@ -206,8 +211,8 @@ export function CheckoutPreview() {
                       />
                       {/* Network badges — icons only, NO provider names */}
                       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-                        <div className="flex h-5 w-7 items-center justify-center rounded bg-blue-500/10">
-                          <CreditCard className="h-3 w-3 text-blue-400" />
+                        <div className="flex h-5 w-7 items-center justify-center rounded bg-xblue/10">
+                          <CreditCard className="h-3 w-3 text-xblue" />
                         </div>
                         <div className="flex h-5 w-7 items-center justify-center rounded bg-orange-500/10">
                           <CreditCard className="h-3 w-3 text-orange-400" />
@@ -315,7 +320,7 @@ export function CheckoutPreview() {
           <div className="px-6 py-5">
             <Button
               disabled
-              className="h-11 w-full bg-usdt text-background font-semibold text-sm hover:bg-usdt/90"
+              className="h-11 w-full bg-gradient-to-r from-xblue to-usdt text-background font-semibold text-sm hover:opacity-90"
             >
               Pay {ORDER.amount}
               <ChevronRight className="ml-1 h-4 w-4" />
@@ -325,10 +330,18 @@ export function CheckoutPreview() {
           {/* Footer — ONLY XPayments branding, zero third-party */}
           <div className="border-t border-border px-6 py-3">
             <div className="flex items-center justify-center gap-2">
-              <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground/40" />
+              <div className="flex h-4 w-4 items-center justify-center rounded-full overflow-hidden">
+                <Image
+                  src="/logo-xpayments.png"
+                  alt="XPayments"
+                  width={16}
+                  height={16}
+                  className="h-full w-full object-cover"
+                />
+              </div>
               <span className="text-[10px] text-muted-foreground/40">
                 Secured by{" "}
-                <span className="font-medium text-muted-foreground/60">
+                <span className="font-medium text-gradient-xpayments">
                   XPayments
                 </span>
               </span>
@@ -343,14 +356,14 @@ export function CheckoutPreview() {
           </h3>
           <div className="flex flex-col gap-2.5">
             {[
-              "No Stripe logo or text visible",
-              "No MisticPay, SumUp, or Mollie references",
+              "No backend payment provider names visible anywhere",
               "Card form says 'Enter your card details' — generic",
-              "Only XPayments logo shown in checkout header",
+              "Only XPayments circular logo shown in checkout header",
               "Footer shows 'Secured by XPayments' exclusively",
               "Network icons (Visa/MC) — no provider badges",
               "QR codes contain no third-party branding",
               "All payment method names are generic (Cartão, PIX, Crypto)",
+              "Pay button uses XPayments gradient — no external branding",
             ].map((item) => (
               <div key={item} className="flex items-start gap-2">
                 <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-usdt" />

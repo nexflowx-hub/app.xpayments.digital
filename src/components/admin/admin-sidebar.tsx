@@ -77,13 +77,15 @@ export function AdminSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
-          <div className="flex h-8 w-auto items-center justify-center overflow-hidden">
+          {/* Official XPayments Circular Logo */}
+          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full overflow-hidden">
+            <div className="absolute -inset-1 rounded-full bg-red-500/10 blur-sm" />
             <Image
               src="/logo-xpayments.png"
               alt="XPayments"
               width={32}
-              height={28}
-              className="h-7 w-auto object-contain brightness-0 invert"
+              height={32}
+              className="relative h-full w-full object-cover"
             />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">

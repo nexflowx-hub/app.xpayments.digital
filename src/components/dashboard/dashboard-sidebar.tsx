@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // XPayments.Digital — Merchant Dashboard Sidebar
 // ─────────────────────────────────────────────────────────────────────────────
+// Uses the official XPayments circular logo with dual neon accents.
 
 import Image from "next/image";
 import {
@@ -90,18 +91,18 @@ export function DashboardSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
-          {/* Official XPayments Logo */}
-          <div className="flex h-8 w-auto items-center justify-center overflow-hidden">
+          {/* Official XPayments Circular Logo */}
+          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full overflow-hidden glow-dual">
             <Image
               src="/logo-xpayments.png"
               alt="XPayments"
               width={32}
-              height={28}
-              className="h-7 w-auto object-contain brightness-0 invert"
+              height={32}
+              className="h-full w-full object-cover"
             />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-bold tracking-tight text-foreground">
+            <span className="text-sm font-bold tracking-tight text-gradient-xpayments">
               XPayments
             </span>
             <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
@@ -196,7 +197,7 @@ export function DashboardSidebar() {
           <DropdownMenuTrigger asChild>
             <button className="flex w-full items-center gap-3 rounded-lg p-2 transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:justify-center">
               <Avatar className="h-7 w-7 border border-border">
-                <AvatarFallback className="bg-usdt/15 text-xs font-bold text-usdt">
+                <AvatarFallback className="bg-xblue/15 text-xs font-bold text-xblue">
                   {initials}
                 </AvatarFallback>
               </Avatar>

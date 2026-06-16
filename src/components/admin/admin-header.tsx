@@ -4,6 +4,7 @@
 // XPayments.Digital — Admin Header
 // ─────────────────────────────────────────────────────────────────────────────
 
+import Image from "next/image";
 import { ShieldAlert, Search, Bell } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,18 @@ export function AdminHeader() {
         />
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-3">
+        {/* Circular Logo */}
+        <div className="flex h-7 w-7 items-center justify-center rounded-full overflow-hidden">
+          <Image
+            src="/logo-xpayments.png"
+            alt="XPayments"
+            width={28}
+            height={28}
+            className="h-full w-full object-cover"
+          />
+        </div>
+
         {/* Admin badge */}
         <Badge
           variant="outline"

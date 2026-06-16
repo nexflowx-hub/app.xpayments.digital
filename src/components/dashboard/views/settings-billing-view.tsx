@@ -295,8 +295,8 @@ export function SettingsBillingView() {
       <Separator className="bg-border" />
 
       {/* White-Label Notice */}
-      <div className="flex items-start gap-2.5 rounded-lg border border-usdt/10 bg-usdt/[0.03] px-4 py-3">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-usdt" />
+      <div className="flex items-start gap-2.5 rounded-lg border border-xblue/10 bg-xblue/[0.03] px-4 py-3">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-xblue" />
         <p className="text-[11px] leading-relaxed text-muted-foreground">
           XPayments manages all payment processing infrastructure transparently.
           Your configured methods are optimized for the best approval rates and
