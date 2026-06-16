@@ -1,0 +1,19 @@
+{
+  "name": "XPayments.Digital",
+  "short_name": "XPayments",
+  "description": "Centro de Comando Banking & Web3",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0E1A",
+  "theme_color": "#0A0E1A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "business"]
+}

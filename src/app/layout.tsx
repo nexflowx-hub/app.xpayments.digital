@@ -1,34 +1,94 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { QueryProvider } from "@/lib/query-provider";
+import type { Metadata, Viewport } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "@/providers";
+import { Toaster } from "sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#0A0E1A",
+};
 
 export const metadata: Metadata = {
-  title: "XPayments.Digital — High-Risk Payment Gateway",
-  description:
-    "Receba no mundo todo, liquide em USDT em D+0. Gateway de pagamentos high-risk com settlement em Tether.",
-  keywords: [
-    "XPayments",
-    "USDT",
-    "Tether",
-    "Payment Gateway",
-    "High-Risk",
-    "Crypto Settlement",
-  ],
-  icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+  metadataBase: new URL("https://xpayments.digital"),
+  title: {
+    default: "XPayments.Digital — Plataforma de Pagamentos",
+    template: "%s | XPayments.Digital",
   },
+  description:
+    "XPayments.Digital — Plataforma institucional Web3 para gestão de wallets multi-moeda (EUR, BRL, USDT), settlement automatizado, swap e operações cross-border. A ponte entre o sistema financeiro tradicional e a economia digital.",
+  keywords: [
+    "XPayments.Digital",
+    "Payment Gateway",
+    "Fintech",
+    "Web3",
+    "Crypto",
+    "Wallet",
+    "Multi-moeda",
+    "USDT",
+    "EUR",
+    "BRL",
+    "Settlement",
+    "Swap",
+    "Cross-border",
+    "Pagamentos",
+    "Blockchain",
+  ],
+  authors: [{ name: "XPayments.Digital" }],
+  creator: "XPayments.Digital",
+  publisher: "XPayments.Digital",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: "https://xpayments.digital",
+    siteName: "XPayments.Digital",
+    title: "XPayments.Digital — Plataforma de Pagamentos",
+    description:
+      "Plataforma de pagamentos institucional para gestão multi-moeda (EUR, BRL, USDT), settlement automatizado e operações cross-border.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "XPayments.Digital",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "XPayments.Digital — Plataforma de Pagamentos",
+    description:
+      "Plataforma de pagamentos institucional para gestão multi-moeda (EUR, BRL, USDT), settlement automatizado e operações cross-border.",
+    images: ["/og-image.png"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -37,12 +97,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className="dark" suppressHydrationWarning>
+    <html lang="pt" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-background text-foreground`}
       >
-        <QueryProvider>{children}</QueryProvider>
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster richColors position="top-right" />
+        </ThemeProvider>
       </body>
     </html>
   );
