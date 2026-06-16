@@ -12,6 +12,7 @@ export type DashboardView =
   | "Developers / API"
   | "Settings / Billing"
   | "Support & Upgrades"
+  | "Checkout Preview"
   | "Settings"
   | "Help & Support";
 
@@ -19,7 +20,7 @@ export type AdminView =
   | "Overview"
   | "Transactions"
   | "Payout Approvals"
-  | "Gateway Config"
+  | "Payment Routing"
   | "Support Tickets";
 
 interface NavigationState {

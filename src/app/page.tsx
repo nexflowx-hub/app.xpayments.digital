@@ -16,6 +16,7 @@ import { PaymentLinksView } from "@/components/dashboard/payment-links/payment-l
 import { DevelopersApiView } from "@/components/dashboard/views/developers-api-view";
 import { SettingsBillingView } from "@/components/dashboard/views/settings-billing-view";
 import { SupportUpgradesView } from "@/components/dashboard/views/support-upgrades-view";
+import { CheckoutPreview } from "@/components/dashboard/views/checkout-preview";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { AdminOverview } from "@/components/admin/admin-overview";
 import { AdminHeader } from "@/components/admin/admin-header";
@@ -197,6 +198,9 @@ function MerchantDashboard() {
       break;
     case "Support & Upgrades":
       viewContent = <SupportUpgradesView />;
+      break;
+    case "Checkout Preview":
+      viewContent = <CheckoutPreview />;
       break;
     default:
       viewContent = <PlaceholderView view={activeView} />;

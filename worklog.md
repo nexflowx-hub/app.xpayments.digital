@@ -242,3 +242,56 @@ Stage Summary:
   - Support & Upgrades view: Ticket form, Tier A upgrade dialog, recent tickets
   - Admin dashboard: Red-accented sidebar, merchants table with 5 rows, action dropdowns (Change Tier submenu, Block Account)
   - Zero console errors across all views
+
+---
+Task ID: 12
+Agent: Lead Frontend Engineer (Main)
+Task: White-Label Architecture Enforcement, Official Logo Integration, Checkout Preview
+
+Work Log:
+- Full codebase audit: grep for "stripe|misticpay|sumup|mollie|gateway" across all .ts/.tsx files
+- Created `src/lib/provider-abstraction.ts` — SINGLE SOURCE OF TRUTH for white-label mapping:
+  - `InternalProvider` type: stripe_card_brl, misticpay_pix, mollie_sepa, etc. (internal codes, never rendered)
+  - `DisplayMethod` interface: label, description, currency, networks[], category, isInstant
+  - `NetworkBadge` interface: id (for icon lookup), label (aria-label only)
+  - `PROVIDER_MAP`: Maps every internal code to generic display names:
+    - stripe_card_brl → "Cartão de Crédito" / "Processamento Global"
+    - misticpay_pix → "PIX Instantâneo"
+    - mollie_sepa → "Transferência Bancária (SEPA/IBAN)"
+    - misticpay_crypto → "Criptomoedas (Web3)"
+  - `toDisplayMethod()`, `toDisplayMethods()` (deduplicates), `getNetworkBadges()`, `getCategoryLabel()`
+  - JSDoc warnings: "NEVER render providerUsed, gatewayId in UI"
+- Rewrote `src/components/dashboard/views/settings-billing-view.tsx`:
+  - Mock data uses `providerUsed` field → passed through `toDisplayMethod()` before rendering
+  - Payment methods grouped by category with `getCategoryLabel()` headers
+  - 4 methods: PIX Instantâneo (instant badge), Cartão de Crédito (Visa/MC/Amex icons), Transferência Bancária (SEPA), Criptomoedas Web3 (USDT/USDC)
+  - `NetworkIconBadge` component: renders ONLY network icons (Visa=blue, MC=orange, Amex=sky, PIX=emerald, SEPA=blue, USDT=neon green), no text
+  - White-label notice card: "XPayments manages all payment processing infrastructure transparently"
+  - Info footer: "Network icons represent accepted card brands and payment networks"
+- Updated `src/components/auth/auth-layout.tsx`: Replaced Zap icon with official XPayments logo (`<Image src="/logo-xpayments.png">`) with CSS filter for white-on-dark
+- Updated `src/components/dashboard/dashboard-sidebar.tsx`: Replaced Zap icon with official logo, added Checkout Preview (Eye icon) to Tools nav
+- Updated `src/components/admin/admin-sidebar.tsx`: Replaced Zap icon with official logo, renamed "Gateway Config" → "Payment Routing" (white-label)
+- Updated `src/lib/navigation-store.ts`: Added "Payment Routing" to AdminView, "Checkout Preview" to DashboardView
+- Created `src/components/dashboard/views/checkout-preview.tsx`:
+  - Simulated checkout card with ONLY XPayments branding (logo + "Secured" badge)
+  - 3 payment tabs: Cartão (card form), PIX (QR placeholder), Crypto (wallet address)
+  - Card form: "Enter your card details" — generic, with network icon badges (Visa/MC) — no provider names
+  - Footer: "Secured by XPayments" — exclusively, no third-party
+  - White-Label Compliance Checklist: 8 verification items
+- Copied `upload/XPayments_Logo_Oficial.png` → `public/logo-xpayments.png` (Next.js Image component)
+- Verified: `rg -i "stripe|misticpay|sumup|mollie"` shows provider names ONLY in provider-abstraction.ts (map keys/comments) and checkout-preview.tsx (compliance checklist text). Zero UI leaks.
+
+Stage Summary:
+- New artifacts (3 files):
+  - `src/lib/provider-abstraction.ts` — White-label abstraction layer (provider code → generic display)
+  - `src/components/dashboard/views/checkout-preview.tsx` — White-label checkout simulation
+  - `public/logo-xpayments.png` — Official XPayments logo
+- Modified artifacts (6 files):
+  - `src/components/dashboard/views/settings-billing-view.tsx` — Full white-label rewrite
+  - `src/components/auth/auth-layout.tsx` — Logo integration
+  - `src/components/dashboard/dashboard-sidebar.tsx` — Logo + Checkout Preview nav
+  - `src/components/admin/admin-sidebar.tsx` — Logo + "Payment Routing" rename
+  - `src/lib/navigation-store.ts` — New view types
+  - `src/app/page.tsx` — Checkout Preview route
+- ESLint: 0 errors
+- Browser verified: Settings/Billing shows 4 grouped methods with network icons only, Checkout Preview shows white-label card, Admin sidebar shows "Payment Routing", zero console errors

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   Users,
   Activity,
@@ -8,7 +9,6 @@ import {
   MessageSquare,
   Settings,
   LogOut,
-  Zap,
   ChevronDown,
   ShieldAlert,
 } from "lucide-react";
@@ -47,7 +47,7 @@ const operationsNav: {
   { title: "Overview", icon: Users },
   { title: "Transactions", icon: Activity, badge: "247" },
   { title: "Payout Approvals", icon: CheckCircle, badge: "8" },
-  { title: "Gateway Config", icon: Sliders },
+  { title: "Payment Routing", icon: Sliders },
 ];
 
 const supportNav: {
@@ -77,8 +77,14 @@ export function AdminSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/15">
-            <Zap className="h-4 w-4 text-red-400" />
+          <div className="flex h-8 w-auto items-center justify-center overflow-hidden">
+            <Image
+              src="/logo-xpayments.png"
+              alt="XPayments"
+              width={32}
+              height={28}
+              className="h-7 w-auto object-contain brightness-0 invert"
+            />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-bold tracking-tight text-foreground">

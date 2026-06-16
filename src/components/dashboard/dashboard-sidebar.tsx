@@ -1,5 +1,10 @@
 "use client";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// XPayments.Digital — Merchant Dashboard Sidebar
+// ─────────────────────────────────────────────────────────────────────────────
+
+import Image from "next/image";
 import {
   LayoutDashboard,
   ArrowDownLeft,
@@ -7,14 +12,13 @@ import {
   Shield,
   Settings,
   HelpCircle,
-  CreditCard,
   ChevronDown,
   LogOut,
-  Zap,
   Link2,
   Code2,
   Wallet,
   Headphones,
+  Eye,
 } from "lucide-react";
 import {
   Sidebar,
@@ -59,6 +63,7 @@ const toolsNav: { title: DashboardView; icon: React.ElementType }[] = [
   { title: "Developers / API", icon: Code2 },
   { title: "Settings / Billing", icon: Wallet },
   { title: "Support & Upgrades", icon: Headphones },
+  { title: "Checkout Preview", icon: Eye },
 ];
 
 const bottomNav: { title: DashboardView; icon: React.ElementType }[] = [
@@ -85,8 +90,15 @@ export function DashboardSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-usdt/15">
-            <Zap className="h-4 w-4 text-usdt" />
+          {/* Official XPayments Logo */}
+          <div className="flex h-8 w-auto items-center justify-center overflow-hidden">
+            <Image
+              src="/logo-xpayments.png"
+              alt="XPayments"
+              width={32}
+              height={28}
+              className="h-7 w-auto object-contain brightness-0 invert"
+            />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-bold tracking-tight text-foreground">

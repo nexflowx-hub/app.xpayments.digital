@@ -2,10 +2,11 @@
 // XPayments.Digital — Shared Auth Layout
 // ─────────────────────────────────────────────────────────────────────────────
 // Full-screen dark layout with subtle grid background.
-// Used as a wrapper for all auth screens (login, register, admin-login).
+// Uses the official XPayments logo.
+// Variant "admin" applies crimson accents; default (merchant) uses USDT neon green.
 
 import type { ReactNode } from "react";
-import { Zap } from "lucide-react";
+import Image from "next/image";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -20,10 +21,6 @@ export function AuthLayout({
   subtitle = "High-Risk Payment Gateway",
   variant = "merchant",
 }: AuthLayoutProps) {
-  const accentColor = variant === "admin" ? "text-red-400" : "text-usdt";
-  const accentBg = variant === "admin" ? "bg-red-500/15" : "bg-usdt/15";
-  const accentBorder =
-    variant === "admin" ? "border-red-500/20" : "border-usdt/20";
   const badgeText =
     variant === "admin" ? "Restricted Access" : "Merchant Portal";
   const badgeClass =
@@ -52,19 +49,17 @@ export function AuthLayout({
 
       {/* Content */}
       <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-6">
-        {/* Branding */}
+        {/* Branding — Official Logo */}
         <div className="flex flex-col items-center gap-3">
-          <div
-            className={`flex h-12 w-12 items-center justify-center rounded-2xl ${accentBg} ${accentBorder} border`}
-          >
-            <Zap className={`h-6 w-6 ${accentColor}`} />
-          </div>
-          <div className="flex flex-col items-center gap-1">
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              XPayments<span className={accentColor}>.Digital</span>
-            </h1>
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
-          </div>
+          <Image
+            src="/logo-xpayments.png"
+            alt="XPayments.Digital"
+            width={140}
+            height={48}
+            priority
+            className="h-12 w-auto object-contain brightness-0 invert [filter:brightness(0)_invert(1)]"
+          />
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
           <span
             className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-widest ${badgeClass}`}
           >
