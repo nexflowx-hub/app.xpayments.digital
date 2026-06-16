@@ -1,12 +1,16 @@
 {
-  "name": "XPayments.Digital",
+  "name": "XPayments.Digital — Plataforma de Pagamentos Institucional",
   "short_name": "XPayments",
-  "description": "Centro de Comando Banking & Web3",
+  "description": "Centro de Comando Banking & Web3 — Wallets multi-moeda, settlement automatizado e gateway de pagamentos white-label.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0A0E1A",
   "theme_color": "#0A0E1A",
   "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["finance", "business", "payments"],
   "icons": [
     {
       "src": "/logo.png",
@@ -14,6 +18,5 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "categories": ["finance", "business"]
+  ]
 }

@@ -7,11 +7,13 @@ import { Toaster } from "sonner";
 const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const viewport: Viewport = {
@@ -21,22 +23,25 @@ export const viewport: Viewport = {
   themeColor: "#0A0E1A",
 };
 
+const SITE_URL = "https://xpayments.digital";
+const SITE_TITLE = "XPayments.Digital — Plataforma de Pagamentos Institucional";
+const SITE_DESCRIPTION =
+  "XPayments.Digital — Plataforma institucional Web3 para gestão de wallets multi-moeda (EUR, BRL, USDT), settlement automatizado, swap e operações cross-border. Gateway de pagamentos white-label para merchants.";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://xpayments.digital"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "XPayments.Digital — Plataforma de Pagamentos",
+    default: SITE_TITLE,
     template: "%s | XPayments.Digital",
   },
-  description:
-    "XPayments.Digital — Plataforma institucional Web3 para gestão de wallets multi-moeda (EUR, BRL, USDT), settlement automatizado, swap e operações cross-border. A ponte entre o sistema financeiro tradicional e a economia digital.",
+  description: SITE_DESCRIPTION,
   keywords: [
     "XPayments.Digital",
     "Payment Gateway",
     "Fintech",
     "Web3",
-    "Crypto",
-    "Wallet",
-    "Multi-moeda",
+    "Crypto Payments",
+    "Wallet Multi-moeda",
     "USDT",
     "EUR",
     "BRL",
@@ -45,8 +50,13 @@ export const metadata: Metadata = {
     "Cross-border",
     "Pagamentos",
     "Blockchain",
+    "PIX",
+    "SEPA",
+    "White-label Gateway",
+    "Merchant Dashboard",
+    "Business Account",
   ],
-  authors: [{ name: "XPayments.Digital" }],
+  authors: [{ name: "XPayments.Digital", url: SITE_URL }],
   creator: "XPayments.Digital",
   publisher: "XPayments.Digital",
   robots: {
@@ -63,25 +73,23 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "pt_BR",
-    url: "https://xpayments.digital",
+    url: SITE_URL,
     siteName: "XPayments.Digital",
-    title: "XPayments.Digital — Plataforma de Pagamentos",
-    description:
-      "Plataforma de pagamentos institucional para gestão multi-moeda (EUR, BRL, USDT), settlement automatizado e operações cross-border.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "XPayments.Digital",
+        alt: "XPayments.Digital — Plataforma de Pagamentos Institucional",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "XPayments.Digital — Plataforma de Pagamentos",
-    description:
-      "Plataforma de pagamentos institucional para gestão multi-moeda (EUR, BRL, USDT), settlement automatizado e operações cross-border.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     images: ["/og-image.png"],
   },
   icons: {
@@ -89,6 +97,32 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.json",
+  category: "finance",
+  alternates: {
+    canonical: SITE_URL,
+  },
+};
+
+// ── JSON-LD Structured Data ──
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FinancialService",
+  name: "XPayments.Digital",
+  url: SITE_URL,
+  logo: `${SITE_URL}/logo.png`,
+  description: SITE_DESCRIPTION,
+  areaServed: [
+    { "@type": "Country", name: "Brazil" },
+    { "@type": "Country", name: "Portugal" },
+    { "@type": "Country", name: "European Union" },
+  ],
+  serviceType: [
+    "Payment Gateway",
+    "Digital Wallet",
+    "Currency Exchange",
+    "Cross-border Payments",
+  ],
+  knowsAbout: ["Blockchain", "Cryptocurrency", "Fiat Payments", "SEPA", "PIX"],
 };
 
 export default function RootLayout({
@@ -101,6 +135,11 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://api.xpayments.digital" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-background text-foreground`}

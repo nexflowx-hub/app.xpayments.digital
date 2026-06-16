@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Menu, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const PAGES: Record<string, React.ComponentType> = {
   dashboard: DashboardPage,
@@ -61,6 +62,7 @@ const TITLES: Record<string, string> = {
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAuthenticated } = useAuthStore();
   const { currentPage, sidebarOpen, toggleSidebar, setPage } = useNavStore();
 
@@ -80,6 +82,14 @@ export default function Home() {
     };
   }, [setPage]);
 
+  // Close mobile menu when currentPage changes
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- sync UI overlay to navigation
+  useEffect(() => { setMobileMenuOpen(false); }, [currentPage]);
+
+  const handleToggleMobile = () => {
+    setMobileMenuOpen((prev) => !prev);
+  };
+
   if (!mounted) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#0A0E1A]">
@@ -97,12 +107,48 @@ export default function Home() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <XPaymentsSidebar />
+      {/* ── Mobile backdrop ── */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ── Sidebar ──
+          - On mobile: absolute overlay, controlled by mobileMenuOpen
+          - On md+: static flex child, controlled by sidebarOpen (collapsed/expanded)
+      */}
+      <div
+        className={cn(
+          'shrink-0 z-50 md:z-auto',
+          'md:relative md:translate-x-0',
+          mobileMenuOpen
+            ? 'fixed inset-y-0 left-0 translate-x-0'
+            : 'fixed inset-y-0 left-0 -translate-x-full',
+        )}
+      >
+        <XPaymentsSidebar />
+      </div>
+
+      {/* ── Main content ── */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="flex items-center justify-between h-14 px-4 sm:px-6 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-sm shrink-0">
           <div className="flex items-center gap-3 min-w-0">
+            {/* Mobile: always show menu button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleToggleMobile}
+              className="md:hidden h-9 w-9 text-zinc-400 hover:text-zinc-200"
+              aria-label="Abrir menu"
+            >
+              <Menu className="size-5" />
+            </Button>
+            {/* Desktop: show menu button only when sidebar is collapsed */}
             {!sidebarOpen && (
-              <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-8 w-8 text-zinc-400 hover:text-zinc-200 shrink-0" aria-label="Abrir menu">
+              <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hidden md:inline-flex h-8 w-8 text-zinc-400 hover:text-zinc-200 shrink-0" aria-label="Abrir menu">
                 <Menu className="size-4" />
               </Button>
             )}

@@ -28,7 +28,7 @@ import {
   Activity,
 } from 'lucide-react';
 import CryptoCards from '@/components/shared/crypto-cards';
-import TradingViewWidget from '@/components/shared/tradingview-widget';
+import { cn } from '@/lib/utils';
 import type { AuthUser } from '@/types/xpayments';
 
 // --- Dev Mode Mock Users (apenas para dev) ---
@@ -522,14 +522,29 @@ export default function XPaymentsLanding() {
             <CryptoCards />
           </div>
 
-          {/* TradingView - hidden on very small screens */}
-          <div className="mt-6 rounded-xl border border-zinc-800/40 bg-zinc-900/30 overflow-hidden animate-slide-in-left hidden sm:block" style={{ animationDelay: '0.3s' }}>
+          {/* Supported Currencies — Dark themed replacement */}
+          <div className="mt-6 rounded-xl border border-zinc-800/40 bg-zinc-900/30 overflow-hidden animate-slide-in-left" style={{ animationDelay: '0.3s' }}>
             <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800/40">
               <Globe className="w-3.5 h-3.5 text-neon-400/60" />
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">TradingView — Market Overview</span>
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Moedas Suportadas</span>
             </div>
-            <div className="h-[320px] sm:h-[380px]">
-              <TradingViewWidget type="market-overview" height={380} />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-zinc-800/40">
+              {[
+                { symbol: 'EUR', name: 'Euro', desc: 'SEPA Instant', color: 'text-sky-400', bg: 'bg-sky-500/10' },
+                { symbol: 'BRL', name: 'Real', desc: 'PIX Instantâneo', color: 'text-neon-400', bg: 'bg-neon-500/10' },
+                { symbol: 'USDT', name: 'Tether', desc: 'TRC-20 / ERC-20', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+                { symbol: 'USD', name: 'Dólar', desc: 'Wire Transfer', color: 'text-amber-400', bg: 'bg-amber-500/10' },
+              ].map((c) => (
+                <div key={c.symbol} className="flex flex-col items-center gap-2 p-4 sm:p-5 bg-zinc-900/60 hover:bg-zinc-900/80 transition-colors">
+                  <div className={cn('size-10 rounded-xl border border-zinc-700/30 flex items-center justify-center', c.bg)}>
+                    <span className={cn("text-sm font-bold", c.color)}>{c.symbol}</span>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-semibold text-zinc-200">{c.name}</p>
+                    <p className="text-[10px] text-zinc-500 mt-0.5">{c.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

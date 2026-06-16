@@ -327,9 +327,9 @@ function XPaymentsSidebar() {
         </nav>
       </ScrollArea>
 
-      {/* Collapse toggle */}
-      <Separator className="bg-zinc-800" />
-      <div className="flex justify-center py-2 shrink-0">
+      {/* Collapse toggle — desktop only (mobile uses overlay) */}
+      <Separator className="bg-zinc-800 hidden md:block" />
+      <div className="hidden md:flex justify-center py-2 shrink-0">
         <Button
           variant="ghost"
           size="icon"
