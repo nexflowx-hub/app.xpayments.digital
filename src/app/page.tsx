@@ -38,14 +38,29 @@ import {
 import { useMerchantDashboard } from "@/hooks/use-merchant-dashboard";
 import { useNavigationStore } from "@/lib/navigation-store";
 import { useAuthStore } from "@/lib/auth-store";
+import { useT } from "@/lib/i18n";
+import { AnimatedBackground } from "@/components/animated-background";
+import type { DashboardView } from "@/lib/navigation-store";
 
 // ─── Test Merchant UUID ──────────────────────────────────────────────────────
 
 const MERCHANT_ID = "00000000-0000-0000-0000-000000000000";
 
+// ─── View-to-i18n-key mapping ────────────────────────────────────────────────
+
+const viewDisplayKeyMap: Record<string, string> = {
+  Transactions: "nav.transactions",
+  Payouts: "nav.payouts",
+  Compliance: "nav.compliance",
+  Settings: "nav.settings",
+  "Help & Support": "nav.help_support",
+};
+
 // ─── Placeholder view for unimplemented pages ────────────────────────────────
 
 function PlaceholderView({ view }: { view: string }) {
+  const { t } = useT();
+
   const iconMap: Record<string, React.ElementType> = {
     Transactions: ArrowDownLeft,
     Payouts: ArrowUpRight,
@@ -55,6 +70,8 @@ function PlaceholderView({ view }: { view: string }) {
   };
   const Icon = iconMap[view] ?? LayoutDashboard;
 
+  const displayText = viewDisplayKeyMap[view] ? t(viewDisplayKeyMap[view]) : view;
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface">
@@ -62,17 +79,17 @@ function PlaceholderView({ view }: { view: string }) {
       </div>
       <div>
         <h1 className="text-lg font-semibold tracking-tight text-foreground">
-          {view}
+          {displayText}
         </h1>
         <p className="mt-1.5 text-sm text-muted-foreground max-w-sm">
-          This module is under construction and will be available in the next sprint.
+          {t("placeholder.under_construction")}
         </p>
       </div>
       <Badge
         variant="outline"
         className="border-xblue/20 bg-xblue/5 text-[10px] font-semibold uppercase tracking-widest text-xblue"
       >
-        Coming Soon
+        {t("placeholder.coming_soon")}
       </Badge>
     </div>
   );
@@ -81,6 +98,8 @@ function PlaceholderView({ view }: { view: string }) {
 // ─── Admin Placeholder View ──────────────────────────────────────────────────
 
 function AdminPlaceholderView({ view }: { view: string }) {
+  const { t } = useT();
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/5">
@@ -91,14 +110,14 @@ function AdminPlaceholderView({ view }: { view: string }) {
           {view}
         </h1>
         <p className="mt-1.5 text-sm text-muted-foreground max-w-sm">
-          Admin module under development.
+          {t("placeholder.under_construction")}
         </p>
       </div>
       <Badge
         variant="outline"
         className="border-red-500/20 bg-red-500/5 text-[10px] font-semibold uppercase tracking-widest text-red-400"
       >
-        Coming Soon
+        {t("placeholder.coming_soon")}
       </Badge>
     </div>
   );
@@ -107,6 +126,8 @@ function AdminPlaceholderView({ view }: { view: string }) {
 // ─── Overview View (balances) ────────────────────────────────────────────────
 
 function OverviewView() {
+  const { t } = useT();
+
   const {
     data,
     isLoading,
@@ -130,16 +151,16 @@ function OverviewView() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold tracking-tight text-foreground">
-            Overview
+            {t("overview.title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Real-time balance across all settlement states. All values in USDT.
+            {t("overview.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
             <CreditCard className="h-3 w-3" />
-            <span>Synced {lastSync}</span>
+            <span>{t("overview.synced")} {lastSync}</span>
             {isFetching && (
               <span className="ml-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-usdt/30 border-t-usdt" />
             )}
@@ -155,10 +176,10 @@ function OverviewView() {
           variant="outline"
           className="border-xblue/20 bg-xblue/5 text-[9px] font-semibold uppercase tracking-widest text-xblue"
         >
-          API Connected
+          {t("overview.api_connected")}
         </Badge>
         <span className="text-[11px] text-muted-foreground">
-          Fetching from{" "}
+          {t("overview.fetching_from")}{" "}
           <code className="rounded bg-surface px-1.5 py-0.5 text-[10px] font-mono text-foreground/70">
             api.xpayments.digital
           </code>
@@ -180,6 +201,7 @@ function OverviewView() {
 
 function MerchantDashboard() {
   const { activeView } = useNavigationStore();
+  const { t } = useT();
 
   let viewContent: React.ReactNode;
 
@@ -209,14 +231,15 @@ function MerchantDashboard() {
 
   return (
     <SidebarProvider>
+      <AnimatedBackground />
       <DashboardSidebar />
       <SidebarInset>
         <DashboardHeader />
-        <main className="flex-1 px-4 py-6 md:px-6">{viewContent}</main>
+        <main className="relative z-10 flex-1 px-4 py-6 md:px-6">{viewContent}</main>
         <footer className="mt-auto border-t border-border bg-background/60 px-4 py-3 backdrop-blur-sm md:px-6">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground/60">
-            <span>© 2025 <span className="text-gradient-xpayments font-medium">XPayments</span>.Digital</span>
-            <span>Settlement Engine v1.0.0</span>
+            <span>© 2026 <span className="text-gradient-xpayments font-medium">XPayments</span>.Digital</span>
+            <span>{t("footer.settlement_engine")}</span>
           </div>
         </footer>
       </SidebarInset>
@@ -228,6 +251,7 @@ function MerchantDashboard() {
 
 function AdminDashboard() {
   const { activeAdminView } = useNavigationStore();
+  const { t } = useT();
 
   let viewContent: React.ReactNode;
 
@@ -242,14 +266,15 @@ function AdminDashboard() {
 
   return (
     <SidebarProvider>
+      <AnimatedBackground />
       <AdminSidebar />
       <SidebarInset>
         <AdminHeader />
-        <main className="flex-1 px-4 py-6 md:px-6">{viewContent}</main>
+        <main className="relative z-10 flex-1 px-4 py-6 md:px-6">{viewContent}</main>
         <footer className="mt-auto border-t border-border bg-background/60 px-4 py-3 backdrop-blur-sm md:px-6">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground/60">
-            <span>© 2025 <span className="text-gradient-xpayments font-medium">XPayments</span>.Digital — Admin Console</span>
-            <span>All actions are logged</span>
+            <span>© 2026 <span className="text-gradient-xpayments font-medium">XPayments</span>.Digital — Admin Console</span>
+            <span>{t("admin.all_actions_logged")}</span>
           </div>
         </footer>
       </SidebarInset>
@@ -261,11 +286,12 @@ function AdminDashboard() {
 
 function AuthRouter() {
   const { authView } = useAuthStore();
+  const { t } = useT();
 
   switch (authView) {
     case "register":
       return (
-        <AuthLayout variant="merchant" subtitle="Start accepting payments">
+        <AuthLayout variant="merchant" subtitle={t("auth.start_accepting")}>
           <RegisterForm />
         </AuthLayout>
       );
@@ -273,7 +299,7 @@ function AuthRouter() {
       return (
         <AuthLayout
           variant="admin"
-          subtitle="Administration Console — MFA Required"
+          subtitle={t("auth.admin_console_mfa")}
         >
           <AdminLoginForm />
         </AuthLayout>
@@ -281,7 +307,7 @@ function AuthRouter() {
     case "login":
     default:
       return (
-        <AuthLayout variant="merchant" subtitle="High-Risk Payment Gateway">
+        <AuthLayout variant="merchant" subtitle={t("auth.high_risk_gateway")}>
           <LoginForm />
         </AuthLayout>
       );

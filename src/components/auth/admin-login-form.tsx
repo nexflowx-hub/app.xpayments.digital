@@ -22,6 +22,7 @@ import {
 import { adminLoginSchema, type AdminLoginFormData } from "@/lib/auth-schemas";
 import { xpaymentsApi, XPaymentsApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/lib/auth-store";
+import { useT } from "@/lib/i18n";
 import {
   Form,
   FormControl,
@@ -37,6 +38,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function AdminLoginForm() {
   const { setAdmin, setAuthView } = useAuthStore();
+  const { t } = useT();
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -65,7 +67,7 @@ export function AdminLoginForm() {
         const body = error.body as { message?: string } | undefined;
         setApiError(body?.message ?? error.message);
       } else {
-        setApiError("An unexpected error occurred. Please try again.");
+        setApiError(t("auth.unexpected_error"));
       }
     } finally {
       setIsLoading(false);
@@ -79,22 +81,21 @@ export function AdminLoginForm() {
         <div className="flex items-center gap-2">
           <ShieldAlert className="h-5 w-5 text-red-400" />
           <h2 className="text-lg font-semibold tracking-tight text-foreground">
-            Admin Console
+            {t("auth.admin_console")}
           </h2>
         </div>
         <p className="text-sm text-muted-foreground">
-          Multi-factor authentication required
+          {t("auth.mfa_required")}
         </p>
       </div>
 
       {/* Warning banner */}
       <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 p-3">
         <Fingerprint className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          This is a <span className="font-medium text-red-400">restricted area</span>.
-          All actions are monitored and logged. Unauthorized access attempts will
-          be reported.
-        </p>
+        <p
+          className="text-[11px] leading-relaxed text-muted-foreground"
+          dangerouslySetInnerHTML={{ __html: t("auth.restricted_warning") }}
+        />
       </div>
 
       {/* API Error */}
@@ -116,7 +117,7 @@ export function AdminLoginForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs text-muted-foreground">
-                  Admin Email
+                  {t("auth.admin_email")}
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
@@ -142,7 +143,7 @@ export function AdminLoginForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs text-muted-foreground">
-                  Password
+                  {t("auth.password")}
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
@@ -168,7 +169,7 @@ export function AdminLoginForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs text-muted-foreground">
-                  MFA Code
+                  {t("auth.mfa_code")}
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
@@ -185,7 +186,7 @@ export function AdminLoginForm() {
                   </div>
                 </FormControl>
                 <FormDescription className="text-[10px] text-muted-foreground/50">
-                  6-digit code from your authenticator app
+                  {t("auth.mfa_description")}
                 </FormDescription>
                 <FormMessage className="text-xs" />
               </FormItem>
@@ -200,11 +201,11 @@ export function AdminLoginForm() {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Verifying MFA...
+                {t("auth.verifying_mfa")}
               </>
             ) : (
               <>
-                Access Admin Panel
+                {t("auth.access_admin")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
@@ -219,7 +220,7 @@ export function AdminLoginForm() {
           onClick={() => setAuthView("login")}
           className="text-[11px] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
         >
-          ← Back to Merchant Login
+          {t("auth.back_to_merchant")}
         </button>
       </div>
     </div>

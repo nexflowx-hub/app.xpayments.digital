@@ -11,8 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useT } from "@/lib/i18n";
 
 export function AdminHeader() {
+  const { t } = useT();
+
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-red-500/10 bg-background/80 px-4 backdrop-blur-md md:px-6">
       <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
@@ -24,7 +27,7 @@ export function AdminHeader() {
         <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
-          placeholder="Search merchants, transactions..."
+          placeholder={t("admin.search_placeholder")}
           className="h-8 w-full border-border bg-surface pl-9 text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-red-400/30"
         />
       </div>

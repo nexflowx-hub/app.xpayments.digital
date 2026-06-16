@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useT } from "@/lib/i18n";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -114,6 +115,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function DevelopersApiView() {
+  const { t } = useT();
   const [secretRevealed, setSecretRevealed] = useState(false);
 
   return (
@@ -121,10 +123,10 @@ export function DevelopersApiView() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Developers / API
+          {t("developers.title")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your API keys, explore code snippets, and configure webhook events.
+          {t("developers.subtitle")}
         </p>
       </div>
 
@@ -134,7 +136,7 @@ export function DevelopersApiView() {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Code2 className="h-4 w-4 text-usdt" />
-          <h2 className="text-lg font-medium text-foreground">API Keys</h2>
+          <h2 className="text-lg font-medium text-foreground">{t("developers.api_keys")}</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -142,7 +144,7 @@ export function DevelopersApiView() {
           <Card className="bg-surface border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Public Key
+                {t("developers.public_key")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -153,7 +155,7 @@ export function DevelopersApiView() {
                 <CopyButton text={PUBLIC_KEY} />
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                Safe to use in client-side code. Cannot access sensitive data.
+                {t("developers.public_key_desc")}
               </p>
             </CardContent>
           </Card>
@@ -162,7 +164,7 @@ export function DevelopersApiView() {
           <Card className="bg-surface border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Secret Key
+                {t("developers.secret_key")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -185,7 +187,7 @@ export function DevelopersApiView() {
                 </Button>
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                Keep this secret. Never expose it in client-side code or public repositories.
+                {t("developers.secret_key_desc")}
               </p>
             </CardContent>
           </Card>
@@ -198,7 +200,7 @@ export function DevelopersApiView() {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-usdt" />
-          <h2 className="text-lg font-medium text-foreground">Quick Start</h2>
+          <h2 className="text-lg font-medium text-foreground">{t("developers.quick_start")}</h2>
         </div>
 
         <Tabs defaultValue="curl" className="w-full">
@@ -234,7 +236,7 @@ export function DevelopersApiView() {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Webhook className="h-4 w-4 text-usdt" />
-          <h2 className="text-lg font-medium text-foreground">Webhook Events</h2>
+          <h2 className="text-lg font-medium text-foreground">{t("developers.webhook_events")}</h2>
         </div>
 
         <Card className="bg-surface border-border">

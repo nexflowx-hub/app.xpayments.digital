@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useT } from "@/lib/i18n";
 
 // ─── Mock Payment Data ───────────────────────────────────────────────────────
 
@@ -39,6 +40,7 @@ type PaymentTab = "card" | "pix" | "crypto";
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function CheckoutPreview() {
+  const { t } = useT();
   const [activeTab, setActiveTab] = useState<PaymentTab>("card");
 
   return (
@@ -46,11 +48,10 @@ export function CheckoutPreview() {
       {/* Header */}
       <div>
         <h1 className="text-lg font-semibold tracking-tight text-foreground">
-          Checkout Preview
+          {t("checkout.title")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Preview of the white-label hosted checkout experience.
-          No third-party branding is exposed to the end customer.
+          {t("checkout.subtitle")}
         </p>
       </div>
 
@@ -61,12 +62,10 @@ export function CheckoutPreview() {
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-xblue" />
         <div className="flex flex-col gap-1">
           <p className="text-xs font-medium text-foreground">
-            White-Label Checkout Active
+            {t("checkout.whitelabel_active")}
           </p>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
-            The checkout page displayed below uses only XPayments branding.
-            No backend payment provider names, logos, or identifiers are visible to
-            the paying customer. All payment processing is abstracted.
+            {t("checkout.whitelabel_desc")}
           </p>
         </div>
       </div>
@@ -103,7 +102,7 @@ export function CheckoutPreview() {
           {/* Order Summary */}
           <div className="px-6 py-5">
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60">
-              Order Summary
+              {t("checkout.order_summary")}
             </p>
             <div className="mt-3 flex flex-col gap-2 rounded-xl bg-surface p-4">
               <div className="flex items-start justify-between gap-4">
@@ -121,7 +120,7 @@ export function CheckoutPreview() {
               </div>
               <Separator className="bg-border my-1" />
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Order ID</span>
+                <span className="text-xs text-muted-foreground">{t("checkout.order_id")}</span>
                 <span className="text-xs font-mono text-muted-foreground">
                   {ORDER.orderId}
                 </span>
@@ -134,7 +133,7 @@ export function CheckoutPreview() {
           {/* Payment Method Tabs — Generic names ONLY */}
           <div className="px-6 pt-5">
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60 mb-3">
-              Payment Method
+              {t("checkout.payment_method")}
             </p>
             <div className="grid grid-cols-3 gap-2">
               {([
@@ -196,12 +195,12 @@ export function CheckoutPreview() {
             {activeTab === "card" && (
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground">
-                  Enter your card details
+                  {t("checkout.enter_card")}
                 </p>
                 <div className="space-y-3">
                   <div>
                     <Label className="text-[10px] text-muted-foreground">
-                      Card Number
+                      {t("checkout.card_number")}
                     </Label>
                     <div className="relative mt-1">
                       <Input
@@ -223,7 +222,7 @@ export function CheckoutPreview() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-[10px] text-muted-foreground">
-                        Expiry
+                        {t("checkout.expiry")}
                       </Label>
                       <Input
                         placeholder="MM/YY"
@@ -233,7 +232,7 @@ export function CheckoutPreview() {
                     </div>
                     <div>
                       <Label className="text-[10px] text-muted-foreground">
-                        CVV
+                        {t("checkout.cvv")}
                       </Label>
                       <Input
                         placeholder="•••"
@@ -244,7 +243,7 @@ export function CheckoutPreview() {
                   </div>
                   <div>
                     <Label className="text-[10px] text-muted-foreground">
-                      Cardholder Name
+                      {t("checkout.cardholder")}
                     </Label>
                     <Input
                       placeholder="Name on card"
@@ -265,15 +264,14 @@ export function CheckoutPreview() {
                   </div>
                 </div>
                 <p className="text-center text-xs text-muted-foreground">
-                  Scan the QR code with your banking app to complete the payment
-                  instantly.
+                  {t("checkout.scan_qr")}
                 </p>
                 <Badge
                   variant="outline"
                   className="border-emerald-500/20 bg-emerald-500/5 text-[10px] font-semibold text-emerald-400"
                 >
                   <Zap className="mr-1 h-3 w-3" />
-                  Instant Payment
+                  {t("checkout.instant_payment")}
                 </Badge>
               </div>
             )}
@@ -284,7 +282,7 @@ export function CheckoutPreview() {
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60">
-                        Send USDT to
+                        {t("checkout.send_usdt")}
                       </span>
                       <code className="text-xs font-mono text-foreground">
                         TXyz...abc123
@@ -307,8 +305,7 @@ export function CheckoutPreview() {
                   </div>
                 </div>
                 <p className="text-center text-xs text-muted-foreground">
-                  Send the exact USDT amount. Payment confirms after blockchain
-                  verification.
+                  {t("checkout.send_exact")}
                 </p>
               </div>
             )}
@@ -322,7 +319,7 @@ export function CheckoutPreview() {
               disabled
               className="h-11 w-full bg-gradient-to-r from-xblue to-usdt text-background font-semibold text-sm hover:opacity-90"
             >
-              Pay {ORDER.amount}
+              {t("checkout.pay")} {ORDER.amount}
               <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
@@ -340,7 +337,7 @@ export function CheckoutPreview() {
                 />
               </div>
               <span className="text-[10px] text-muted-foreground/40">
-                Secured by{" "}
+                {t("checkout.secured_by")}{" "}
                 <span className="font-medium text-gradient-xpayments">
                   XPayments
                 </span>

@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { MerchantDashboardBalances } from "@/lib/api-client";
+import { useT } from "@/lib/i18n";
 
 // ─── USDT Formatter ──────────────────────────────────────────────────────────
 
@@ -36,8 +37,8 @@ type CardVariant = "incoming" | "pending" | "risk" | "available";
 
 interface PrimaryCardDef {
   id: string;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   variant: CardVariant;
   icon: React.ElementType;
   changeType: "positive" | "neutral" | "negative";
@@ -47,7 +48,7 @@ interface PrimaryCardDef {
 
 interface SecondaryStateDef {
   id: string;
-  label: string;
+  labelKey: string;
   icon: React.ElementType;
   colorClass: string;
   dataKey: keyof MerchantDashboardBalances;
@@ -58,8 +59,8 @@ interface SecondaryStateDef {
 const primaryCards: PrimaryCardDef[] = [
   {
     id: "incoming",
-    label: "Incoming",
-    description: "Funds just received",
+    labelKey: "overview.incoming",
+    descriptionKey: "overview.incoming_desc",
     variant: "incoming",
     icon: ArrowDownLeft,
     changeType: "positive",
@@ -67,8 +68,8 @@ const primaryCards: PrimaryCardDef[] = [
   },
   {
     id: "pending",
-    label: "Pending",
-    description: "In transit D+1 to D+3",
+    labelKey: "overview.pending",
+    descriptionKey: "overview.pending_desc",
     variant: "pending",
     icon: Clock,
     changeType: "neutral",
@@ -76,8 +77,8 @@ const primaryCards: PrimaryCardDef[] = [
   },
   {
     id: "risk-reserve",
-    label: "Risk Reserve",
-    description: "Held by compliance",
+    labelKey: "overview.risk_reserve",
+    descriptionKey: "overview.risk_reserve_desc",
     variant: "risk",
     icon: Lock,
     changeType: "negative",
@@ -85,8 +86,8 @@ const primaryCards: PrimaryCardDef[] = [
   },
   {
     id: "available",
-    label: "Available to Withdraw",
-    description: "Ready for payout",
+    labelKey: "overview.available",
+    descriptionKey: "overview.available_desc",
     variant: "available",
     icon: Wallet,
     changeType: "positive",
@@ -97,21 +98,21 @@ const primaryCards: PrimaryCardDef[] = [
 const secondaryStates: SecondaryStateDef[] = [
   {
     id: "cleared",
-    label: "Cleared",
+    labelKey: "overview.cleared",
     icon: ShieldCheck,
     colorClass: "text-emerald-400/70",
     dataKey: "CLEARED",
   },
   {
     id: "audit",
-    label: "Under Audit",
+    labelKey: "overview.under_audit",
     icon: FileSearch,
     colorClass: "text-xblue/70",
     dataKey: "AUDIT",
   },
   {
     id: "blocked",
-    label: "Blocked",
+    labelKey: "overview.blocked",
     icon: Ban,
     colorClass: "text-red-400/70",
     dataKey: "BLOCKED",
@@ -182,6 +183,8 @@ function CardSkeleton() {
 // ─── Error State ──────────────────────────────────────────────────────────────
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
+  const { t } = useT();
+
   return (
     <Card className="col-span-full rounded-xl border border-destructive/20 bg-destructive/5">
       <CardContent className="flex flex-col items-center justify-center gap-3 p-10">
@@ -190,10 +193,10 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
         </div>
         <div className="text-center">
           <p className="text-sm font-medium text-foreground">
-            Unable to fetch balance data
+            {t("overview.unable_fetch")}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Check your connection or try again later.
+            {t("overview.check_connection")}
           </p>
         </div>
         <Button
@@ -203,7 +206,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
           className="gap-2 border-border text-xs text-foreground hover:bg-accent hover:text-accent-foreground"
         >
           <RefreshCw className="h-3.5 w-3.5" />
-          Retry
+          {t("overview.retry")}
         </Button>
       </CardContent>
     </Card>
@@ -213,6 +216,8 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 // ─── Primary Cards Grid ──────────────────────────────────────────────────────
 
 function PrimaryCards({ data }: { data: MerchantDashboardBalances }) {
+  const { t } = useT();
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {primaryCards.map((def) => {
@@ -233,7 +238,7 @@ function PrimaryCards({ data }: { data: MerchantDashboardBalances }) {
               {/* Label + Icon */}
               <div className="flex items-start justify-between">
                 <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  {def.label}
+                  {t(def.labelKey)}
                 </span>
                 <div
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${style.iconWrapper}`}
@@ -251,7 +256,7 @@ function PrimaryCards({ data }: { data: MerchantDashboardBalances }) {
                     {formatUsdt(amount)}
                   </span>
                   <span className="text-xs font-medium text-muted-foreground/80">
-                    USDT
+                    {t("balance.usdt")}
                   </span>
                 </div>
 
@@ -272,7 +277,7 @@ function PrimaryCards({ data }: { data: MerchantDashboardBalances }) {
                           : "text-muted-foreground"
                     }`}
                   >
-                    {def.description}
+                    {t(def.descriptionKey)}
                   </span>
                 </div>
               </div>
@@ -283,7 +288,7 @@ function PrimaryCards({ data }: { data: MerchantDashboardBalances }) {
                   className="mt-5 h-9 w-full gap-2 rounded-lg border-0 bg-gradient-to-r from-xblue to-usdt text-xs font-semibold text-background shadow-none transition-all hover:opacity-90 hover:shadow-lg hover:shadow-usdt/20"
                 >
                   <ArrowUpRight className="h-3.5 w-3.5" />
-                  Request Payout
+                  {t("overview.request_payout")}
                 </Button>
               )}
             </CardContent>
@@ -297,6 +302,8 @@ function PrimaryCards({ data }: { data: MerchantDashboardBalances }) {
 // ─── Secondary States Bar ────────────────────────────────────────────────────
 
 function SecondaryStates({ data }: { data: MerchantDashboardBalances }) {
+  const { t } = useT();
+
   return (
     <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
       {secondaryStates.map((def) => {
@@ -311,12 +318,12 @@ function SecondaryStates({ data }: { data: MerchantDashboardBalances }) {
             <Icon className={`h-4 w-4 shrink-0 ${def.colorClass}`} />
             <div className="flex flex-col">
               <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                {def.label}
+                {t(def.labelKey)}
               </span>
               <span className="text-sm font-semibold tabular-nums text-foreground">
                 {formatUsdt(amount)}{" "}
                 <span className="text-[10px] font-medium text-muted-foreground/60">
-                  USDT
+                  {t("balance.usdt")}
                 </span>
               </span>
             </div>
@@ -343,6 +350,8 @@ export function BalanceOverviewCards({
   isError,
   onRetry,
 }: BalanceOverviewCardsProps) {
+  const { t } = useT();
+
   // ── Loading ──
   if (isLoading) {
     return (
@@ -380,9 +389,9 @@ export function BalanceOverviewCards({
         <div className="mt-4 flex items-center gap-2 px-1">
           <AlertTriangle className="h-3.5 w-3.5 text-muted-foreground/50" />
           <span className="text-[11px] text-muted-foreground/60">
-            Total across all states:{" "}
+            {t("overview.total_states")}{" "}
             <span className="font-semibold text-foreground/80">
-              {formatUsdt(totalBalance)} USDT
+              {formatUsdt(totalBalance)} {t("balance.usdt")}
             </span>
           </span>
         </div>

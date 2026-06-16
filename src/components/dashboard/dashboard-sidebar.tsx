@@ -45,31 +45,33 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNavigationStore, type DashboardView } from "@/lib/navigation-store";
 import { useAuthStore } from "@/lib/auth-store";
+import { useT } from "@/lib/i18n";
 
 // ─── Nav definitions ─────────────────────────────────────────────────────────
 
 const mainNav: {
   title: DashboardView;
+  displayKey: string;
   icon: React.ElementType;
   badge?: string;
 }[] = [
-  { title: "Overview", icon: LayoutDashboard },
-  { title: "Transactions", icon: ArrowDownLeft, badge: "12" },
-  { title: "Payouts", icon: ArrowUpRight },
-  { title: "Payment Links", icon: Link2 },
-  { title: "Compliance", icon: Shield },
+  { title: "Overview", displayKey: "nav.overview", icon: LayoutDashboard },
+  { title: "Transactions", displayKey: "nav.transactions", icon: ArrowDownLeft, badge: "12" },
+  { title: "Payouts", displayKey: "nav.payouts", icon: ArrowUpRight },
+  { title: "Payment Links", displayKey: "nav.payment_links", icon: Link2 },
+  { title: "Compliance", displayKey: "nav.compliance", icon: Shield },
 ];
 
-const toolsNav: { title: DashboardView; icon: React.ElementType }[] = [
-  { title: "Developers / API", icon: Code2 },
-  { title: "Settings / Billing", icon: Wallet },
-  { title: "Support & Upgrades", icon: Headphones },
-  { title: "Checkout Preview", icon: Eye },
+const toolsNav: { title: DashboardView; displayKey: string; icon: React.ElementType }[] = [
+  { title: "Developers / API", displayKey: "nav.developers_api", icon: Code2 },
+  { title: "Settings / Billing", displayKey: "nav.settings_billing", icon: Wallet },
+  { title: "Support & Upgrades", displayKey: "nav.support_upgrades", icon: Headphones },
+  { title: "Checkout Preview", displayKey: "nav.checkout_preview", icon: Eye },
 ];
 
-const bottomNav: { title: DashboardView; icon: React.ElementType }[] = [
-  { title: "Settings", icon: Settings },
-  { title: "Help & Support", icon: HelpCircle },
+const bottomNav: { title: DashboardView; displayKey: string; icon: React.ElementType }[] = [
+  { title: "Settings", displayKey: "nav.settings", icon: Settings },
+  { title: "Help & Support", displayKey: "nav.help_support", icon: HelpCircle },
 ];
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -77,6 +79,7 @@ const bottomNav: { title: DashboardView; icon: React.ElementType }[] = [
 export function DashboardSidebar() {
   const { activeView, setActiveView } = useNavigationStore();
   const { user, logout } = useAuthStore();
+  const { t } = useT();
 
   const initials = user?.storeName
     ? user.storeName
@@ -117,7 +120,7 @@ export function DashboardSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 px-4">
-            Main
+            Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -126,10 +129,10 @@ export function DashboardSidebar() {
                   <SidebarMenuButton
                     isActive={activeView === item.title}
                     onClick={() => setActiveView(item.title)}
-                    tooltip={item.title}
+                    tooltip={t(item.displayKey)}
                   >
                     <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
+                    <span>{t(item.displayKey)}</span>
                     {item.badge && (
                       <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-usdt/15 px-1.5 text-[10px] font-semibold text-usdt group-data-[collapsible=icon]:hidden">
                         {item.badge}
@@ -146,7 +149,7 @@ export function DashboardSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 px-4">
-            Tools
+            Ferramentas
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -155,10 +158,10 @@ export function DashboardSidebar() {
                   <SidebarMenuButton
                     isActive={activeView === item.title}
                     onClick={() => setActiveView(item.title)}
-                    tooltip={item.title}
+                    tooltip={t(item.displayKey)}
                   >
                     <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
+                    <span>{t(item.displayKey)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -170,7 +173,7 @@ export function DashboardSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 px-4">
-            System
+            Sistema
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -179,10 +182,10 @@ export function DashboardSidebar() {
                   <SidebarMenuButton
                     isActive={activeView === item.title}
                     onClick={() => setActiveView(item.title)}
-                    tooltip={item.title}
+                    tooltip={t(item.displayKey)}
                   >
                     <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
+                    <span>{t(item.displayKey)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -221,7 +224,7 @@ export function DashboardSidebar() {
           >
             <DropdownMenuItem className="text-sm text-foreground focus:bg-accent focus:text-accent-foreground">
               <Settings className="mr-2 h-4 w-4" />
-              Account Settings
+              {t("nav.account_settings")}
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem
@@ -229,7 +232,7 @@ export function DashboardSidebar() {
               className="text-sm text-destructive focus:bg-destructive/10 focus:text-destructive"
             >
               <LogOut className="mr-2 h-4 w-4" />
-              Log out
+              {t("nav.logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

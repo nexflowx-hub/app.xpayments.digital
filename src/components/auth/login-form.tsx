@@ -11,6 +11,7 @@ import { Mail, Lock, Loader2, ArrowRight, AlertCircle } from "lucide-react";
 import { loginSchema, type LoginFormData } from "@/lib/auth-schemas";
 import { xpaymentsApi, XPaymentsApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/lib/auth-store";
+import { useT } from "@/lib/i18n";
 import {
   Form,
   FormControl,
@@ -25,6 +26,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function LoginForm() {
   const { setMerchant, setAuthView } = useAuthStore();
+  const { t } = useT();
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -52,7 +54,7 @@ export function LoginForm() {
         const body = error.body as { message?: string } | undefined;
         setApiError(body?.message ?? error.message);
       } else {
-        setApiError("An unexpected error occurred. Please try again.");
+        setApiError(t("auth.unexpected_error"));
       }
     } finally {
       setIsLoading(false);
@@ -64,10 +66,10 @@ export function LoginForm() {
       {/* Header */}
       <div className="flex flex-col gap-1.5">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">
-          Welcome back
+          {t("auth.welcome_back")}
         </h2>
         <p className="text-sm text-muted-foreground">
-          Sign in to your merchant dashboard
+          {t("auth.sign_in_subtitle")}
         </p>
       </div>
 
@@ -90,7 +92,7 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs text-muted-foreground">
-                  Email Address
+                  {t("auth.email")}
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
@@ -116,7 +118,7 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs text-muted-foreground">
-                  Password
+                  {t("auth.password")}
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
@@ -144,11 +146,11 @@ export function LoginForm() {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Authenticating...
+                {t("auth.authenticating")}
               </>
             ) : (
               <>
-                Sign In
+                {t("auth.sign_in")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
@@ -159,13 +161,13 @@ export function LoginForm() {
       {/* Footer links */}
       <div className="flex flex-col items-center gap-3 pt-2">
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <span>Don&apos;t have an account?</span>
+          <span>{t("auth.no_account")}</span>
           <button
             type="button"
             onClick={() => setAuthView("register")}
             className="font-medium text-usdt hover:text-usdt/80 transition-colors"
           >
-            Create one
+            {t("auth.create_one")}
           </button>
         </div>
 
@@ -174,7 +176,7 @@ export function LoginForm() {
           onClick={() => setAuthView("admin-login")}
           className="text-[11px] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
         >
-          Admin Access →
+          {t("auth.admin_access")}
         </button>
       </div>
     </div>

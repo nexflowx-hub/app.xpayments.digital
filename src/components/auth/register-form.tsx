@@ -30,6 +30,7 @@ import {
 } from "@/lib/auth-schemas";
 import { xpaymentsApi, XPaymentsApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/lib/auth-store";
+import { useT } from "@/lib/i18n";
 import {
   Form,
   FormControl,
@@ -109,6 +110,7 @@ function SecretKeyModal({
   response: RegisterResponse;
   onContinue: () => void;
 }) {
+  const { t } = useT();
   const [copied, setCopied] = useState(false);
 
   function copyKey() {
@@ -126,12 +128,10 @@ function SecretKeyModal({
         </div>
         <div className="flex flex-col items-center gap-1">
           <h2 className="text-lg font-semibold tracking-tight text-foreground">
-            Account Created
+            {t("auth.account_created")}
           </h2>
           <p className="text-sm text-muted-foreground text-center max-w-xs">
-            Your merchant account is ready.{" "}
-            <span className="text-usdt font-medium">Save your Secret Key now</span> —
-            it won&apos;t be shown again.
+            {t("auth.start_accepting")}
           </p>
         </div>
       </div>
@@ -143,7 +143,7 @@ function SecretKeyModal({
         {/* Public Key */}
         <div className="flex flex-col gap-1.5">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Public Key
+            {t("developers.public_key")}
           </span>
           <div className="flex items-center gap-2 rounded-lg border border-border bg-surface p-3">
             <code className="flex-1 truncate text-xs font-mono text-foreground/80">
@@ -165,10 +165,10 @@ function SecretKeyModal({
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-destructive">
-              Secret Key
+              {t("developers.secret_key")}
             </span>
             <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-destructive">
-              Save Now
+              {t("auth.save_secret_now")}
             </span>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
@@ -196,11 +196,10 @@ function SecretKeyModal({
       {/* Warning */}
       <div className="flex items-start gap-2.5 rounded-lg border border-pending/20 bg-pending/5 p-3">
         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-pending" />
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Store your Secret Key in a secure location (password manager, encrypted
-          file). If lost, you will need to regenerate it from the dashboard.
-          Never expose it in client-side code.
-        </p>
+        <p
+          className="text-[11px] leading-relaxed text-muted-foreground"
+          dangerouslySetInnerHTML={{ __html: t("auth.secret_key_warning") }}
+        />
       </div>
 
       {/* CTA */}
@@ -208,7 +207,7 @@ function SecretKeyModal({
         onClick={onContinue}
         className="h-10 w-full bg-usdt text-background font-semibold text-sm hover:bg-usdt/90 focus-visible:ring-usdt/50"
       >
-        I&apos;ve saved my key — Continue to Dashboard
+        {t("auth.saved_key_continue")}
         <ArrowRight className="ml-2 h-4 w-4" />
       </Button>
     </div>
@@ -219,6 +218,7 @@ function SecretKeyModal({
 
 export function RegisterForm() {
   const { setRegistrationData, setAuthView } = useAuthStore();
+  const { t } = useT();
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [registrationData, setRegistrationDataLocal] =
@@ -252,7 +252,7 @@ export function RegisterForm() {
         const body = error.body as { message?: string } | undefined;
         setApiError(body?.message ?? error.message);
       } else {
-        setApiError("An unexpected error occurred. Please try again.");
+        setApiError(t("auth.unexpected_error"));
       }
     } finally {
       setIsLoading(false);
@@ -278,10 +278,10 @@ export function RegisterForm() {
       {/* Header */}
       <div className="flex flex-col gap-1.5">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">
-          Create your account
+          {t("auth.create_account")}
         </h2>
         <p className="text-sm text-muted-foreground">
-          Start accepting payments in minutes
+          {t("auth.start_accepting")}
         </p>
       </div>
 
@@ -307,14 +307,14 @@ export function RegisterForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs text-muted-foreground">
-                  Store Name
+                  {t("auth.store_name")}
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Store className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       type="text"
-                      placeholder="My Online Store"
+                      placeholder={t("auth.store_name_placeholder")}
                       autoComplete="organization"
                       disabled={isLoading}
                       className="h-10 border-border bg-surface pl-10 text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-usdt/30"
@@ -333,7 +333,7 @@ export function RegisterForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs text-muted-foreground">
-                  Email Address
+                  {t("auth.email")}
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
@@ -359,7 +359,7 @@ export function RegisterForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs text-muted-foreground">
-                  Password
+                  {t("auth.password")}
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
@@ -403,11 +403,11 @@ export function RegisterForm() {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating account...
+                {t("auth.creating_account")}
               </>
             ) : (
               <>
-                Create Account
+                {t("auth.create_account")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
@@ -418,13 +418,13 @@ export function RegisterForm() {
       {/* Footer links */}
       <div className="flex flex-col items-center gap-3 pt-2">
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <span>Already have an account?</span>
+          <span>{t("auth.already_have_account")}</span>
           <button
             type="button"
             onClick={() => setAuthView("login")}
             className="font-medium text-usdt hover:text-usdt/80 transition-colors"
           >
-            Sign in
+            {t("auth.sign_in")}
           </button>
         </div>
       </div>

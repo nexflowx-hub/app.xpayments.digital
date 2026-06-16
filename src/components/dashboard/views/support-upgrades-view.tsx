@@ -44,6 +44,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { useT } from "@/lib/i18n";
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -88,46 +89,50 @@ const TICKETS = [
 // ─── Status / Priority Badges ─────────────────────────────────────────────────
 
 function TicketStatusBadge({ status }: { status: "open" | "in_progress" | "resolved" }) {
+  const { t } = useT();
+
   switch (status) {
     case "open":
       return (
         <Badge variant="outline" className="border-usdt/30 text-usdt bg-usdt/10">
-          Open
+          {t("support.open")}
         </Badge>
       );
     case "in_progress":
       return (
         <Badge variant="outline" className="border-pending/30 text-pending bg-pending/10">
-          In Progress
+          {t("support.in_progress")}
         </Badge>
       );
     case "resolved":
       return (
         <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground bg-muted/50">
-          Resolved
+          {t("support.resolved")}
         </Badge>
       );
   }
 }
 
 function PriorityBadge({ priority }: { priority: "Low" | "Medium" | "High" }) {
+  const { t } = useT();
+
   switch (priority) {
     case "High":
       return (
         <Badge variant="outline" className="border-risk/30 text-risk bg-risk/10">
-          {priority}
+          {t("support.high")}
         </Badge>
       );
     case "Medium":
       return (
         <Badge variant="outline" className="border-pending/30 text-pending bg-pending/10">
-          {priority}
+          {t("support.medium")}
         </Badge>
       );
     case "Low":
       return (
         <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground bg-muted/50">
-          {priority}
+          {t("support.low")}
         </Badge>
       );
   }
@@ -136,6 +141,7 @@ function PriorityBadge({ priority }: { priority: "Low" | "Medium" | "High" }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function SupportUpgradesView() {
+  const { t } = useT();
   const [ticketSubmitted, setTicketSubmitted] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [upgradeSubmitted, setUpgradeSubmitted] = useState(false);
@@ -179,10 +185,10 @@ export function SupportUpgradesView() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Support &amp; Upgrades
+          {t("support.title")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Get help from our team or request a tier upgrade for better settlement terms.
+          {t("support.subtitle")}
         </p>
       </div>
 
@@ -192,7 +198,7 @@ export function SupportUpgradesView() {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Headphones className="h-4 w-4 text-usdt" />
-          <h2 className="text-lg font-medium text-foreground">Open Support Ticket</h2>
+          <h2 className="text-lg font-medium text-foreground">{t("support.open_ticket")}</h2>
         </div>
 
         <Card className="bg-surface border-border">
@@ -205,7 +211,7 @@ export function SupportUpgradesView() {
                     name="subject"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Subject</FormLabel>
+                        <FormLabel>{t("support.subject")}</FormLabel>
                         <FormControl>
                           <Input placeholder="Brief description of your issue" {...field} />
                         </FormControl>
@@ -220,7 +226,7 @@ export function SupportUpgradesView() {
                       name="category"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Category</FormLabel>
+                          <FormLabel>{t("support.category")}</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -245,7 +251,7 @@ export function SupportUpgradesView() {
                       name="priority"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Priority</FormLabel>
+                          <FormLabel>{t("support.priority")}</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -253,9 +259,9 @@ export function SupportUpgradesView() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Low">Low</SelectItem>
-                              <SelectItem value="Medium">Medium</SelectItem>
-                              <SelectItem value="High">High</SelectItem>
+                              <SelectItem value="Low">{t("support.low")}</SelectItem>
+                              <SelectItem value="Medium">{t("support.medium")}</SelectItem>
+                              <SelectItem value="High">{t("support.high")}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -270,7 +276,7 @@ export function SupportUpgradesView() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
+                      <FormLabel>{t("support.description")}</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Describe your issue in detail. Include transaction IDs, error messages, or any relevant context."
@@ -289,7 +295,7 @@ export function SupportUpgradesView() {
                   disabled={ticketSubmitted}
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  {ticketSubmitted ? "Ticket Submitted" : "Submit Ticket"}
+                  {ticketSubmitted ? t("support.ticket_submitted") : t("support.submit_ticket")}
                 </Button>
               </form>
             </Form>
@@ -303,14 +309,14 @@ export function SupportUpgradesView() {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <ArrowUpRight className="h-4 w-4 text-usdt" />
-          <h2 className="text-lg font-medium text-foreground">Tier Upgrade</h2>
+          <h2 className="text-lg font-medium text-foreground">{t("support.tier_upgrade")}</h2>
         </div>
 
         <Card className="bg-surface border-border">
           <CardHeader>
-            <CardTitle className="text-base">Settlement Tier Comparison</CardTitle>
+            <CardTitle className="text-base">{t("support.tier_comparison")}</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
-              Upgrade your tier for faster settlements, lower fees, and higher limits.
+              {t("support.tier_upgrade_desc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -320,7 +326,7 @@ export function SupportUpgradesView() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-foreground">Tier B</span>
                   <Badge variant="outline" className="border-usdt/30 text-usdt bg-usdt/10 text-xs">
-                    Current
+                    {t("support.current")}
                   </Badge>
                 </div>
                 <ul className="space-y-2 text-sm text-muted-foreground">
@@ -344,7 +350,7 @@ export function SupportUpgradesView() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-usdt">Tier A</span>
                   <Badge variant="outline" className="border-usdt/50 text-usdt bg-usdt/15 text-xs">
-                    Target
+                    {t("support.target")}
                   </Badge>
                 </div>
                 <ul className="space-y-2 text-sm text-foreground/80">
@@ -375,16 +381,16 @@ export function SupportUpgradesView() {
                   className="mt-6 border-usdt/30 text-usdt hover:bg-usdt/10 hover:text-usdt"
                 >
                   <ArrowUpRight className="h-4 w-4 mr-2" />
-                  Request Tier A Upgrade
+                  {t("support.request_upgrade")}
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-surface border-border sm:max-w-lg">
                 <DialogHeader>
                   <DialogTitle className="text-foreground">
-                    Request Upgrade to Tier A
+                    {t("support.request_upgrade")}
                   </DialogTitle>
                   <DialogDescription className="text-muted-foreground">
-                    Review the requirements and submit your request.
+                    {t("support.tier_upgrade_desc")}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -393,7 +399,7 @@ export function SupportUpgradesView() {
                   <div className="rounded-lg border border-border bg-background p-4 space-y-3">
                     <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
                       <Shield className="h-4 w-4 text-usdt" />
-                      Requirements
+                      {t("support.requirements")}
                     </h4>
                     <ul className="space-y-2">
                       {[
@@ -447,7 +453,7 @@ export function SupportUpgradesView() {
                           }}
                           className="text-muted-foreground hover:text-foreground"
                         >
-                          Cancel
+                          {t("support.cancel")}
                         </Button>
                         <Button
                           type="submit"
@@ -455,7 +461,7 @@ export function SupportUpgradesView() {
                           disabled={upgradeSubmitted}
                         >
                           <Send className="h-4 w-4 mr-2" />
-                          {upgradeSubmitted ? "Request Submitted" : "Submit Request"}
+                          {upgradeSubmitted ? t("support.request_submitted") : t("support.submit_request")}
                         </Button>
                       </DialogFooter>
                     </form>
@@ -473,7 +479,7 @@ export function SupportUpgradesView() {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Headphones className="h-4 w-4 text-usdt" />
-          <h2 className="text-lg font-medium text-foreground">Recent Tickets</h2>
+          <h2 className="text-lg font-medium text-foreground">{t("support.recent_tickets")}</h2>
         </div>
 
         <Card className="bg-surface border-border">

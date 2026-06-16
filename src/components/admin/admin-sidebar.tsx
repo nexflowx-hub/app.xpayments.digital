@@ -36,26 +36,29 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNavigationStore, type AdminView } from "@/lib/navigation-store";
 import { useAuthStore } from "@/lib/auth-store";
+import { useT } from "@/lib/i18n";
 
 // ─── Nav definitions ─────────────────────────────────────────────────────────
 
 const operationsNav: {
   title: AdminView;
+  displayKey: string;
   icon: React.ElementType;
   badge?: string;
 }[] = [
-  { title: "Overview", icon: Users },
-  { title: "Transactions", icon: Activity, badge: "247" },
-  { title: "Payout Approvals", icon: CheckCircle, badge: "8" },
-  { title: "Payment Routing", icon: Sliders },
+  { title: "Overview", displayKey: "admin.overview", icon: Users },
+  { title: "Transactions", displayKey: "nav.transactions", icon: Activity, badge: "247" },
+  { title: "Payout Approvals", displayKey: "admin.payout_approvals", icon: CheckCircle, badge: "8" },
+  { title: "Payment Routing", displayKey: "admin.payment_routing", icon: Sliders },
 ];
 
 const supportNav: {
   title: AdminView;
+  displayKey: string;
   icon: React.ElementType;
   badge?: string;
 }[] = [
-  { title: "Support Tickets", icon: MessageSquare, badge: "3" },
+  { title: "Support Tickets", displayKey: "admin.support_tickets", icon: MessageSquare, badge: "3" },
 ];
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -63,6 +66,7 @@ const supportNav: {
 export function AdminSidebar() {
   const { activeAdminView, setActiveAdminView } = useNavigationStore();
   const { user, logout } = useAuthStore();
+  const { t } = useT();
 
   const initials = user?.storeName
     ? user.storeName
@@ -110,7 +114,7 @@ export function AdminSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 px-4">
-            Operations
+            Operações
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -119,10 +123,10 @@ export function AdminSidebar() {
                   <SidebarMenuButton
                     isActive={activeAdminView === item.title}
                     onClick={() => setActiveAdminView(item.title)}
-                    tooltip={item.title}
+                    tooltip={t(item.displayKey)}
                   >
                     <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
+                    <span>{t(item.displayKey)}</span>
                     {item.badge && (
                       <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500/15 px-1.5 text-[10px] font-semibold text-red-400 group-data-[collapsible=icon]:hidden">
                         {item.badge}
@@ -139,7 +143,7 @@ export function AdminSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 px-4">
-            Support
+            Suporte
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -148,10 +152,10 @@ export function AdminSidebar() {
                   <SidebarMenuButton
                     isActive={activeAdminView === item.title}
                     onClick={() => setActiveAdminView(item.title)}
-                    tooltip={item.title}
+                    tooltip={t(item.displayKey)}
                   >
                     <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
+                    <span>{t(item.displayKey)}</span>
                     {item.badge && (
                       <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500/15 px-1.5 text-[10px] font-semibold text-red-400 group-data-[collapsible=icon]:hidden">
                         {item.badge}
@@ -195,7 +199,7 @@ export function AdminSidebar() {
           >
             <DropdownMenuItem className="text-sm text-foreground focus:bg-accent focus:text-accent-foreground">
               <Settings className="mr-2 h-4 w-4" />
-              Admin Settings
+              {t("admin.admin_settings")}
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem
@@ -203,7 +207,7 @@ export function AdminSidebar() {
               className="text-sm text-destructive focus:bg-destructive/10 focus:text-destructive"
             >
               <LogOut className="mr-2 h-4 w-4" />
-              Log out
+              {t("nav.logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
