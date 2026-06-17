@@ -72,3 +72,7 @@ worklog.md
 # Start scripts (dev-only wrappers)
 start-dev.sh
 run-dev.sh
+
+# Agent context (internal)
+/agent-ctx/
+/.zscripts/
