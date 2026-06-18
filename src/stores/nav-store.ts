@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 
 export type NavPage =
+  | 'admin-dashboard'
   | 'dashboard'
   | 'wallets'
   | 'deposits'

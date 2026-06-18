@@ -6,6 +6,7 @@ import { useNavStore } from '@/stores/nav-store';
 import { PageErrorBoundary } from '@/components/ui/page-error-boundary';
 import XPaymentsLanding from '@/components/layout/xp-landing';
 import XPaymentsSidebar from '@/components/layout/xp-sidebar';
+import AdminDashboardPage from '@/components/dashboard/admin-dashboard-page';
 import DashboardPage from '@/components/dashboard/dashboard-page';
 import WalletsPage from '@/components/wallet/wallets-page';
 import DepositsPage from '@/components/wallet/deposits-page';
@@ -27,6 +28,7 @@ import { Menu, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const PAGES: Record<string, React.ComponentType> = {
+  'admin-dashboard': AdminDashboardPage,
   dashboard: DashboardPage,
   wallets: WalletsPage,
   deposits: DepositsPage,
@@ -44,6 +46,7 @@ const PAGES: Record<string, React.ComponentType> = {
 };
 
 const TITLES: Record<string, string> = {
+  'admin-dashboard': 'Super Admin Overview',
   dashboard: 'Painel de Controle',
   wallets: 'Carteiras',
   deposits: 'Depositar',

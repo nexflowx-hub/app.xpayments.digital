@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   LayoutDashboard,
+  Shield,
   Wallet,
   ArrowDownLeft,
   ArrowLeftRight,
@@ -49,6 +50,14 @@ interface NavItemDef {
 }
 
 const NAV_ITEMS: NavItemDef[] = [
+  // Super Admin Dashboard – APENAS admin
+  {
+    page: 'admin-dashboard',
+    label: 'Admin Overview',
+    icon: Shield,
+    roles: ['admin'],
+  },
+
   // Dashboard – todos
   {
     page: 'dashboard',
@@ -170,7 +179,7 @@ const SECTION_MAP: Record<SectionKey, NavPage[]> = {
   wallet: ['wallets', 'deposits', 'swaps', 'payouts', 'transactions'],
   kyc: ['kyc'],
   merchant: ['merchant-links', 'merchant-api-keys', 'merchant-checkouts'],
-  admin: ['admin-tickets', 'admin-fees', 'admin-users', 'admin-organizations'],
+  admin: ['admin-dashboard', 'admin-tickets', 'admin-fees', 'admin-users', 'admin-organizations'],
 };
 
 const SECTION_LABELS: Record<SectionKey, string> = {

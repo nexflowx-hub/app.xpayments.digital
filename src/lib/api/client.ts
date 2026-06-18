@@ -207,6 +207,27 @@ export interface RegisterResponse {
   message?: string;
 }
 
+// ── Admin Dashboard Types ──
+
+export interface AdminStatsResponse {
+  totalMerchants: number;
+  activeMerchants: number;
+  totalVolumeUSDT: number;
+  totalTransactions: number;
+  pendingTickets?: number;
+}
+
+export interface AdminMerchant {
+  id: string;
+  name: string;
+  email?: string | null;
+  tier: string;
+  status: string;
+  activeStores?: number;
+  totalVolume?: number;
+  createdAt?: string;
+}
+
 export const xpApi = {
   // ── AUTH ──
   auth: {
@@ -228,6 +249,14 @@ export const xpApi = {
     /** POST /admin/login — Login de Admin/Operador */
     login: (data: { email: string; password: string }) =>
       post<AdminLoginResponse>('/admin/login', data),
+
+    /** GET /admin/stats — Super Admin dashboard stats */
+    getStats: () =>
+      get<AdminStatsResponse>('/admin/stats'),
+
+    /** GET /admin/merchants — List all merchants */
+    getMerchants: () =>
+      get<AdminMerchant[]>('/admin/merchants'),
   },
 
   // ── PUBLIC (sem autenticação) ──

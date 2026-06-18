@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { useAuthStore, ROLE_LABELS } from '@/stores/auth-store';
+import { useNavStore } from '@/stores/nav-store';
 import { xpApi, type MerchantLoginResponse, type AdminLoginResponse } from '@/lib/api/client';
 import { XPaymentsApiError } from '@/lib/api/client';
 import { Input } from '@/components/ui/input';
@@ -108,6 +109,7 @@ export default function XPaymentsLanding() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const { setAuth, isLoading, setLoading } = useAuthStore();
+  const { setPage } = useNavStore();
 
   // ── Helper: mapeia role do backend para UserRole do frontend ──
   const mapRole = (backendRole?: string): UserRole => {
@@ -151,6 +153,7 @@ export default function XPaymentsLanding() {
           };
 
           setAuth(adminData.token, user);
+          setPage('admin-dashboard');
         } else {
           // ── Merchant Login: POST /api/v1/auth/login ──
           const response = await xpApi.auth.login({
@@ -189,7 +192,7 @@ export default function XPaymentsLanding() {
         setLoading(false);
       }
     },
-    [loginId, loginPassword, isAdminLogin, setAuth, setLoading],
+    [loginId, loginPassword, isAdminLogin, setAuth, setLoading, setPage],
   );
 
   // ── Register via API real ──
