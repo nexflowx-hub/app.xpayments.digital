@@ -259,7 +259,7 @@ Todas as rotas são relativas a `/api/v1` (o client acrescenta automaticamente).
 |--------|------|--------|-----------|
 | `GET` | `/public/rates` | `xpApi.public.getRates` | Taxas de câmbio para o motor de swap |
 
-### Dashboard
+### Dashboard (Genérico)
 
 | Método | Rota | Módulo | Descrição |
 |--------|------|--------|-----------|
@@ -320,6 +320,8 @@ Todas as rotas são relativas a `/api/v1` (o client acrescenta automaticamente).
 
 | Método | Rota | Módulo | Descrição |
 |--------|------|--------|-----------|
+| `GET` | `/merchant/:merchantId/dashboard` | `xpApi.merchant.getDashboard` | Saldos Ledger Engine (AVAILABLE, PENDING, INCOMING, RESERVE) |
+| `GET` | `/merchant/:merchantId/transactions` | `xpApi.merchant.getTransactions` | Transações recentes do merchant (limit, page) |
 | `GET` | `/merchant/api-keys` | `xpApi.merchant.getApiKeys` | Lista chaves API do merchant |
 | `POST` | `/merchant/api-keys/generate` | `xpApi.merchant.generateApiKey` | Gera nova chave API |
 | `GET` | `/merchant/links` | `xpApi.merchant.getPaymentLinks` | Lista links de pagamento |
@@ -336,6 +338,8 @@ Todas as rotas são relativas a `/api/v1` (o client acrescenta automaticamente).
 
 | Método | Rota | Módulo | Descrição |
 |--------|------|--------|-----------|
+| `GET` | `/admin/stats` | `xpApi.admin.getStats` | Estatísticas agregadas (merchants, volume, transações) |
+| `GET` | `/admin/merchants` | `xpApi.admin.getMerchants` | Lista todos os merchants com detalhes |
 | `GET` | `/organizations` | `xpApi.organizations.list` | Lista organizações |
 | `GET` | `/users` | `xpApi.users.list` | Lista utilizadores (com paginação) |
 
@@ -372,6 +376,11 @@ Todos os tipos estão centralizados em `src/types/xpayments.ts`, alinhados ao sc
 | `ApiKey` | Chave API S2S para integração merchant |
 | `KycProfile` | Perfil KYC com dados progressivos por tier |
 | `FeeSchedule` | Agendamento de taxas por tier e tipo de transação |
+| `AdminStatsResponse` | Stats agregados do Super Admin (totalMerchants, activeMerchants, totalVolumeUSDT, etc.) |
+| `AdminMerchant` | Merchant com tier, status, lojas ativas e volume |
+| `MerchantDashboardResponse` | Saldos Ledger Engine do merchant (balances: available, pending, incoming, reserve) |
+| `MerchantDashboardTransaction` | Transação do merchant dashboard com store.name, fiatAmount e fiatCurrency |
+| `MerchantDashboardBalances` | Balances por estado do ledger (available, pending, incoming, reserve, blocked) |
 
 ---
 
@@ -636,6 +645,31 @@ Ambas configuradas com `font-display: swap` para performance de carregamento.
 - Cards com `bg-zinc-900/50 border-zinc-800` e backdrop-blur
 - Botões principais com gradiente `from-neon-600 to-neon-500`
 - Badges com variantes outline em `border-zinc-700 bg-zinc-900`
+
+### Padrões Visuais — Dashboards
+
+#### Merchant Dashboard (`dashboard-page.tsx`)
+
+| Elemento | Estilo |
+|----------|--------|
+| Header | Ícone `TrendingUp` + "Dashboard Financeiro" + nome da org |
+| Ledger Cards | 4 colunas (1/2/4 responsive) com `border-white/[0.06] bg-white/[0.02]` |
+| Card AVAILABLE | Borda verde, `text-emerald-400`, ícone `Wallet` |
+| Card PENDING | Borda âmbar, `text-amber-400`, ícone `Clock` |
+| Card INCOMING | Borda azul, `text-sky-400`, ícone `ArrowDownLeft` |
+| Card RESERVE | Borda roxa, `text-purple-400`, ícone `ShieldAlert` |
+| Tabela Transações | shadcn `Table`, status badges coloridos, mobile cards |
+| Loading | `Skeleton` animado em todas as posições |
+| Erro | Banner vermelho com retry automático |
+
+#### Admin Dashboard (`admin-dashboard-page.tsx`)
+
+| Elemento | Estilo |
+|----------|--------|
+| Header | Ícone `Shield` + "Super Admin Overview" + badge "Master System" neon |
+| Stat Cards | 3 colunas: Merchants Ativos, Volume USDT, Routing Engine Status |
+| Routing Status | Ponto verde pulsante (animate-ping) |
+| Merchants Table | Desktop table + mobile cards, tier badges coloridos |
 
 ---
 

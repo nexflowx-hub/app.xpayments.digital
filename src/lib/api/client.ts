@@ -207,6 +207,45 @@ export interface RegisterResponse {
   message?: string;
 }
 
+// ── Merchant Dashboard Types ──
+
+export interface MerchantDashboardBalances {
+  available?: number;
+  pending?: number;
+  incoming?: number;
+  reserve?: number;
+ blocked?: number;
+ totalUSDT?: number;
+ [key: string]: number | undefined;
+}
+
+export interface MerchantDashboardResponse {
+  balances?: MerchantDashboardBalances;
+ totalStores?: number;
+ activeStores?: number;
+  pendingSettlements?: number;
+  todayVolume?: number;
+  [key: string]: unknown;
+}
+
+export interface MerchantDashboardTransaction {
+  id: string;
+ walletId?: string | null;
+ storeId?: string | null;
+ store?: { id?: string; name?: string } | null;
+ type?: string | null;
+  status?: string | null;
+  amount?: number;
+  feeApplied?: number;
+ currency?: string | null;
+  fiatAmount?: number | null;
+ fiatCurrency?: string | null;
+ description?: string | null;
+  createdAt?: string | null;
+ updatedAt?: string | null;
+ [key: string]: unknown;
+}
+
 // ── Admin Dashboard Types ──
 
 export interface AdminStatsResponse {
@@ -310,8 +349,19 @@ export const xpApi = {
       post<unknown>('/kyc/upgrade', data),
   },
 
-  // ── MERCHANT: API Keys (S2S) ──
+  // ── MERCHANT: API Keys (S2S) + Dashboard ──
   merchant: {
+    /** GET /merchant/:merchantId/dashboard — Saldos Ledger Engine do Merchant */
+    getDashboard: (merchantId: string) =>
+      get<MerchantDashboardResponse>(`/merchant/${merchantId}/dashboard`),
+
+    /** GET /merchant/:merchantId/transactions — Transações recentes do Merchant */
+    getTransactions: (merchantId: string, params?: { limit?: number; page?: number }) =>
+      get<MerchantDashboardTransaction[] | { data: MerchantDashboardTransaction[]; total?: number; page?: number; totalPages?: number }>(
+        `/merchant/${merchantId}/transactions`,
+        params as Record<string, string | number | undefined>,
+      ),
+
     getApiKeys: () => get<unknown>('/merchant/api-keys'),
 
     generateApiKey: (data?: { storeName?: string }) =>
