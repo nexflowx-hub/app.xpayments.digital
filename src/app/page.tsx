@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useNavStore } from '@/stores/nav-store';
 import { PageErrorBoundary } from '@/components/ui/page-error-boundary';
@@ -24,8 +24,7 @@ import MerchantCheckoutsPage from '@/components/dashboard/merchant-checkouts-pag
 import XpAiChat from '@/components/ai/xp-ai-chat';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Menu, Loader2 } from 'lucide-react';
+import { Menu, Loader2, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const PAGES: Record<string, React.ComponentType> = {
@@ -64,11 +63,17 @@ const TITLES: Record<string, string> = {
   'merchant-checkouts': 'Checkouts',
 };
 
+// ── Scroll-to-top / bottom threshold (px from edge) ──
+const SCROLL_THRESHOLD = 60;
+
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
   const { isAuthenticated } = useAuthStore();
   const { currentPage, sidebarOpen, toggleSidebar, setPage } = useNavStore();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: client hydration guard
@@ -89,6 +94,43 @@ export default function Home() {
   // Close mobile menu when currentPage changes
   // eslint-disable-next-line react-hooks/set-state-in-effect -- sync UI overlay to navigation
   useEffect(() => { setMobileMenuOpen(false); }, [currentPage]);
+
+  // ── Track scroll position to show/hide arrow buttons ──
+  const updateScrollState = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    setCanScrollUp(el.scrollTop > SCROLL_THRESHOLD);
+    setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - SCROLL_THRESHOLD);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    updateScrollState();
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    // Also listen to resize to recompute
+    const ro = new ResizeObserver(updateScrollState);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      ro.disconnect();
+    };
+  }, [currentPage, updateScrollState]);
+
+  // Reset scroll position when page changes
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (el) el.scrollTop = 0;
+  }, [currentPage]);
+
+  const scrollToTop = () => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const scrollToBottom = () => {
+    const el = scrollContainerRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  };
 
   const handleToggleMobile = () => {
     setMobileMenuOpen((prev) => !prev);
@@ -138,37 +180,72 @@ export default function Home() {
 
       {/* ── Main content ── */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="flex items-center justify-between h-14 px-4 sm:px-6 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-sm shrink-0">
+        {/* ── Top Navigation Bar ── */}
+        <header className="flex items-center justify-between h-14 px-4 sm:px-6 border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md shrink-0 z-30">
           <div className="flex items-center gap-3 min-w-0">
             {/* Mobile: always show menu button */}
             <Button
               variant="ghost"
               size="icon"
               onClick={handleToggleMobile}
-              className="md:hidden h-9 w-9 text-zinc-400 hover:text-zinc-200"
+              className="md:hidden h-9 w-9 text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]"
               aria-label="Abrir menu"
             >
               <Menu className="size-5" />
             </Button>
             {/* Desktop: show menu button only when sidebar is collapsed */}
             {!sidebarOpen && (
-              <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hidden md:inline-flex h-8 w-8 text-zinc-400 hover:text-zinc-200 shrink-0" aria-label="Abrir menu">
+              <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hidden md:inline-flex h-8 w-8 text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05] shrink-0" aria-label="Abrir menu">
                 <Menu className="size-4" />
               </Button>
             )}
-            <h1 className="text-base font-semibold text-zinc-100 truncate">{title}</h1>
+            <h1 className="text-sm font-semibold text-zinc-200 truncate tracking-tight">{title}</h1>
           </div>
-          <Badge variant="outline" className="hidden sm:inline-flex text-[10px] px-2 py-0 h-5 border-zinc-700 text-zinc-500 bg-zinc-900">
-            XPayments v3.0
-          </Badge>
+
+          {/* ── Right side: scroll controls + version ── */}
+          <div className="flex items-center gap-1.5">
+            {/* Scroll to Top */}
+            {canScrollUp && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={scrollToTop}
+                className="h-8 w-8 text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.06] rounded-lg transition-all duration-200"
+                aria-label="Voltar ao topo"
+              >
+                <ArrowUp className="size-3.5" />
+              </Button>
+            )}
+            {/* Scroll to Bottom */}
+            {canScrollDown && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={scrollToBottom}
+                className="h-8 w-8 text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.06] rounded-lg transition-all duration-200"
+                aria-label="Ir para o fundo"
+              >
+                <ArrowDown className="size-3.5" />
+              </Button>
+            )}
+            <Badge variant="outline" className="hidden sm:inline-flex text-[10px] px-2 py-0 h-5 border-zinc-700/60 text-zinc-500 bg-zinc-900/60 font-medium">
+              XPayments v3.0
+            </Badge>
+          </div>
         </header>
-        <ScrollArea className="flex-1">
+
+        {/* ── Scrollable Content Area ── */}
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth"
+          style={{ scrollbarGutter: 'stable' }}
+        >
           <div key={currentPage} className="p-4 sm:p-6 lg:p-8 animate-page-enter">
             <PageErrorBoundary>
               <Page />
             </PageErrorBoundary>
           </div>
-        </ScrollArea>
+        </div>
       </main>
 
       {/* ── AI Chat Widget (authenticated only) ── */}
