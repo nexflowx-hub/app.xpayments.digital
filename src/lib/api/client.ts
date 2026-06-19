@@ -267,6 +267,17 @@ export interface AdminMerchant {
   createdAt?: string;
 }
 
+export interface MerchantStore {
+  id: string;
+  name: string;
+  primaryColor?: string | null;
+  successUrl?: string | null;
+  webhookUrl?: string | null;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export const xpApi = {
   // ── AUTH ──
   auth: {
@@ -371,6 +382,14 @@ export const xpApi = {
 
     createPaymentLink: (data: { amount: number; currency: string; description?: string }) =>
       post<unknown>('/merchant/links', data),
+
+    /** GET /merchant/:merchantId/stores — Listar lojas/checkouts */
+    getStores: (merchantId: string) =>
+      get<MerchantStore[]>(`/merchant/${merchantId}/stores`),
+
+    /** POST /merchant/:merchantId/stores — Criar nova loja/checkout */
+    createStore: (merchantId: string, data: { name: string; primaryColor?: string; successUrl?: string; webhookUrl?: string }) =>
+      post<MerchantStore>(`/merchant/${merchantId}/stores`, data),
   },
 
   // ── TICKETS (Admin/Operator) ──
