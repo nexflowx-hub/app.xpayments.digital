@@ -3,6 +3,8 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/providers";
 import { Toaster } from "sonner";
+import { PwaRegister } from '@/components/pwa/pwa-register';
+import { PwaInstallPrompt } from '@/components/pwa/pwa-install-prompt';
 
 const inter = Inter({
   variable: "--font-sans",
@@ -20,7 +22,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#0A0E1A",
+  themeColor: "#10b981",
 };
 
 const SITE_URL = "https://xpayments.digital";
@@ -136,6 +138,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://api.xpayments.digital" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -144,6 +148,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-background text-foreground`}
       >
+        <PwaRegister />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -153,6 +158,7 @@ export default function RootLayout({
           {children}
           <Toaster richColors position="top-right" />
         </ThemeProvider>
+        <PwaInstallPrompt />
       </body>
     </html>
   );

@@ -21,6 +21,7 @@ import AdminOrganizationsPage from '@/components/dashboard/admin-organizations-p
 import MerchantLinksPage from '@/components/dashboard/merchant-links-page';
 import MerchantApiKeysPage from '@/components/dashboard/merchant-api-keys-page';
 import MerchantCheckoutsPage from '@/components/dashboard/merchant-checkouts-page';
+import XpAiChat from '@/components/ai/xp-ai-chat';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -158,17 +159,20 @@ export default function Home() {
             <h1 className="text-base font-semibold text-zinc-100 truncate">{title}</h1>
           </div>
           <Badge variant="outline" className="hidden sm:inline-flex text-[10px] px-2 py-0 h-5 border-zinc-700 text-zinc-500 bg-zinc-900">
-            XPayments v2.0
+            XPayments v3.0
           </Badge>
         </header>
         <ScrollArea className="flex-1">
-          <div className="p-4 sm:p-6 lg:p-8">
+          <div key={currentPage} className="p-4 sm:p-6 lg:p-8 animate-page-enter">
             <PageErrorBoundary>
               <Page />
             </PageErrorBoundary>
           </div>
         </ScrollArea>
       </main>
+
+      {/* ── AI Chat Widget (authenticated only) ── */}
+      <XpAiChat />
     </div>
   );
 }

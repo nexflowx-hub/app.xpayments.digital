@@ -1,22 +1,25 @@
 {
-  "name": "XPayments.Digital — Plataforma de Pagamentos Institucional",
+  "name": "XPayments.Digital",
   "short_name": "XPayments",
-  "description": "Centro de Comando Banking & Web3 — Wallets multi-moeda, settlement automatizado e gateway de pagamentos white-label.",
+  "description": "Plataforma de Pagamentos Institucional — Wallets multi-moeda, settlement e gateway white-label",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0A0E1A",
-  "theme_color": "#0A0E1A",
-  "orientation": "portrait-primary",
+  "background_color": "#09090b",
+  "theme_color": "#10b981",
+  "orientation": "any",
   "scope": "/",
   "lang": "pt-BR",
   "dir": "ltr",
   "categories": ["finance", "business", "payments"],
   "icons": [
-    {
-      "src": "/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    { "name": "Dashboard", "url": "/", "description": "Painel Financeiro" }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }

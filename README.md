@@ -1,6 +1,6 @@
-# XPayments.Digital — Referência Técnica
+# XPayments.Digital v3.0 — Referência Técnica Completa
 
-> **Plataforma institucional Web3 para gestão de wallets multi-moeda, settlement automatizado e operações cross-border.**
+> **Super app fintech institucional — gestão de wallets multi-moeda, settlement automatizado, operações cross-border, PWA instalável e assistente AI integrado.**
 >
 > A ponte entre o sistema financeiro tradicional e a economia digital.
 
@@ -21,21 +21,23 @@
 9. [RBAC & Permissões](#9-rbac--permissoes)
 10. [Fluxo de Autenticação](#10-fluxo-de-autenticação)
 11. [Navegação & View Routing](#11-navegação--view-routing)
-12. [Depósitos — Métodos & Fluxo](#12-depósitos--métodos--fluxo)
-13. [Payouts — Fluxo de Saída](#13-payouts--fluxo-de-saída)
-14. [Design System — Dark Control Tower](#14-design-system--dark-control-tower)
-15. [Design Responsivo — Mobile-First](#15-design-responsivo--mobile-first)
-16. [SEO & Metadados](#16-seo--metadados)
-17. [Landing Page](#17-landing-page)
-18. [Deploy](#18-deploy)
-19. [Setup & Desenvolvimento](#19-setup--desenvolvimento)
-20. [Licença](#20-licença)
+12. [PWA — Progressive Web App](#12-pwa--progressive-web-app)
+13. [AI Chat — Assistente Virtual](#13-ai-chat--assistente-virtual)
+14. [Depósitos — Métodos & Fluxo](#14-depósitos--métodos--fluxo)
+15. [Payouts — Fluxo de Saída](#15-payouts--fluxo-de-saída)
+16. [Design System — Dark Control Tower v3.0](#16-design-system--dark-control-tower-v30)
+17. [Design Responsivo — Mobile-First](#17-design-responsivo--mobile-first)
+18. [SEO & Metadados](#18-seo--metadados)
+19. [Deploy — Vercel](#19-deploy--vercel)
+20. [Roadmap v4.0 (Próxima Versão)](#20-roadmap-v40-próxima-versão)
+21. [Licença](#21-licença)
+22. [Setup & Desenvolvimento](#22-setup--desenvolvimento)
 
 ---
 
 ## 1. Visão Geral
 
-O **XPayments.Digital** é uma plataforma institucional de pagamentos com as seguintes capacidades:
+O **XPayments.Digital v3.0** é uma super app fintech institucional para pagamentos digitais com as seguintes capacidades:
 
 - **Multi-Wallet**: Carteiras em EUR, BRL, USD e USDT com saldos segregados por estado (incoming, pending, available, blocked)
 - **Depósitos**: PIX Instantâneo (BRL), SEPA Instant (EUR), Crypto Wallet (USDT/USDC via TRC-20)
@@ -45,8 +47,20 @@ O **XPayments.Digital** é uma plataforma institucional de pagamentos com as seg
 - **Gateway White-Label**: Links de pagamento, API Keys S2S e checkouts para merchants
 - **RBAC**: 5 roles com matriz de permissões granular
 - **Painel Admin**: Gestão de tickets, utilizadores, organizações e taxas
+- **PWA Instalável**: Service worker com cache inteligente, manifest completo e install prompt nativo
+- **AI Chat Integrado**: Assistente virtual com interface flutuante e proxy para LLM (OpenRouter)
 
-Todas as páginas estão conectadas à API real. Não existem dados simulados no fluxo principal.
+### Zero Mock Data
+
+Todas as páginas do dashboard estão conectadas à API real. Não existem dados simulados no fluxo principal. Quando a API não retorna dados, a UI exibe estados vazios adequados.
+
+### PWA Instalável
+
+A plataforma é uma Progressive Web App completa — pode ser instalada no dispositivo do utilizador (desktop ou mobile) e funciona com cache offline para assets estáticos.
+
+### AI Assistente Integrado
+
+Um chatbot flutuante com integração a modelos de linguagem (OpenRouter/GPT) está disponível em todas as páginas do dashboard, fornecendo suporte contextual sobre a plataforma.
 
 ---
 
@@ -60,13 +74,14 @@ Todas as páginas estão conectadas à API real. Não existem dados simulados no
 | Componentes | shadcn/ui (estilo New York) | latest |
 | Estado Global | Zustand (com persist) | 5.x |
 | HTTP Client | Fetch (native, wrapper próprio) | — |
+| Animação | Framer Motion | 12.x |
 | ORM (dev) | Prisma / SQLite | 6.x |
 | Toasts | Sonner | 2.x |
 | Gráficos | Recharts | 2.x |
 | Tabelas | @tanstack/react-table | 8.x |
 | Forms | React Hook Form + Zod | 7.x / 4.x |
-| Animação | Framer Motion | 12.x |
 | Ícones | Lucide React | 0.525+ |
+| Internacionalização | next-intl | 4.x |
 | Runtime | Bun | latest |
 | Output | Standalone (Docker/VPS ready) | — |
 
@@ -77,14 +92,17 @@ Todas as páginas estão conectadas à API real. Não existem dados simulados no
 ```
 src/
 ├── app/
-│   ├── layout.tsx              # Root layout, fonts, JSON-LD, SEO metadata
+│   ├── layout.tsx              # Root layout, fonts, JSON-LD, SEO, PWA meta tags
 │   ├── page.tsx                # Router principal (landing ↔ dashboard)
-│   ├── globals.css             # Tailwind 4 + variáveis CSS neon
+│   ├── globals.css             # Tailwind 4 + variáveis CSS neon + animações premium
 │   ├── robots.ts               # robots.txt dinâmico
 │   ├── sitemap.ts              # sitemap.xml dinâmico
 │   └── api/
 │       ├── health/route.ts     # Health check endpoint
-│       └── binance/route.ts    # Proxy para ticker público Binance
+│       ├── binance/route.ts    # Proxy para ticker público Binance
+│       └── ai/
+│           └── chat/
+│               └── route.ts    # Proxy AI chat → Backend OpenRouter (NOVO v3.0)
 ├── components/
 │   ├── layout/
 │   │   ├── xp-landing.tsx      # Landing page + formulário login/register
@@ -107,9 +125,14 @@ src/
 │   │   └── transactions-page.tsx
 │   ├── kyc/
 │   │   └── kyc-page.tsx
+│   ├── ai/
+│   │   └── xp-ai-chat.tsx      # Chat widget flutuante (NOVO v3.0)
+│   ├── pwa/
+│   │   ├── pwa-register.tsx    # Auto-registo do service worker (NOVO v3.0)
+│   │   └── pwa-install-prompt.tsx  # Banner de instalação PWA (NOVO v3.0)
 │   ├── shared/
 │   │   ├── crypto-cards.tsx    # Ticker tape + cards de cripto (Binance proxy)
-│   │   └── animated-grid-bg.tsx
+│   │   └── animated-grid-bg.tsx  # Canvas particle system com constellation lines
 │   └── ui/                     # Componentes shadcn/ui (~40 componentes)
 ├── lib/
 │   ├── api/
@@ -119,6 +142,7 @@ src/
 ├── stores/
 │   ├── auth-store.ts           # Auth state + RBAC permissions matrix
 │   ├── nav-store.ts            # Navegação SPA (currentPage + sidebar state)
+│   ├── chat-store.ts           # Chat AI state — messages, isOpen, loading (NOVO v3.0)
 │   └── baas-store.ts           # Estado auxiliar BaaS
 ├── hooks/
 │   ├── use-mobile.ts           # Detecção de breakpoint mobile
@@ -129,6 +153,18 @@ src/
 └── providers/
     ├── theme-provider.tsx      # next-themes (dark por padrão)
     └── index.ts                # Barrel export
+
+public/
+├── manifest.json               # PWA manifest completo (NOVO v3.0)
+├── sw.js                       # Service worker com cache versionado (NOVO v3.0)
+├── icons/
+│   ├── icon-192.png            # PWA icon 192×192 (NOVO v3.0)
+│   └── icon-512.png            # PWA icon 512×512 + maskable (NOVO v3.0)
+├── logo.png
+├── logo.svg
+├── favicon.ico
+├── apple-touch-icon.png
+└── og-image.png
 ```
 
 ---
@@ -148,7 +184,7 @@ src/
 NEXT_PUBLIC_API_URL="https://api.xpayments.digital"
 ```
 
-> **Atenção**: `NEXT_PUBLIC_API_URL` **não** inclui `/api/v1`. O client adiciona automaticamente `/api/v1` ao construir as URLs de request. Nunca adicione `/api/v1` na variável de ambiente nem nas chamadas individuais.
+> ⚠️ **Atenção**: `NEXT_PUBLIC_API_URL` **não** inclui `/api/v1`. O client adiciona automaticamente `/api/v1` ao construir as URLs de request. Nunca adicione `/api/v1` na variável de ambiente nem nas chamadas individuais.
 
 ---
 
@@ -166,11 +202,13 @@ NEXT_PUBLIC_API_URL = "https://api.xpayments.digital"
 
 O client lê `NEXT_PUBLIC_API_URL`, remove trailing slashes e concatena `/api/v1` + o path relativo da rota.
 
-### Injeção JWT
+### Injeção JWT (Lazy Import Pattern)
 
-O wrapper `request()` faz um **lazy import** de `useAuthStore` (para evitar dependência circular) e lê o token diretamente do Zustand store em cada request:
+O wrapper `request()` faz um **lazy import** de `useAuthStore` (para evitar dependência circular — o `auth-store` importa os storage helpers do próprio `client.ts`, que é carregado primeiro). O token é lido diretamente do Zustand store em cada request:
 
 ```typescript
+// Lazy import para evitar dependência circular no module load
+const { useAuthStore } = await import('@/stores/auth-store');
 const token = useAuthStore.getState().token;
 headers['Authorization'] = `Bearer ${token}`;
 ```
@@ -195,9 +233,9 @@ Classe customizada para erros de API, exportada de `client.ts`:
 
 ```typescript
 class XPaymentsApiError extends Error {
-  status: number;        // HTTP status (ex: 404, 422)
-  code?: string;         // Código de erro do backend (ex: "INSUFFICIENT_BALANCE")
-  details?: Record<string, unknown>; // Detalhes adicionais do erro
+  status: number;                         // HTTP status (ex: 404, 422)
+  code?: string;                          // Código de erro do backend (ex: "INSUFFICIENT_BALANCE")
+  details?: Record<string, unknown>;      // Detalhes adicionais do erro
 }
 ```
 
@@ -217,26 +255,22 @@ O componente raiz (`page.tsx`) escuta `xp:unauthorized` e redireciona para a lan
 
 | Método | Descrição |
 |--------|-----------|
-| `get<T>(path, params?)` | GET com query params opcionais |
+| `get<T>(path, params?)` | GET com query params opcionais (filtrados automaticamente para remover `undefined`/`null`/`''`) |
 | `post<T>(path, body?)` | POST com body JSON |
 | `patch<T>(path, body?)` | PATCH com body JSON |
 
-### Helpers de Armazenamento
+### Helpers de Armazenamento (sessionStorage)
 
-| Função | Descrição |
-|--------|-----------|
-| `getStoredToken()` | Lê `xp_token` do sessionStorage |
-| `setStoredToken(token)` | Grava token no sessionStorage |
-| `clearStoredToken()` | Remove token do sessionStorage |
-| `getStoredUser<T>()` | Lê e desserializa `xp_user` do sessionStorage |
-| `setStoredUser<T>(user)` | Grava user serializado no sessionStorage |
-| `clearStoredUser()` | Remove user do sessionStorage |
+| Função | Chave | Descrição |
+|--------|-------|-----------|
+| `getStoredToken()` | `xp_token` | Lê token do sessionStorage |
+| `setStoredToken(token)` | `xp_token` | Grava token no sessionStorage |
+| `clearStoredToken()` | `xp_token` | Remove token do sessionStorage |
+| `getStoredUser<T>()` | `xp_user` | Lê e desserializa user do sessionStorage |
+| `setStoredUser<T>(user)` | `xp_user` | Grava user serializado no sessionStorage |
+| `clearStoredUser()` | `xp_user` | Remove user do sessionStorage |
 
-### Ficheiros Removidos (pós-migração)
-
-- `src/lib/mock-data.ts` — dados mock eliminados; helpers de UI movidos para `src/lib/formatting.ts`
-- `src/components/shared/tradingview-widget.tsx` — widget não utilizado, removido
-- `src/components/layout/xp-login.tsx` — tela de login dedicada não utilizada, removida
+Todos os helpers incluem guarda `typeof window === 'undefined'` para segurança em SSR.
 
 ---
 
@@ -258,6 +292,13 @@ Todas as rotas são relativas a `/api/v1` (o client acrescenta automaticamente).
 | Método | Rota | Módulo | Descrição |
 |--------|------|--------|-----------|
 | `GET` | `/public/rates` | `xpApi.public.getRates` | Taxas de câmbio para o motor de swap |
+
+### Merchant Dashboard
+
+| Método | Rota | Módulo | Descrição |
+|--------|------|--------|-----------|
+| `GET` | `/merchant/:merchantId/dashboard` | `xpApi.merchant.getDashboard` | Saldos Ledger Engine (AVAILABLE, PENDING, INCOMING, RESERVE) |
+| `GET` | `/merchant/:merchantId/transactions` | `xpApi.merchant.getTransactions` | Transações recentes do merchant (limit, page) |
 
 ### Dashboard (Genérico)
 
@@ -316,16 +357,39 @@ Todas as rotas são relativas a `/api/v1` (o client acrescenta automaticamente).
 | `GET` | `/kyc/profile` | `xpApi.kyc.getProfile` | Perfil KYC atual com dados por tier |
 | `POST` | `/kyc/upgrade` | `xpApi.kyc.upgrade` | Solicita upgrade de tier |
 
-### Merchant
+### Merchant Tools
 
 | Método | Rota | Módulo | Descrição |
 |--------|------|--------|-----------|
-| `GET` | `/merchant/:merchantId/dashboard` | `xpApi.merchant.getDashboard` | Saldos Ledger Engine (AVAILABLE, PENDING, INCOMING, RESERVE) |
-| `GET` | `/merchant/:merchantId/transactions` | `xpApi.merchant.getTransactions` | Transações recentes do merchant (limit, page) |
+| `GET` | `/merchant/:merchantId/dashboard` | `xpApi.merchant.getDashboard` | Saldos Ledger Engine do Merchant |
+| `GET` | `/merchant/:merchantId/transactions` | `xpApi.merchant.getTransactions` | Transações recentes do Merchant |
 | `GET` | `/merchant/api-keys` | `xpApi.merchant.getApiKeys` | Lista chaves API do merchant |
 | `POST` | `/merchant/api-keys/generate` | `xpApi.merchant.generateApiKey` | Gera nova chave API |
 | `GET` | `/merchant/links` | `xpApi.merchant.getPaymentLinks` | Lista links de pagamento |
 | `POST` | `/merchant/links` | `xpApi.merchant.createPaymentLink` | Cria novo link de pagamento |
+
+### AI Chat (NOVO v3.0)
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/api/ai/chat` | Proxy Next.js para backend AI (OpenRouter) |
+
+> **Nota**: Esta rota é uma API Route do Next.js (`src/app/api/ai/chat/route.ts`), **não** passa pelo client `xpApi`. O componente chat faz `fetch('/api/ai/chat', ...)` diretamente.
+
+**Request body:**
+
+```typescript
+{
+  messages: Array<{
+    role: "user" | "assistant" | "system";
+    content: string;
+  }>;
+}
+```
+
+**Header:** `Authorization: Bearer <JWT>` (encaminhado ao backend)
+
+**Backend esperado:** `POST /api/v1/ai/chat` (ver secção [13. AI Chat](#13-ai-chat--assistente-virtual) para detalhes)
 
 ### Tickets
 
@@ -347,13 +411,14 @@ Todas as rotas são relativas a `/api/v1` (o client acrescenta automaticamente).
 
 ## 7. Sistema de Tipos TypeScript
 
-Todos os tipos estão centralizados em `src/types/xpayments.ts`, alinhados ao schema Prisma do backend.
+Todos os tipos estão centralizados em `src/types/xpayments.ts` (modelos de domínio) e `src/lib/api/client.ts` (tipos de resposta API), alinhados ao schema Prisma do backend.
 
-### Enums Principais
+### Enums
 
 | Enum | Valores |
 |------|---------|
 | `UserRole` | `customer`, `merchant`, `super_merchant`, `admin`, `operator` |
+| `OrgRole` | `ADMIN`, `OPERATOR`, `ACCOUNT_MANAGER` |
 | `Currency` | `EUR`, `BRL`, `USDT`, `USD` |
 | `TierLevel` | `TIER_0_UNVERIFIED`, `TIER_1_BASIC`, `TIER_2_VERIFIED`, `TIER_3_CORPORATE` |
 | `TransactionType` | `PROXY_INCOMING`, `SETTLEMENT`, `PAYOUT`, `SWAP`, `TRANSFER`, `FEE` |
@@ -371,16 +436,28 @@ Todos os tipos estão centralizados em `src/types/xpayments.ts`, alinhados ao sc
 | `Wallet` | Carteira com saldos segregados (balanceIncoming, balancePending, balanceAvailable, balanceBlocked) |
 | `Transaction` | Transação com tipo, status, moeda, taxa e referências |
 | `Merchant` | Organização merchant com tier e reserva percentual |
+| `User` | Utilizador com role, tier, organização e carteiras |
+| `OrgOperator` | Operador interno vinculado a uma organização |
 | `OperationTicket` | Ticket de operação (aprovação manual, upgrade KYC, etc.) |
 | `PaymentLink` | Link de pagamento white-label |
 | `ApiKey` | Chave API S2S para integração merchant |
 | `KycProfile` | Perfil KYC com dados progressivos por tier |
 | `FeeSchedule` | Agendamento de taxas por tier e tipo de transação |
-| `AdminStatsResponse` | Stats agregados do Super Admin (totalMerchants, activeMerchants, totalVolumeUSDT, etc.) |
-| `AdminMerchant` | Merchant com tier, status, lojas ativas e volume |
-| `MerchantDashboardResponse` | Saldos Ledger Engine do merchant (balances: available, pending, incoming, reserve) |
-| `MerchantDashboardTransaction` | Transação do merchant dashboard com store.name, fiatAmount e fiatCurrency |
-| `MerchantDashboardBalances` | Balances por estado do ledger (available, pending, incoming, reserve, blocked) |
+| `PaymentMethod` | Método de pagamento (network, label, currencies) |
+| `GatewayRoute` | Rota de gateway de depósito (provider, min/max, estimatedTime) |
+
+### API Response Types (client.ts)
+
+| Tipo | Descrição |
+|------|-----------|
+| `MerchantLoginResponse` | Login response: `{ merchantId, name, tier, token }` |
+| `AdminLoginResponse` | Admin login response: `{ adminId, name, role, token }` |
+| `RegisterResponse` | Register response: `{ userId?, merchantId?, token?, message? }` |
+| `AdminStatsResponse` | Stats agregados: `{ totalMerchants, activeMerchants, totalVolumeUSDT, totalTransactions, pendingTickets? }` |
+| `AdminMerchant` | Merchant admin: `{ id, name, email?, tier, status, activeStores?, totalVolume?, createdAt? }` |
+| `MerchantDashboardResponse` | Saldos Ledger: `{ balances?, totalStores?, activeStores?, pendingSettlements?, todayVolume? }` |
+| `MerchantDashboardTransaction` | Transação merchant: `{ id, walletId?, store?, type?, status?, amount?, feeApplied?, currency?, fiatAmount?, fiatCurrency?, description?, createdAt? }` |
+| `MerchantDashboardBalances` | Balances por estado: `{ available?, pending?, incoming?, reserve?, blocked?, totalUSDT? }` |
 
 ---
 
@@ -413,7 +490,43 @@ Estado de autenticação persistido em **sessionStorage** via middleware `persis
 | `currentPage` | `NavPage` | Página atual do SPA |
 | `sidebarOpen` | `boolean` | Estado de expansão da sidebar |
 
-**Páginas disponíveis**: `dashboard`, `wallets`, `deposits`, `swaps`, `payouts`, `transactions`, `kyc`, `admin-tickets`, `admin-users`, `admin-fees`, `admin-organizations`, `merchant-links`, `merchant-api-keys`, `merchant-checkouts`
+| Ação | Descrição |
+|------|-----------|
+| `setPage(page)` | Navega para a página indicada |
+| `toggleSidebar()` | Alterna expansão da sidebar |
+| `setSidebarOpen(open)` | Define estado da sidebar |
+
+**Páginas disponíveis**: `admin-dashboard`, `dashboard`, `wallets`, `deposits`, `swaps`, `payouts`, `transactions`, `kyc`, `admin-tickets`, `admin-users`, `admin-fees`, `admin-organizations`, `merchant-links`, `merchant-api-keys`, `merchant-checkouts`
+
+### Chat Store (`src/stores/chat-store.ts`) — NOVO v3.0
+
+Estado do assistente AI, **não persistido** (sessão apenas).
+
+| Estado | Tipo | Descrição |
+|--------|------|-----------|
+| `isOpen` | `boolean` | Painel do chat aberto/fechado |
+| `messages` | `ChatMessage[]` | Histórico de mensagens da sessão |
+| `isLoading` | `boolean` | Aguardando resposta do LLM |
+
+| Ação | Descrição |
+|------|-----------|
+| `toggleChat()` | Alterna painel do chat |
+| `openChat()` | Abre o painel |
+| `closeChat()` | Fecha o painel |
+| `addMessage(msg)` | Adiciona mensagem (gera `id` e `timestamp` automaticamente) |
+| `setLoading(loading)` | Define estado de loading |
+| `clearMessages()` | Limpa todo o histórico |
+
+**Tipo `ChatMessage`:**
+
+```typescript
+interface ChatMessage {
+  id: string;                          // Gerado: `msg-${Date.now()}-${random}`
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: number;                   // `Date.now()`
+}
+```
 
 ---
 
@@ -541,8 +654,8 @@ A landing page inclui botões de **Dev Mode** (visíveis apenas em ambiente loca
 A aplicação utiliza um **SPA-like view routing** dentro do App Router do Next.js:
 
 - `src/app/page.tsx` é o componente raiz que decide o que renderizar com base no estado `isAuthenticated`
-- Não autenticado → renderiza `<XPaymentsLanding />`
-- Autenticado → renderiza sidebar + página atual baseada em `useNavStore().currentPage`
+- **Não autenticado** → renderiza `<XPaymentsLanding />`
+- **Autenticado** → renderiza sidebar + página atual baseada em `useNavStore().currentPage`
 
 O mapeamento de páginas é definido no objeto `PAGES` em `page.tsx`, associando cada `NavPage` ao seu componente React correspondente.
 
@@ -556,9 +669,181 @@ O mapeamento de páginas é definido no objeto `PAGES` em `page.tsx`, associando
 | MERCHANT | Links de Pagamento, API Keys, Checkouts | Merchant, Super Merchant |
 | ADMIN | Aprovações, Liquidez, Utilizadores, Organizações | Operator |
 
+### Transição de Páginas
+
+Cada troca de página aplica a classe `animate-page-enter` (slide-up + fade-in, 0.3s) ao container do conteúdo.
+
 ---
 
-## 12. Depósitos — Métodos & Fluxo
+## 12. PWA — Progressive Web App (NOVO v3.0)
+
+A XPayments.Digital v3.0 é uma PWA completa, instalável em desktop e mobile.
+
+### Service Worker
+
+**Localização:** `public/sw.js`
+
+Estratégias de cache por tipo de request:
+
+| Tipo | Estratégia | Descrição |
+|------|-----------|-----------|
+| Assets estáticos (HTML, CSS, JS, imagens) | **Cache-first** + atualização em background | Serve do cache imediatamente; se rede disponível, atualiza o cache para requests futuros |
+| Chamadas API (`/api/`) | **Network-first** + fallback ao cache | Tenta rede primeiro; em caso de falha, serve do cache se disponível |
+
+Detalhes de implementação:
+
+- **Cache version:** `xp-v3` — ao atualizar, o nome muda e caches antigos são removidos automaticamente
+- **Pre-cache no install:** `/`, `/manifest.json`, `/logo.png`, `/logo.svg`
+- **Auto-cleanup:** No evento `activate`, todos os caches com nome diferente de `xp-v3` são deletados
+- **Skip waiting:** `self.skipWaiting()` garante ativação imediata
+
+```javascript
+const CACHE_NAME = 'xp-v3';
+const STATIC_ASSETS = ['/', '/manifest.json', '/logo.png', '/logo.svg'];
+```
+
+### Manifest
+
+**Localização:** `public/manifest.json`
+
+| Campo | Valor |
+|-------|-------|
+| `name` | XPayments.Digital |
+| `short_name` | XPayments |
+| `start_url` | `/` |
+| `display` | `standalone` |
+| `background_color` | `#09090b` |
+| `theme_color` | `#10b981` |
+| `orientation` | `any` |
+| `lang` | `pt-BR` |
+| `categories` | `finance`, `business`, `payments` |
+
+**Ícones:**
+
+| Tamanho | Ficheiro | Propriedade |
+|---------|----------|-------------|
+| 192×192 | `/icons/icon-192.png` | Padrão |
+| 512×512 | `/icons/icon-512.png` | Padrão |
+| 512×512 | `/icons/icon-512.png` | `maskable` |
+
+**Atalho:** Dashboard → `/` ("Painel Financeiro")
+
+### Install Prompt
+
+Dois componentes gerenciam a experiência de instalação:
+
+| Componente | Localização | Descrição |
+|-----------|-------------|-----------|
+| `PwaRegister` | `src/components/pwa/pwa-register.tsx` | Regista automaticamente `/sw.js` no `navigator.serviceWorker` ao montar. Renderiza `null` (não tem UI). |
+| `PwaInstallPrompt` | `src/components/pwa/pwa-install-prompt.tsx` | Banner animado (Framer Motion) no bottom-left. Aparece quando o browser dispara `beforeinstallprompt`. Botão "Instalar" + botão "X" para dispensar. |
+
+**Comportamento de dismiss:** O utilizador pode fechar o prompt com o botão X, que grava `pwa-install-dismissed` no `sessionStorage`. O prompt não reaparece na mesma sessão.
+
+**Animação:** Entrada com `slide-in-from-bottom-4` + `fade-in-0` (spring, damping: 25, stiffness: 300).
+
+### Meta Tags PWA
+
+No `<head>` do `layout.tsx`:
+
+```html
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+```
+
+**Viewport `themeColor`:** `#10b981` (emerald-500)
+
+---
+
+## 13. AI Chat — Assistente Virtual (NOVO v3.0)
+
+### Arquitetura
+
+```
+User → xp-ai-chat.tsx → POST /api/ai/chat (Next.js route) → Backend /api/v1/ai/chat → OpenRouter
+```
+
+O frontend **não** chama o LLM diretamente. Todas as mensagens passam por uma API Route do Next.js que atua como proxy seguro, encaminhando o request ao backend XPayments com o JWT do utilizador.
+
+### Chat Widget
+
+**Componente:** `src/components/ai/xp-ai-chat.tsx`
+
+| Elemento | Especificação |
+|----------|--------------|
+| Botão flutuante | Fixo `bottom-6 right-6`, 56×56px, `bg-neon-500` com `shadow-[0_0_20px_rgba(16,185,129,0.3)]`, pulse animado quando chat está fechado |
+| Painel do chat | Fixo `bottom-24 right-6`, `max-w-[380px]` × `520px`, responsivo (`w-[calc(100vw-2rem)]` em mobile) |
+| Header | Ícone `Bot` com ponto verde pulsante, título "XPayments AI", subtítulo "Assistente Virtual", botão fechar |
+| Input | Campo de texto com bordas neon no focus, botão enviar com ícone `SendHorizontal` |
+| Store | `src/stores/chat-store.ts` (Zustand, não persistido) |
+
+**Funcionalidades:**
+
+| Feature | Descrição |
+|---------|-----------|
+| Suggestion chips | 3 chips iniciais: "Ver saldos", "Transações recentes", "Ajuda com KYC" |
+| Typing indicator | 3 pontos pulsantes com `animate-pulse` e delays escalonados (0ms, 150ms, 300ms) |
+| Auto-scroll | `scrollIntoView({ behavior: 'smooth' })` a cada nova mensagem ou mudança de loading |
+| Auto-focus | Input recebe foco 100ms após abertura do painel (aguarda animação) |
+| Error handling | Em caso de erro, adiciona mensagem `role: 'system'` com texto de erro |
+| Mensagem do assistant | Extrai de `data.data.content \|\| data.content \|\| data.message` |
+
+**Estilo das mensagens:**
+
+| Role | Fundo | Borda | Alinhamento |
+|------|-------|-------|-------------|
+| `user` | `bg-neon-500/15` | `rounded-br-md` (canto reto inferior-direito) | Direita |
+| `assistant` | `bg-white/[0.05]` | `rounded-bl-md` (canto reto inferior-esquerdo) | Esquerda |
+| `system` | Sem fundo | — | Centrado, texto `zinc-600` |
+
+### Backend Esperado
+
+O backend deve implementar o endpoint:
+
+```
+POST /api/v1/ai/chat
+Authorization: Bearer <JWT>
+Content-Type: application/json
+```
+
+**Request:**
+
+```typescript
+{
+  messages: Array<{
+    role: "user" | "assistant" | "system";
+    content: string;
+  }>;
+}
+```
+
+**Response:**
+
+```typescript
+{
+  success: true,
+  data: {
+    message: string  // ou { content: string }
+  }
+}
+```
+
+O backend deve:
+1. Validar o JWT e identificar o merchant/utilizador
+2. Adicionar um **system prompt** com personalidade XPayments e contexto da plataforma
+3. Enviar o array de mensagens ao provedor LLM (OpenRouter, OpenAI, etc.)
+4. Retornar a resposta no envelope padrão `{ success, data }`
+
+### Configuração Sugerida (Backend)
+
+```env
+OPENROUTER_API_KEY=sk-or-...
+AI_MODEL=openai/gpt-4o
+AI_SYSTEM_PROMPT="És o assistente virtual da XPayments.Digital. Ajudas merchants com saldos, transações, KYC, depósitos, swaps e payouts. Responde sempre em português."
+```
+
+---
+
+## 14. Depósitos — Métodos & Fluxo
 
 ### Métodos Disponíveis
 
@@ -584,7 +869,7 @@ O fluxo chama duas APIs em sequência:
 
 ---
 
-## 13. Payouts — Fluxo de Saída
+## 15. Payouts — Fluxo de Saída
 
 ### Fluxo
 
@@ -613,7 +898,7 @@ interface PayoutRequest {
 
 ---
 
-## 14. Design System — Dark Control Tower
+## 16. Design System — Dark Control Tower v3.0
 
 ### Paleta Principal
 
@@ -623,6 +908,7 @@ interface PayoutRequest {
 | `neon-500` | `#00E672` | Gradientes, botões principais |
 | `neon-600` | `#00CC66` | Gradientes (início), hovers |
 | `neon-950` | `#003319` | Backgrounds de alto contraste |
+| PWA Theme Color | `#10b981` | emerald-500, usado no manifest e meta tag |
 | Background | `#0A0E1A` | Background principal (dark) |
 | Card | `zinc-900/50` | Cards com transparência |
 | Border | `zinc-800` | Bordas de cards e divisores |
@@ -638,10 +924,59 @@ interface PayoutRequest {
 
 Ambas configuradas com `font-display: swap` para performance de carregamento.
 
+### Animações Premium (NOVO v3.0)
+
+Todas definidas em `src/app/globals.css`:
+
+| Animação | Classe CSS | Descrição | Duração |
+|----------|-----------|-----------|---------|
+| `particle-drift` | — | Partículas CSS flutuantes (starfield) com `--dx`, `--dy`, `--s` customizáveis | 6s (ease-in-out, infinite) |
+| `shimmer` | `.animate-shimmer` | Skeleton loading premium — gradiente horizontal deslizante | 2s (ease-in-out, infinite) |
+| `glow-pulse` | `.animate-glow-pulse` | Neon breathing — box-shadow pulsante em emerald | 4s (ease-in-out, infinite) |
+| `card-enter` | `.animate-card-enter` | Card entrance — slide-up + fade-in com scale | 0.5s (cubic-bezier 0.16, 1, 0.3, 1) |
+| `value-update` | `.animate-value-update` | Balance change flash — opacidade pulsa brevemente | 0.3s (ease) |
+| `page-enter` | `.animate-page-enter` | SPA page transition — slide-up + fade-in | 0.3s (cubic-bezier 0.16, 1, 0.3, 1) |
+| `ticker-scroll` | `.animate-ticker-scroll` | Ticker tape horizontal de cripto | 40s (linear, infinite) |
+| `marquee-scroll` | `.animate-marquee-scroll` | Marquee genérico | 30s (linear, infinite) |
+| `neon-flow` | `.xpayments-grid-bg` | Grid background com linhas neon pulsantes | 8s (ease-in-out, infinite) |
+| `sweep-horizontal` | `.xpayments-sweep::before` | Feixe de luz horizontal no grid | 12s (linear, infinite) |
+| `sweep-vertical` | `.xpayments-sweep::after` | Feixe de luz vertical no grid | 16s (linear, infinite) |
+
+Adicionalmente, existem animações para a landing page: `float-up`, `pulse-glow`, `slide-in-left`, `slide-in-right`, `gradient-x`.
+
+### Background Particle System (NOVO v3.0)
+
+**Componente:** `src/components/shared/animated-grid-bg.tsx`
+
+Sistema de partículas canvas-based que cria um efeito de constelação interativa.
+
+| Propriedade | Valor |
+|-------------|-------|
+| Partículas | 50 |
+| Distância de conexão | 140px |
+| Raio de atração do mouse | 180px |
+| Força de atração | 0.008 |
+| Cor (RGB) | `16, 185, 129` (#10b981, emerald) |
+| FPS target | 30 (throttle via `requestAnimationFrame`) |
+| DPR awareness | `Math.min(devicePixelRatio, 2)` |
+| Comportamento nas bordas | Wrap-around (partículas reaparecem no lado oposto) |
+
+**Elementos visuais:**
+
+1. **Partículas:** Pontos com radius 1–2.5px e opacidade 0.1–0.4
+2. **Linhas de constelação:** Conectadas entre partículas < 140px com alpha proporcional à distância
+3. **Cursor glow:** Gradiente radial (300px raio) que segue o mouse com smoothing (`0.04` interpolation lag)
+4. **Grid CSS overlay:** Camada base com grid lines neon (`.xpayments-grid-bg`)
+
+**Performance:** O loop de renderização é throttled a 30fps. O canvas respeita o device pixel ratio (limitado a 2x) para evitar overhead em displays de alta densidade.
+
 ### Componentes
 
-- **shadcn/ui** (estilo New York) como base
+- **shadcn/ui** (estilo New York) como base (~40 componentes)
 - **Sonner** para toasts (position: `top-right`, `richColors`)
+- **PwaRegister** — auto-registo do service worker
+- **PwaInstallPrompt** — banner de instalação PWA com Framer Motion
+- **XpAiChat** — chat widget flutuante com AI assistant
 - Cards com `bg-zinc-900/50 border-zinc-800` e backdrop-blur
 - Botões principais com gradiente `from-neon-600 to-neon-500`
 - Badges com variantes outline em `border-zinc-700 bg-zinc-900`
@@ -668,12 +1003,12 @@ Ambas configuradas com `font-display: swap` para performance de carregamento.
 |----------|--------|
 | Header | Ícone `Shield` + "Super Admin Overview" + badge "Master System" neon |
 | Stat Cards | 3 colunas: Merchants Ativos, Volume USDT, Routing Engine Status |
-| Routing Status | Ponto verde pulsante (animate-ping) |
+| Routing Status | Ponto verde pulsante (`animate-ping`) |
 | Merchants Table | Desktop table + mobile cards, tier badges coloridos |
 
 ---
 
-## 15. Design Responsivo — Mobile-First
+## 17. Design Responsivo — Mobile-First
 
 ### Abordagem
 
@@ -699,9 +1034,15 @@ Todos os grids utilizam breakpoints responsivos:
 - Desktop: botão hamburger apenas quando sidebar está colapsada
 - Badge de versão oculto em telas pequenas (`hidden sm:inline-flex`)
 
+### Chat AI (Mobile)
+
+O painel do chat é 100% responsivo:
+- **Mobile:** `w-[calc(100vw-2rem)]` — quase full-width com 1rem de margem
+- **Desktop:** `max-w-[380px]` — largura fixa
+
 ---
 
-## 16. SEO & Metadados
+## 18. SEO & Metadados
 
 ### Arquivos Dinâmicos
 
@@ -742,30 +1083,32 @@ Tipo `FinancialService` no Schema.org, injetado no `<head>` via `layout.tsx`:
 
 ---
 
-## 17. Landing Page
+## 19. Deploy — Vercel (NOVO v3.0)
 
-A landing page utiliza a estética **Dark Control Tower** com tom de fundo `#0A0E1A` e destaques em neon green (`#00FF7F`).
+### Configuração Automática
 
-### Seções Principais
+O repositório está configurado para deploy automático no Vercel:
 
-- **Header**: Logo XPayments + navegação + botões Login/Registro
-- **Hero**: Headline, descrição e formulário de autenticação inline (login/register toggle)
-- **Features**: 4 cards (Multi-Wallet, Motor de Swap, KYC Progressivo, Infraestrutura Segura)
-- **Mercado**: Ticker tape de cripto com dados do Binance via proxy local + cards de preço com sparklines
-- **Moedas Suportadas**: Seção nativa dark-themed exibindo EUR, BRL, USDT e USD com ícones e descrições
+1. Fazer fork do repositório
+2. Importar no [Vercel](https://vercel.com/new) (`vercel.com/new`)
+3. Configurar variável de ambiente:
+   - `NEXT_PUBLIC_API_URL=https://api.xpayments.digital`
+4. Deploy automático em cada push para `main`
 
-> O widget TradingView (`tradingview-widget.tsx`) e o ficheiro de dados mock (`mock-data.ts`) foram removidos. Os helpers de formatação de UI (símbolos, labels, cores) foram migrados para `src/lib/formatting.ts`. Todas as páginas do dashboard agora consomem dados reais da API (exibindo estados vazios quando sem dados).
+### Variáveis de Ambiente no Vercel
 
----
+| Variável | Valor | Obrigatória |
+|----------|-------|-------------|
+| `NEXT_PUBLIC_API_URL` | `https://api.xpayments.digital` | Sim |
 
-## 18. Deploy
+### Build Configuration
 
-### Vercel (Recomendado)
-
-Variável de ambiente obrigatória:
-```
-NEXT_PUBLIC_API_URL=https://api.xpayments.digital
-```
+| Configuração | Valor |
+|-------------|-------|
+| Framework Preset | Next.js |
+| Build Command | `next build` |
+| Output Directory | `.next` |
+| Install Command | `bun install` |
 
 O projeto utiliza `output: "standalone"` no `next.config.ts`, permitindo também deploy em qualquer ambiente com suporte a Node.js/Bun.
 
@@ -788,7 +1131,28 @@ O projeto inclui um `Caddyfile` de referência para deploy com reverse proxy.
 
 ---
 
-## 19. Setup & Desenvolvimento
+## 20. Roadmap v4.0 (Próxima Versão)
+
+- [ ] **Webhook notifications** — Eventos de pagamento em tempo real via webhooks
+- [ ] **Multi-language (i18n)** — Suporte multi-idioma com `next-intl` (já instalado como dependência)
+- [ ] **Dashboard analytics** — Gráficos interativos com Recharts (já instalado como dependência)
+- [ ] **Checkout embeddable** — Widget iframe para merchants integrarem checkout diretamente
+- [ ] **Sub-clientes** — Hierarquia Super Merchant → Sub-merchants
+- [ ] **API Rate limiting** — Limitação de requests no frontend
+- [ ] **Biometria (WebAuthn)** — Autenticação 2FA por biometria
+- [ ] **Dark/Light theme toggle** — Alternância de tema claro/escuro
+- [ ] **Export CSV/Excel** — Exportação de transações em formato tabular
+- [ ] **Notificações push** — Service worker + backend para notificações em tempo real
+
+---
+
+## 21. Licença
+
+Projeto proprietário — **UNLICENSED**. Todos os direitos reservados a XPayments.Digital.
+
+---
+
+## 22. Setup & Desenvolvimento
 
 ```bash
 # 1. Clonar o repositório
@@ -822,9 +1186,3 @@ bun run dev
 | `db:generate` | `prisma generate` | Gera client Prisma |
 | `db:migrate` | `prisma migrate dev` | Cria e aplica migrações |
 | `db:reset` | `prisma migrate reset` | Reseta o banco de dados |
-
----
-
-## 20. Licença
-
-Projeto proprietário — **UNLICENSED**. Todos os direitos reservados a XPayments.Digital.

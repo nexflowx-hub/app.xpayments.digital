@@ -254,7 +254,7 @@ function XPaymentsSidebar() {
               variant="secondary"
               className="text-[10px] px-1.5 py-0 h-4 bg-zinc-800 text-zinc-400 border-zinc-700"
             >
-              v2.0
+              v3.0
             </Badge>
           </div>
         )}
