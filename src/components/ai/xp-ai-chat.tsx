@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback, type KeyboardEvent } from 'react';
-import { X, SendHorizontal, Sparkles } from 'lucide-react';
+import Image from 'next/image';
+import { X, SendHorizontal, MessageSquare } from 'lucide-react';
 import { useChatStore, type ChatMessage } from '@/stores/chat-store';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,40 +11,30 @@ import { cn } from '@/lib/utils';
 // ── Suggestion Chips ──
 const SUGGESTIONS = ['Ver saldos', 'Transações recentes', 'Ajuda com KYC'];
 
-// ── Custom AI Avatar (gradient monogram) ──
+// ── AI Avatar using the actual XPayments logo ──
 function AiAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const sizeMap = {
-    sm: { container: 'size-7', text: 'text-[10px]', ring: 'ring-[1.5px]' },
-    md: { container: 'size-10', text: 'text-xs', ring: 'ring-2' },
-    lg: { container: 'size-14', text: 'text-base', ring: 'ring-2' },
+    sm: { wrapper: 'size-7', img: 14 },
+    md: { wrapper: 'size-9', img: 18 },
+    lg: { wrapper: 'size-16', img: 32 },
   };
   const s = sizeMap[size];
 
   return (
     <div
       className={cn(
-        'relative shrink-0 rounded-full',
-        'bg-gradient-to-br from-emerald-500 via-emerald-400 to-teal-400',
-        'flex items-center justify-center',
-        'shadow-[0_0_12px_rgba(16,185,129,0.25)]',
-        s.container,
+        'relative shrink-0 rounded-xl overflow-hidden',
+        'border border-white/[0.10] shadow-[0_0_10px_rgba(255,255,255,0.04)]',
+        s.wrapper,
       )}
     >
-      <span
-        className={cn(
-          'font-bold text-black/90 tracking-tighter leading-none select-none',
-          s.text,
-        )}
-      >
-        XP
-      </span>
-      {/* Outer glow ring */}
-      <div
-        className={cn(
-          'absolute inset-0 rounded-full',
-          'ring-emerald-400/30',
-          s.ring,
-        )}
+      <Image
+        src="/logo.png"
+        alt="XPayments"
+        width={s.img}
+        height={s.img}
+        className="size-full object-contain"
+        unoptimized
       />
     </div>
   );
@@ -55,9 +46,9 @@ function TypingIndicator() {
     <div className="flex items-start gap-2.5 px-4 py-1">
       <AiAvatar size="sm" />
       <div className="flex items-center gap-1.5 bg-white/[0.04] rounded-2xl rounded-bl-md px-4 py-3 border border-white/[0.04]">
-        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500/60 animate-pulse [animation-delay:0ms]" />
-        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500/60 animate-pulse [animation-delay:150ms]" />
-        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500/60 animate-pulse [animation-delay:300ms]" />
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-zinc-500/70 animate-pulse [animation-delay:0ms]" />
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-zinc-500/70 animate-pulse [animation-delay:150ms]" />
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-zinc-500/70 animate-pulse [animation-delay:300ms]" />
       </div>
     </div>
   );
@@ -95,8 +86,8 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           className={cn(
             'px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap',
             isUser
-              ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 text-zinc-100 rounded-2xl rounded-br-sm border border-emerald-500/10'
-              : 'bg-white/[0.04] text-zinc-200 rounded-2xl rounded-bl-sm border border-white/[0.05]',
+              ? 'bg-white/[0.08] text-zinc-100 rounded-2xl rounded-br-sm border border-white/[0.06]'
+              : 'bg-white/[0.03] text-zinc-300 rounded-2xl rounded-bl-sm border border-white/[0.04]',
           )}
         >
           {message.content}
@@ -118,9 +109,9 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 function WelcomeState({ onSuggestionClick }: { onSuggestionClick: (text: string) => void }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-5 px-6 py-8">
-      {/* Animated avatar with glow */}
+      {/* Logo avatar with subtle glow */}
       <div className="relative">
-        <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl animate-pulse" />
+        <div className="absolute inset-0 rounded-2xl bg-white/[0.06] blur-2xl scale-125 animate-pulse" />
         <AiAvatar size="lg" />
       </div>
       <div className="text-center space-y-2">
@@ -139,7 +130,7 @@ function WelcomeState({ onSuggestionClick }: { onSuggestionClick: (text: string)
             className={cn(
               'text-[11px] px-3.5 py-1.5 rounded-full',
               'border border-white/[0.08] bg-white/[0.03] text-zinc-400',
-              'hover:text-emerald-300 hover:border-emerald-500/25 hover:bg-emerald-500/5',
+              'hover:text-zinc-200 hover:border-white/[0.15] hover:bg-white/[0.06]',
               'transition-all duration-200 cursor-pointer',
             )}
           >
@@ -260,21 +251,18 @@ export default function XpAiChat() {
           )}
         >
           {/* ── Panel Header ── */}
-          <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/[0.06] shrink-0 bg-white/[0.02]">
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/[0.06] shrink-0 bg-white/[0.015]">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <AiAvatar size="sm" />
                 {/* Online indicator */}
-                <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-[#0a0a0d] shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 border-2 border-[#0a0a0d]" />
               </div>
               <div className="flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[13px] font-semibold text-zinc-100 leading-tight">
-                    XPayments AI
-                  </span>
-                  <Sparkles className="size-3 text-emerald-400" />
-                </div>
-                <span className="text-[10px] text-emerald-400/70 leading-tight mt-0.5">
+                <span className="text-[13px] font-semibold text-zinc-100 leading-tight">
+                  XPayments AI
+                </span>
+                <span className="text-[10px] text-zinc-500 leading-tight mt-0.5">
                   Online · Pronto a ajudar
                 </span>
               </div>
@@ -321,7 +309,7 @@ export default function XpAiChat() {
                 className={cn(
                   'flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl',
                   'px-3.5 py-2.5 text-[13px] text-zinc-100 placeholder:text-zinc-600',
-                  'outline-none focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/15',
+                  'outline-none focus:border-white/[0.15] focus:ring-1 focus:ring-white/[0.06]',
                   'transition-all duration-200 disabled:opacity-50',
                 )}
               />
@@ -331,15 +319,15 @@ export default function XpAiChat() {
                 disabled={isLoading || !inputValue.trim()}
                 className={cn(
                   'h-10 w-10 shrink-0 rounded-xl',
-                  'bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300',
-                  'text-black shadow-[0_0_16px_rgba(16,185,129,0.25)]',
-                  'disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none',
+                  'bg-white/[0.08] hover:bg-white/[0.12] text-zinc-300 hover:text-zinc-100',
+                  'border border-white/[0.08]',
+                  'disabled:opacity-30 disabled:cursor-not-allowed',
                   'transition-all duration-200',
                 )}
                 aria-label="Enviar mensagem"
               >
                 {isLoading ? (
-                  <div className="h-4 w-4 rounded-full border-2 border-black/30 border-t-black animate-spin" />
+                  <div className="h-4 w-4 rounded-full border-2 border-zinc-600 border-t-zinc-300 animate-spin" />
                 ) : (
                   <SendHorizontal className="h-4 w-4" />
                 )}
@@ -358,24 +346,33 @@ export default function XpAiChat() {
         )}
         aria-label={isOpen ? 'Fechar chat' : 'Abrir chat'}
       >
-        {/* Animated gradient ring (visible when closed) */}
+        {/* Subtle ambient glow (closed only) */}
         {!isOpen && (
-          <span className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 animate-[pulse_3s_ease-in-out_infinite] opacity-60 blur-md" />
+          <span className="absolute inset-0 rounded-2xl bg-white/[0.06] blur-xl animate-[pulse_4s_ease-in-out_infinite]" />
         )}
         <span
           className={cn(
-            'relative flex h-14 w-14 items-center justify-center rounded-full',
-            'bg-gradient-to-br from-emerald-500 to-emerald-400',
-            'text-black shadow-lg transition-all duration-200',
-            'group-hover:scale-105 group-active:scale-95',
-            'shadow-[0_0_24px_rgba(16,185,129,0.35)]',
-            isOpen && 'from-zinc-700 to-zinc-600 text-zinc-200 shadow-[0_0_12px_rgba(0,0,0,0.4)]',
+            'relative flex h-13 w-13 items-center justify-center rounded-2xl p-2',
+            'border border-white/[0.12]',
+            'bg-[#1a1a1e]/90 backdrop-blur-md',
+            'shadow-[0_4px_24px_rgba(0,0,0,0.4)]',
+            'transition-all duration-300 ease-out',
+            'group-hover:scale-105 group-hover:border-white/[0.18] group-hover:shadow-[0_4px_32px_rgba(0,0,0,0.5)]',
+            'group-active:scale-95',
+            isOpen && 'bg-zinc-800/90 border-white/[0.08]',
           )}
         >
           {isOpen ? (
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5 text-zinc-400" />
           ) : (
-            <Sparkles className="h-6 w-6" />
+            <Image
+              src="/logo.png"
+              alt="XPayments AI"
+              width={28}
+              height={28}
+              className="size-7 object-contain"
+              unoptimized
+            />
           )}
         </span>
       </button>

@@ -71,6 +71,7 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { isAuthenticated } = useAuthStore();
   const { currentPage, sidebarOpen, toggleSidebar, setPage } = useNavStore();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -95,12 +96,14 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/set-state-in-effect -- sync UI overlay to navigation
   useEffect(() => { setMobileMenuOpen(false); }, [currentPage]);
 
-  // ── Track scroll position to show/hide arrow buttons ──
+  // ── Track scroll position to show/hide arrow buttons + navbar opacity ──
   const updateScrollState = useCallback(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
-    setCanScrollUp(el.scrollTop > SCROLL_THRESHOLD);
-    setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - SCROLL_THRESHOLD);
+    const y = el.scrollTop;
+    setCanScrollUp(y > SCROLL_THRESHOLD);
+    setCanScrollDown(y + el.clientHeight < el.scrollHeight - SCROLL_THRESHOLD);
+    setScrolled(y > 8);
   }, []);
 
   useEffect(() => {
@@ -181,7 +184,15 @@ export default function Home() {
       {/* ── Main content ── */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* ── Top Navigation Bar ── */}
-        <header className="flex items-center justify-between h-14 px-4 sm:px-6 border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md shrink-0 z-30">
+        <header
+          className={cn(
+            'flex items-center justify-between h-14 px-4 sm:px-6 shrink-0 z-30',
+            'border-b transition-all duration-500 ease-out',
+            scrolled
+              ? 'border-white/[0.06] bg-[#09090b]/80 backdrop-blur-xl shadow-[0_1px_20px_rgba(0,0,0,0.3)]'
+              : 'border-transparent bg-transparent',
+          )}
+        >
           <div className="flex items-center gap-3 min-w-0">
             {/* Mobile: always show menu button */}
             <Button
