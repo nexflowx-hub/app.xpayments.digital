@@ -178,6 +178,10 @@ function patch<T>(path: string, body?: unknown): Promise<T> {
   });
 }
 
+function del<T>(path: string): Promise<T> {
+  return request<T>(path, { method: 'DELETE' });
+}
+
 // ============================================================
 // API Modules
 // Todas as rotas são relativas a /api/v1
@@ -377,6 +381,10 @@ export const xpApi = {
 
     generateApiKey: (data?: { storeName?: string }) =>
       post<unknown>('/merchant/api-keys/generate', data),
+
+    /** DELETE /merchant/api-keys/:id — Eliminar uma chave API */
+    deleteApiKey: (id: string) =>
+      del<unknown>(`/merchant/api-keys/${id}`),
 
     getPaymentLinks: () => get<unknown>('/merchant/links'),
 
