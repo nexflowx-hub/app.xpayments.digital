@@ -376,7 +376,6 @@ function StoreCard({
 
 export default function MerchantCheckoutsPage() {
   const { toast } = useToast();
-  const merchantId = useAuthStore((s) => s.user?.id);
 
   const [stores, setStores] = useState<MerchantStore[]>([]);
   const [loading, setLoading] = useState(true);
@@ -385,32 +384,50 @@ export default function MerchantCheckoutsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // ── Fetch stores ──
-  const fetchStores = useCallback(async (isRefresh = false) => {
-    if (!merchantId) return;
+  // ── Fetch stores (on-mount only) ──
+  useEffect(() => {
+    let cancelled = false;
+    const mid = useAuthStore.getState().user?.id;
+    if (!mid) return;
 
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
+    setLoading(true);
+    setError('');
+
+    xpApi.merchant.getStores(mid)
+      .then((data) => {
+        if (cancelled) return;
+        setStores(Array.isArray(data) ? data : []);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        const msg = err instanceof XPaymentsApiError ? err.message : 'Erro ao carregar checkouts.';
+        setError(msg);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Manual refresh (button) ──
+  const fetchStores = useCallback(async (isRefresh = false) => {
+    const mid = useAuthStore.getState().user?.id;
+    if (!mid) return;
+
+    if (isRefresh) setRefreshing(true);
     setError('');
 
     try {
-      const data = await xpApi.merchant.getStores(merchantId);
+      const data = await xpApi.merchant.getStores(mid);
       setStores(Array.isArray(data) ? data : []);
     } catch (err: unknown) {
       const msg = err instanceof XPaymentsApiError ? err.message : 'Erro ao carregar checkouts.';
       setError(msg);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
-  }, [merchantId]);
-
-  useEffect(() => {
-    fetchStores();
-  }, [fetchStores]);
+  }, []);
 
   // ── Handle copy ──
   const handleCopy = (storeId: string) => {

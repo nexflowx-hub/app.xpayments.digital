@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -83,26 +83,29 @@ export default function MerchantLinksPage() {
   const [formCurrency, setFormCurrency] = useState('EUR');
   const [formDescription, setFormDescription] = useState('');
 
-  // ── Fetch links from API ──
-  const fetchLinks = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await xpApi.merchant.getPaymentLinks();
-      if (Array.isArray(data)) {
-        setLinks(data);
-      } else if (data?.data && Array.isArray(data.data)) {
-        setLinks(data.data);
-      }
-    } catch {
-      // Silently fail — show empty state
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // ── Fetch links from API (on-mount only) ──
   useEffect(() => {
-    fetchLinks();
-  }, [fetchLinks]);
+    let cancelled = false;
+    setLoading(true);
+
+    xpApi.merchant.getPaymentLinks()
+      .then((data) => {
+        if (cancelled) return;
+        if (Array.isArray(data)) {
+          setLinks(data);
+        } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as Record<string, unknown>).data)) {
+          setLinks((data as Record<string, unknown>).data as PaymentLink[]);
+        }
+      })
+      .catch(() => {
+        // Silently fail — show empty state
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, []);
 
   // ── Create link via API ──
   const handleCreate = async (e: React.FormEvent) => {
@@ -113,8 +116,8 @@ export default function MerchantLinksPage() {
         amount: parseFloat(formAmount) || 0,
         currency: formCurrency,
         description: formDescription || undefined,
-      });
-      const newLink = result?.data ?? result;
+      }) as Record<string, unknown> | PaymentLink;
+      const newLink = (result && 'data' in result ? (result as Record<string, unknown>).data : result) as PaymentLink | undefined;
       if (newLink) {
         setLinks((prev) => [newLink, ...prev]);
       }

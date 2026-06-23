@@ -379,6 +379,10 @@ export const xpApi = {
 
     getApiKeys: () => get<unknown>('/merchant/api-keys'),
 
+    /** DELETE /merchant/api-keys/:id — Eliminar uma API key */
+    deleteApiKey: (keyId: string) =>
+      del<unknown>(`/merchant/api-keys/${keyId}`),
+
     generateApiKey: (data?: { storeName?: string }) =>
       post<unknown>('/merchant/api-keys/generate', data),
 
