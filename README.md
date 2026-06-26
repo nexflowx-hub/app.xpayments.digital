@@ -1,10 +1,20 @@
-# XPayments.Digital v3.0 — Referência Técnica Completa
+<div align="center">
 
-> **Super app fintech institucional — gestão de wallets multi-moeda, settlement automatizado, operações cross-border, PWA instalável e assistente AI integrado.**
->
-> A ponte entre o sistema financeiro tradicional e a economia digital.
+# XPayments.Digital v3.0
+
+**Super App Financeira — Gateway de Pagamentos + Business Account**
+
+*A ponte entre o sistema financeiro tradicional e a economia digital.*
+
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev/)
+[![TypeScript 5](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
+[![PWA](https://img.shields.io/badge/PWA-Instalável-9B59B6?style=flat-square&logo=pwa)](#12-pwa--progressive-web-app)
 
 [![Deploy on Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/XPaymentsDigital/xpayments-digital.git&env=NEXT_PUBLIC_API_URL,https://api.xpayments.digital)
+
+</div>
 
 ---
 
@@ -13,77 +23,64 @@
 1. [Visão Geral](#1-visão-geral)
 2. [Stack Tecnológico](#2-stack-tecnológico)
 3. [Estrutura do Projeto](#3-estrutura-do-projeto)
-4. [Variáveis de Ambiente](#4-variáveis-de-ambiente)
-5. [API Client — Native Fetch com JWT](#5-api-client--native-fetch-com-jwt)
-6. [Rotas da API — Mapeamento Completo](#6-rotas-da-api--mapeamento-completo)
-7. [Sistema de Tipos TypeScript](#7-sistema-de-tipos-typescript)
-8. [Stores — Estado Global (Zustand)](#8-stores--estado-global-zustand)
-9. [RBAC & Permissões](#9-rbac--permissoes)
-10. [Fluxo de Autenticação](#10-fluxo-de-autenticação)
-11. [Navegação & View Routing](#11-navegação--view-routing)
-12. [PWA — Progressive Web App](#12-pwa--progressive-web-app)
-13. [AI Chat — Assistente Virtual](#13-ai-chat--assistente-virtual)
-14. [Depósitos — Métodos & Fluxo](#14-depósitos--métodos--fluxo)
-15. [Payouts — Fluxo de Saída](#15-payouts--fluxo-de-saída)
-16. [Design System — Dark Control Tower v3.0](#16-design-system--dark-control-tower-v30)
-17. [Design Responsivo — Mobile-First](#17-design-responsivo--mobile-first)
-18. [SEO & Metadados](#18-seo--metadados)
-19. [Deploy — Vercel](#19-deploy--vercel)
-20. [Roadmap v4.0 (Próxima Versão)](#20-roadmap-v40-próxima-versão)
-21. [Licença](#21-licença)
-22. [Setup & Desenvolvimento](#22-setup--desenvolvimento)
+4. [Arquitetura SPA](#4-arquitetura-spa)
+5. [API Client](#5-api-client)
+6. [Sistema de Tipos TypeScript](#6-sistema-de-tipos-typescript)
+7. [RBAC & Permissões](#7-rbac--permissões)
+8. [Sistema de Navegação](#8-sistema-de-navegação)
+9. [KYC & Taxas](#9-kyc--taxas)
+10. [PWA — Progressive Web App](#10-pwa--progressive-web-app)
+11. [Design System — Dark Control Tower v3.0](#11-design-system--dark-control-tower-v30)
+12. [Variáveis de Ambiente](#12-variáveis-de-ambiente)
+13. [Scripts](#13-scripts)
+14. [Deploy](#14-deploy)
+15. [Roadmap v4.0](#15-roadmap-v40)
 
 ---
 
 ## 1. Visão Geral
 
-O **XPayments.Digital v3.0** é uma super app fintech institucional para pagamentos digitais com as seguintes capacidades:
+O **XPayments.Digital** é uma **Super App Financeira** que combina as funcionalidades de um **Gateway de Pagamentos White-Label** e uma **Business Account** institucional, operando como a ponte entre o sistema financeiro tradicional e a economia digital.
 
-- **Multi-Wallet**: Carteiras em EUR, BRL, USD e USDT com saldos segregados por estado (incoming, pending, available, blocked)
-- **Depósitos**: PIX Instantâneo (BRL), SEPA Instant (EUR), Crypto Wallet (USDT/USDC via TRC-20)
-- **Swap**: Conversão instantânea entre moedas com taxas reais da API pública
-- **Payouts**: Saída em USDT (crypto instantâneo), EUR ou BRL (fiat processado manualmente via OTC desk, prazo D+1)
-- **KYC Progressivo**: 4 tiers de verificação (Unverified → Basic → Verified → Corporate)
-- **Gateway White-Label**: Links de pagamento, API Keys S2S e checkouts para merchants
-- **RBAC**: 5 roles com matriz de permissões granular
-- **Painel Admin**: Gestão de tickets, utilizadores, organizações e taxas
-- **PWA Instalável**: Service worker com cache inteligente, manifest completo e install prompt nativo
-- **AI Chat Integrado**: Assistente virtual com interface flutuante e proxy para LLM (OpenRouter)
+### Funcionalidades Principais
+
+- **Carteiras Multi-Moeda** — Wallets em EUR, BRL e USDT com saldos segregados por estado (`incoming`, `pending`, `available`, `blocked`)
+- **Gateway White-Label** — Payment links, API Keys S2S, checkouts personalizados e catálogo de produtos para merchants
+- **Settlement Automatizado** — Liquidação de recebimentos com timeline progressiva (T+3 a T+0) conforme o nível de verificação
+- **Operações Cross-Border** — PIX (BRL), SEPA (EUR), USDT (TRC-20) com conversão automática via swap
+- **PWA Instalável** — Progressive Web App com Service Worker, cache inteligente e install prompt nativo
+- **AI Assistente Integrado** — Chatbot flutuante com integração a modelos de linguagem (OpenRouter/GPT)
+- **KYC Progressivo** — 4 tiers de verificação com limites, taxas e funcionalidades progressivas
+- **RBAC Granular** — 5 roles com matriz de 15 permissões para controle fino de acesso
 
 ### Zero Mock Data
 
-Todas as páginas do dashboard estão conectadas à API real. Não existem dados simulados no fluxo principal. Quando a API não retorna dados, a UI exibe estados vazios adequados.
-
-### PWA Instalável
-
-A plataforma é uma Progressive Web App completa — pode ser instalada no dispositivo do utilizador (desktop ou mobile) e funciona com cache offline para assets estáticos.
-
-### AI Assistente Integrado
-
-Um chatbot flutuante com integração a modelos de linguagem (OpenRouter/GPT) está disponível em todas as páginas do dashboard, fornecendo suporte contextual sobre a plataforma.
+Todas as páginas do dashboard estão conectadas à API real. Não existem dados simulados no fluxo principal — quando a API não retorna dados, a UI exibe estados vazios adequados.
 
 ---
 
 ## 2. Stack Tecnológico
 
-| Camada | Tecnologia | Versão |
-|--------|-----------|--------|
-| Framework | Next.js (App Router, Turbopack) | 16.x |
-| Linguagem | TypeScript | 5.x |
-| Estilização | Tailwind CSS | 4.x |
-| Componentes | shadcn/ui (estilo New York) | latest |
-| Estado Global | Zustand (com persist) | 5.x |
-| HTTP Client | Fetch (native, wrapper próprio) | — |
-| Animação | Framer Motion | 12.x |
-| ORM (dev) | Prisma / SQLite | 6.x |
-| Toasts | Sonner | 2.x |
-| Gráficos | Recharts | 2.x |
-| Tabelas | @tanstack/react-table | 8.x |
-| Forms | React Hook Form + Zod | 7.x / 4.x |
-| Ícones | Lucide React | 0.525+ |
-| Internacionalização | next-intl | 4.x |
-| Runtime | Bun | latest |
-| Output | Standalone (Docker/VPS ready) | — |
+| Camada | Tecnologia | Versão | Detalhes |
+|--------|-----------|--------|----------|
+| **Framework** | Next.js (App Router) | 16.x | SPA mode, standalone output |
+| **UI Library** | React | 19.x | Concurrent features |
+| **Linguagem** | TypeScript | 5.x | Strict mode |
+| **Estilização** | Tailwind CSS | 4.x | Dark theme, custom neon brand |
+| **Componentes** | shadcn/ui | New York | 49+ componentes |
+| **Estado Global** | Zustand | 5.x | 4 stores (auth, nav, baas, chat) |
+| **ORM** | Prisma | 6.x | SQLite (desenvolvimento) |
+| **Animação** | Framer Motion | 12.x | Transições e micro-interações |
+| **Ícones** | Lucide React | 0.525+ | Conjunto completo |
+| **Temas** | next-themes | 0.4.x | Dark mode por padrão |
+| **Toasts** | Sonner | 2.x | Rich colors, top-right |
+| **Gráficos** | Recharts | 2.x | Dashboard charts |
+| **Tabelas** | @tanstack/react-table | 8.x | Data tables avançadas |
+| **Forms** | React Hook Form + Zod | 7.x / 4.x | Validação tipo-safe |
+| **HTTP Client** | Fetch (native) | — | Wrapper próprio com JWT |
+| **Runtime** | Bun | latest | Dev server e scripts |
+| **PWA** | Service Worker + Manifest | v3 | Cache versionado |
+| **Output** | Standalone | — | Docker / VPS ready |
 
 ---
 
@@ -92,61 +89,63 @@ Um chatbot flutuante com integração a modelos de linguagem (OpenRouter/GPT) es
 ```
 src/
 ├── app/
-│   ├── layout.tsx              # Root layout, fonts, JSON-LD, SEO, PWA meta tags
-│   ├── page.tsx                # Router principal (landing ↔ dashboard)
-│   ├── globals.css             # Tailwind 4 + variáveis CSS neon + animações premium
-│   ├── robots.ts               # robots.txt dinâmico
-│   ├── sitemap.ts              # sitemap.xml dinâmico
+│   ├── layout.tsx              # Root layout (SEO, PWA, Theme, JSON-LD, Fonts)
+│   ├── page.tsx                # SPA entry — auth guard → landing / dashboard shell
+│   ├── globals.css             # Design system, animações, brand colors neon
+│   ├── sitemap.ts              # SEO sitemap dinâmico
+│   ├── robots.ts               # SEO robots.txt dinâmico
 │   └── api/
-│       ├── health/route.ts     # Health check endpoint
+│       ├── route.ts            # Health check raiz
 │       ├── binance/route.ts    # Proxy para ticker público Binance
-│       └── ai/
-│           └── chat/
-│               └── route.ts    # Proxy AI chat → Backend OpenRouter (NOVO v3.0)
+│       ├── ai/chat/route.ts    # Proxy AI chat → Backend OpenRouter
+│       └── health/route.ts     # Health endpoint dedicado
 ├── components/
 │   ├── layout/
 │   │   ├── xp-landing.tsx      # Landing page + formulário login/register
-│   │   └── xp-sidebar.tsx      # Sidebar com RBAC filtering
-│   ├── dashboard/
+│   │   └── xp-sidebar.tsx      # Sidebar colapsável com RBAC filtering
+│   ├── dashboard/              # 12 componentes de página
 │   │   ├── dashboard-page.tsx  # Painel principal (wallets + transações)
-│   │   ├── admin-tickets-page.tsx
-│   │   ├── admin-users-page.tsx
-│   │   ├── admin-fees-page.tsx
-│   │   ├── admin-organizations-page.tsx
-│   │   ├── merchant-links-page.tsx
-│   │   ├── merchant-api-keys-page.tsx
-│   │   ├── merchant-checkouts-page.tsx
-│   │   └── account-manager-dashboard.tsx
-│   ├── wallet/
-│   │   ├── wallets-page.tsx
-│   │   ├── deposits-page.tsx   # Fluxo 3 etapas: método → detalhes → confirmação
-│   │   ├── swaps-page.tsx
-│   │   ├── payouts-page.tsx    # Formulário de payout (USDT → EUR/BRL/USDT)
-│   │   └── transactions-page.tsx
+│   │   ├── admin-dashboard-page.tsx  # Super Admin overview
+│   │   ├── admin-tickets-page.tsx    # Tickets / Operações
+│   │   ├── admin-users-page.tsx      # Gestão de utilizadores
+│   │   ├── admin-fees-page.tsx       # Taxas & Comissões
+│   │   ├── admin-organizations-page.tsx  # Gestão de organizações
+│   │   ├── merchant-links-page.tsx    # Links de pagamento
+│   │   ├── merchant-api-keys-page.tsx # Gestão de API Keys
+│   │   ├── merchant-checkouts-page.tsx # Gestão de checkouts
+│   │   ├── merchant-catalog-page.tsx  # Catálogo de produtos
+│   │   └── merchant-api-docs-page.tsx # Documentação da API
+│   ├── wallet/                 # 5 páginas de wallet
+│   │   ├── wallets-page.tsx    # Visão geral das carteiras
+│   │   ├── deposits-page.tsx   # Depósitos (3 etapas: método → detalhes → confirmação)
+│   │   ├── swaps-page.tsx      # Swap entre moedas
+│   │   ├── payouts-page.tsx    # Payouts (USDT → EUR/BRL/USDT)
+│   │   └── transactions-page.tsx # Histórico de transações
 │   ├── kyc/
-│   │   └── kyc-page.tsx
+│   │   └── kyc-page.tsx        # Verificação KYC 4-tier com taxas
 │   ├── ai/
-│   │   └── xp-ai-chat.tsx      # Chat widget flutuante (NOVO v3.0)
+│   │   └── xp-ai-chat.tsx      # Chat widget flutuante
 │   ├── pwa/
-│   │   ├── pwa-register.tsx    # Auto-registo do service worker (NOVO v3.0)
-│   │   └── pwa-install-prompt.tsx  # Banner de instalação PWA (NOVO v3.0)
+│   │   ├── pwa-register.tsx    # Auto-registo do service worker
+│   │   └── pwa-install-prompt.tsx  # Banner de instalação PWA
 │   ├── shared/
-│   │   ├── crypto-cards.tsx    # Ticker tape + cards de cripto (Binance proxy)
-│   │   └── animated-grid-bg.tsx  # Canvas particle system com constellation lines
-│   └── ui/                     # Componentes shadcn/ui (~40 componentes)
-├── lib/
-│   ├── api/
-│   │   └── client.ts           # Fetch wrapper + xpApi modules + XPaymentsApiError
-│   ├── formatting.ts          # Helpers de exibição (símbolos, labels, cores)
-│   └── utils.ts                # cn() helper (clsx + tailwind-merge)
-├── stores/
+│   │   ├── crypto-cards.tsx    # Ticker tape + cards de cripto
+│   │   └── animated-grid-bg.tsx # Canvas particle system
+│   └── ui/                     # 49 componentes shadcn/ui (New York)
+├── stores/                     # 4 stores Zustand
 │   ├── auth-store.ts           # Auth state + RBAC permissions matrix
-│   ├── nav-store.ts            # Navegação SPA (currentPage + sidebar state)
-│   ├── chat-store.ts           # Chat AI state — messages, isOpen, loading (NOVO v3.0)
+│   ├── nav-store.ts            # Navegação SPA (currentPage + sidebar)
+│   ├── chat-store.ts           # Chat AI state (messages, isOpen, loading)
 │   └── baas-store.ts           # Estado auxiliar BaaS
 ├── hooks/
 │   ├── use-mobile.ts           # Detecção de breakpoint mobile
 │   └── use-toast.ts            # Hook legacy (Sonner é o padrão)
+├── lib/
+│   ├── api/
+│   │   └── client.ts           # Fetch wrapper + xpApi + XPaymentsApiError
+│   ├── formatting.ts           # Helpers de exibição (símbolos, labels, cores)
+│   ├── db.ts                   # Cliente Prisma
+│   └── utils.ts                # cn() helper (clsx + tailwind-merge)
 ├── types/
 │   ├── index.ts                # Re-exports
 │   └── xpayments.ts            # Todos os tipos, enums e interfaces
@@ -155,13 +154,13 @@ src/
     └── index.ts                # Barrel export
 
 public/
-├── manifest.json               # PWA manifest completo (NOVO v3.0)
-├── sw.js                       # Service worker com cache versionado (NOVO v3.0)
+├── manifest.json               # PWA manifest completo
+├── sw.js                       # Service worker com cache versionado
+├── offline.html                # Fallback offline
 ├── icons/
-│   ├── icon-192.png            # PWA icon 192×192 (NOVO v3.0)
-│   └── icon-512.png            # PWA icon 512×512 + maskable (NOVO v3.0)
-├── logo.png
-├── logo.svg
+│   ├── icon-192.png            # PWA icon 192×192
+│   └── icon-512.png            # PWA icon 512×512 + maskable
+├── logo.png / logo.svg
 ├── favicon.ico
 ├── apple-touch-icon.png
 └── og-image.png
@@ -169,1020 +168,673 @@ public/
 
 ---
 
-## 4. Variáveis de Ambiente
+## 4. Arquitetura SPA
 
-| Variável | Obrigatória | Descrição |
-|----------|-------------|-----------|
-| `NEXT_PUBLIC_API_URL` | **Sim** | URL base da API (sem `/api/v1`). Ex: `https://api.xpayments.digital`. O client acrescenta `/api/v1` automaticamente. |
-| `DATABASE_URL` | Não (dev) | String de conexão Prisma (SQLite local, apenas para desenvolvimento) |
-| `NEXTAUTH_SECRET` | Não | Reservado para fluxo futuro |
-| `NEXTAUTH_URL` | Não | Reservado para fluxo futuro |
+O XPayments.Digital utiliza um padrão **Single-Route SPA** — toda a aplicação é servida a partir da rota `/`, com roteamento de views inteiramente no cliente.
 
-**Arquivo de referência**: `.env.example`
+### Como Funciona
 
 ```
-NEXT_PUBLIC_API_URL="https://api.xpayments.digital"
+                    ┌──────────────────────────────┐
+                    │   src/app/page.tsx (única)   │
+                    │   Rota: /                    │
+                    └──────────┬───────────────────┘
+                               │
+                    ┌──────────▼───────────────────┐
+                    │  useAuthStore.isAuthenticated │
+                    └──────────┬───────────────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │ false                             │ true
+              ▼                                   ▼
+    ┌─────────────────┐              ┌─────────────────────────┐
+    │ XPaymentsLanding │              │ useNavStore.currentPage │
+    │ (Login/Register) │              └──────────┬──────────────┘
+    └─────────────────┘                         │
+                                      ┌─────────▼──────────┐
+                                      │ PAGES[page] → <Page│
+                                      │ (mapa de 18 views) │
+                                      └────────────────────┘
 ```
 
-> ⚠️ **Atenção**: `NEXT_PUBLIC_API_URL` **não** inclui `/api/v1`. O client adiciona automaticamente `/api/v1` ao construir as URLs de request. Nunca adicione `/api/v1` na variável de ambiente nem nas chamadas individuais.
+### Componentes-Chave
+
+1. **`page.tsx`** — Ponto de entrada único (`/`). Verifica autenticação e renderiza a Landing ou o Dashboard Shell
+2. **`useNavStore.currentPage`** — Estado Zustand que controla qual "página" está visível
+3. **`PAGES` map** — Objeto `Record<string, React.ComponentType>` que mapeia 18 chaves de navegação para componentes React
+4. **`TITLES` map** — Títulos de cada página exibidos na top bar
+
+### 18 Views SPA
+
+| Chave | Componente | Título |
+|-------|-----------|--------|
+| `admin-dashboard` | `AdminDashboardPage` | Super Admin Overview |
+| `dashboard` | `DashboardPage` | Painel de Controle |
+| `wallets` | `WalletsPage` | Carteiras |
+| `deposits` | `DepositsPage` | Depositar |
+| `swaps` | `SwapsPage` | Swap |
+| `payouts` | `PayoutsPage` | Payouts |
+| `transactions` | `TransactionsPage` | Transações |
+| `kyc` | `KycPage` | Verificação KYC |
+| `admin-tickets` | `AdminTicketsPage` | Tickets / Operações |
+| `admin-users` | `AdminUsersPage` | Utilizadores |
+| `admin-fees` | `AdminFeesPage` | Taxas & Comissões |
+| `admin-organizations` | `AdminOrganizationsPage` | Organizações |
+| `merchant-links` | `MerchantLinksPage` | Links de Pagamento |
+| `merchant-api-keys` | `MerchantApiKeysPage` | API Keys |
+| `merchant-checkouts` | `MerchantCheckoutsPage` | Checkouts |
+| `merchant-catalog` | `MerchantCatalogPage` | Catálogo de Produtos |
+| `merchant-api-docs` | `MerchantApiDocsPage` | Documentação API |
+
+### Transições de Página
+
+Cada troca de view utiliza a animação CSS `animate-page-enter` (definida em `globals.css`):
+
+```css
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(6px) scale(0.995); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-page-enter { animation: page-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+```
+
+O `key={currentPage}` no wrapper garante que o React re-monta o componente, acionando a animação a cada navegação.
 
 ---
 
-## 5. API Client — Native Fetch com JWT
+## 5. API Client
 
-O client HTTP é implementado em `src/lib/api/client.ts` utilizando **`fetch` nativo** (sem dependência de Axios), com um wrapper central `request<T>()` que encapsula toda a lógica de autenticação e tratamento de erros.
+O client HTTP é implementado em `src/lib/api/client.ts` utilizando **`fetch` nativo** (sem Axios), com um wrapper centralizado.
 
-### Base URL & Prefixo
+### Arquitetura do Client
 
 ```
-NEXT_PUBLIC_API_URL = "https://api.xpayments.digital"
-                            ↓ (client adiciona automaticamente)
-               https://api.xpayments.digital/api/v1/auth/login
+┌─────────────────────────────────────────────────┐
+│                 xpApi.<module>.<method>()        │
+│            (get / post / put / patch / del)     │
+└─────────────────────┬───────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────┐
+│              request<T>(path, options)           │
+│  ┌─────────────────────────────────────────┐    │
+│  │ 1. Lazy import useAuthStore (avoid circ) │    │
+│  │ 2. Lê JWT → Authorization: Bearer <token>│    │
+│  │ 3. Constrói URL: API_V1 + path          │    │
+│  │ 4. fetch() com headers                   │    │
+│  │ 5. 401 → clear session + logout + event  │    │
+│  │ 6. !ok → XPaymentsApiError               │    │
+│  │ 7. Unwrap { success, data } → return T   │    │
+│  └─────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────┘
 ```
 
-O client lê `NEXT_PUBLIC_API_URL`, remove trailing slashes e concatena `/api/v1` + o path relativo da rota.
+### Características
 
-### Injeção JWT (Lazy Import Pattern)
+- **JWT Injection** — O token é lido diretamente do Zustand store (`useAuthStore.getState().token`) e injetado no cabeçalho `Authorization: Bearer <token>`
+- **Auto-prefixo `/api/v1`** — O `NEXT_PUBLIC_API_URL` não inclui `/api/v1`; o client adiciona automaticamente
+- **Envelope unwrap** — O backend retorna `{ success: boolean, data: T }`; o client extrai e retorna `data`
+- **Auto 401** — Em resposta 401, limpa sessão (token + user do sessionStorage), dispara `logout()` no store e emite evento global `xp:unauthorized`
+- **Lazy import** — O `useAuthStore` é importado dentro de `request()` para evitar dependências circulares (o auth-store importa helpers de storage deste ficheiro)
+- **XPaymentsApiError** — Erro customizado com `status`, `code` e `details`
 
-O wrapper `request()` faz um **lazy import** de `useAuthStore` (para evitar dependência circular — o `auth-store` importa os storage helpers do próprio `client.ts`, que é carregado primeiro). O token é lido diretamente do Zustand store em cada request:
+### Mapeamento Completo de Endpoints
 
-```typescript
-// Lazy import para evitar dependência circular no module load
-const { useAuthStore } = await import('@/stores/auth-store');
-const token = useAuthStore.getState().token;
-headers['Authorization'] = `Bearer ${token}`;
-```
+#### AUTH
 
-### Unwrap de Resposta
+| Método | Rota | Função | Descrição |
+|--------|------|--------|-----------|
+| POST | `/auth/login` | `xpApi.auth.login()` | Login de Merchant/Lojista |
+| POST | `/auth/register` | `xpApi.auth.register()` | Registo de novo Merchant |
+| GET | `/auth/me` | `xpApi.auth.me()` | Dados do utilizador autenticado |
 
-Todas as respostas do backend seguem o envelope padrão:
+#### ADMIN
 
-```typescript
-interface XPaymentsApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
-```
+| Método | Rota | Função | Descrição |
+|--------|------|--------|-----------|
+| POST | `/admin/login` | `xpApi.admin.login()` | Login de Admin/Operador |
+| GET | `/admin/stats` | `xpApi.admin.getStats()` | Super Admin dashboard stats |
+| GET | `/admin/merchants` | `xpApi.admin.getMerchants()` | Listar todos os merchants |
 
-O client faz o unwrap automaticamente — quando `json.success === true`, retorna `json.data` diretamente. Se o envelope não estiver presente (fallback), retorna o JSON integral.
+#### WALLETS
 
-### Tratamento de Erros — `XPaymentsApiError`
+| Método | Rota | Função | Descrição |
+|--------|------|--------|-----------|
+| GET | `/wallets` | `xpApi.wallets.list()` | Listar carteiras do utilizador |
+| GET | `/wallets/:id` | `xpApi.wallets.getById()` | Obter carteira por ID |
 
-Classe customizada para erros de API, exportada de `client.ts`:
+#### TRANSACTIONS
 
-```typescript
-class XPaymentsApiError extends Error {
-  status: number;                         // HTTP status (ex: 404, 422)
-  code?: string;                          // Código de erro do backend (ex: "INSUFFICIENT_BALANCE")
-  details?: Record<string, unknown>;      // Detalhes adicionais do erro
-}
-```
+| Método | Rota | Função | Descrição |
+|--------|------|--------|-----------|
+| GET | `/transactions` | `xpApi.transactions.list()` | Listar transações (filtros: walletId, type, status, page, pageSize) |
 
-Qualquer resposta com `!response.ok` lança `XPaymentsApiError` com a mensagem, status, código e detalhes extraídos do corpo JSON.
+#### DEPOSITS
 
-### Auto-Logout (401)
+| Método | Rota | Função | Descrição |
+|--------|------|--------|-----------|
+| POST | `/deposits` | `xpApi.deposits.create()` | Criar depósito |
+| POST | `/deposits/:id/proof` | `xpApi.deposits.submitProof()` | Submeter comprovativo (tx_hash ou receipt) |
 
-Quando uma resposta retorna status **401**, o client executa automaticamente:
+#### SWAPS
 
-1. `clearStoredToken()` + `clearStoredUser()` — limpa sessionStorage
-2. `useAuthStore.getState().logout()` — limpa estado Zustand
-3. `window.dispatchEvent(new CustomEvent('xp:unauthorized'))` — evento global
+| Método | Rota | Função | Descrição |
+|--------|------|--------|-----------|
+| POST | `/swaps` | `xpApi.swaps.execute()` | Executar swap entre carteiras |
 
-O componente raiz (`page.tsx`) escuta `xp:unauthorized` e redireciona para a landing page.
+#### PAYOUTS
 
-### Métodos Convenience
+| Método | Rota | Função | Descrição |
+|--------|------|--------|-----------|
+| POST | `/payouts` | `xpApi.payouts.create()` | Criar payout (amountUSDT, requestedCurrency, destinationInfo) |
 
-| Método | Descrição |
-|--------|-----------|
-| `get<T>(path, params?)` | GET com query params opcionais (filtrados automaticamente para remover `undefined`/`null`/`''`) |
-| `post<T>(path, body?)` | POST com body JSON |
-| `patch<T>(path, body?)` | PATCH com body JSON |
+#### KYC
 
-### Helpers de Armazenamento (sessionStorage)
+| Método | Rota | Função | Descrição |
+|--------|------|--------|-----------|
+| GET | `/kyc/profile` | `xpApi.kyc.getProfile()` | Obter perfil KYC do utilizador |
+| POST | `/kyc/upgrade` | `xpApi.kyc.upgrade()` | Solicitar upgrade de tier |
 
-| Função | Chave | Descrição |
-|--------|-------|-----------|
-| `getStoredToken()` | `xp_token` | Lê token do sessionStorage |
-| `setStoredToken(token)` | `xp_token` | Grava token no sessionStorage |
-| `clearStoredToken()` | `xp_token` | Remove token do sessionStorage |
-| `getStoredUser<T>()` | `xp_user` | Lê e desserializa user do sessionStorage |
-| `setStoredUser<T>(user)` | `xp_user` | Grava user serializado no sessionStorage |
-| `clearStoredUser()` | `xp_user` | Remove user do sessionStorage |
+#### MERCHANT
 
-Todos os helpers incluem guarda `typeof window === 'undefined'` para segurança em SSR.
+| Método | Rota | Função | Descrição |
+|--------|------|--------|-----------|
+| GET | `/merchant/:merchantId/dashboard` | `xpApi.merchant.getDashboard()` | Saldos Ledger Engine do Merchant |
+| GET | `/merchant/:merchantId/transactions` | `xpApi.merchant.getTransactions()` | Transações recentes do Merchant |
+| GET | `/merchant/api-keys` | `xpApi.merchant.getApiKeys()` | Listar API Keys |
+| DELETE | `/merchant/api-keys/:id` | `xpApi.merchant.deleteApiKey()` | Eliminar API Key |
+| POST | `/merchant/api-keys/generate` | `xpApi.merchant.generateApiKey()` | Gerar nova API Key |
+| GET | `/merchant/links` | `xpApi.merchant.getPaymentLinks()` | Listar links de pagamento |
+| POST | `/merchant/links` | `xpApi.merchant.createPaymentLink()` | Criar link de pagamento |
+| GET | `/merchant/:merchantId/stores` | `xpApi.merchant.getStores()` | Listar lojas/checkouts |
+| POST | `/merchant/:merchantId/stores` | `xpApi.merchant.createStore()` | Criar nova loja/checkout |
+| GET | `/merchant/products` | `xpApi.merchant.getProducts()` | Listar produtos |
+| POST | `/merchant/products` | `xpApi.merchant.createProduct()` | Criar produto |
+| PUT | `/merchant/products/:id` | `xpApi.merchant.updateProduct()` | Atualizar produto |
+| DELETE | `/merchant/products/:id` | `xpApi.merchant.deleteProduct()` | Eliminar produto |
+
+#### TICKETS
+
+| Método | Rota | Função | Descrição |
+|--------|------|--------|-----------|
+| GET | `/tickets` | `xpApi.tickets.list()` | Listar tickets (filtros: status, type, page) |
+| PATCH | `/tickets/:id` | `xpApi.tickets.update()` | Atualizar ticket (status, resolutionNotes) |
+
+#### ORGANIZATIONS
+
+| Método | Rota | Função | Descrição |
+|--------|------|--------|-----------|
+| GET | `/organizations` | `xpApi.organizations.list()` | Listar organizações |
+
+#### USERS
+
+| Método | Rota | Função | Descrição |
+|--------|------|--------|-----------|
+| GET | `/users` | `xpApi.users.list()` | Listar utilizadores (filtro: page) |
+
+#### DASHBOARD
+
+| Método | Rota | Função | Descrição |
+|--------|------|--------|-----------|
+| GET | `/dashboard/wallets` | `xpApi.dashboard.getWallets()` | Wallets agregados do dashboard |
+| GET | `/dashboard/transactions` | `xpApi.dashboard.getTransactions()` | Transações do dashboard (filtro: limit) |
 
 ---
 
-## 6. Rotas da API — Mapeamento Completo
+## 6. Sistema de Tipos TypeScript
 
-Todas as rotas são relativas a `/api/v1` (o client acrescenta automaticamente).
-
-### Autenticação
-
-| Método | Rota | Módulo | Descrição |
-|--------|------|--------|-----------|
-| `POST` | `/auth/login` | `xpApi.auth.login` | Login merchant com email/password |
-| `POST` | `/auth/register` | `xpApi.auth.register` | Registro de nova conta |
-| `GET` | `/auth/me` | `xpApi.auth.me` | Perfil do utilizador autenticado |
-| `POST` | `/admin/login` | `xpApi.admin.login` | Login admin/operator com email/password |
-
-### Público (sem autenticação)
-
-| Método | Rota | Módulo | Descrição |
-|--------|------|--------|-----------|
-| `GET` | `/public/rates` | `xpApi.public.getRates` | Taxas de câmbio para o motor de swap |
-
-### Merchant Dashboard
-
-| Método | Rota | Módulo | Descrição |
-|--------|------|--------|-----------|
-| `GET` | `/merchant/:merchantId/dashboard` | `xpApi.merchant.getDashboard` | Saldos Ledger Engine (AVAILABLE, PENDING, INCOMING, RESERVE) |
-| `GET` | `/merchant/:merchantId/transactions` | `xpApi.merchant.getTransactions` | Transações recentes do merchant (limit, page) |
-
-### Dashboard (Genérico)
-
-| Método | Rota | Módulo | Descrição |
-|--------|------|--------|-----------|
-| `GET` | `/dashboard/wallets` | `xpApi.dashboard.getWallets` | Carteiras com saldos agregados |
-| `GET` | `/dashboard/transactions` | `xpApi.dashboard.getTransactions` | Últimas transações (com paginação) |
-
-### Carteiras
-
-| Método | Rota | Módulo | Descrição |
-|--------|------|--------|-----------|
-| `GET` | `/wallets` | `xpApi.wallets.list` | Lista todas as carteiras do utilizador |
-| `GET` | `/wallets/:id` | `xpApi.wallets.getById` | Detalhe de uma carteira específica |
-
-### Transações
-
-| Método | Rota | Módulo | Descrição |
-|--------|------|--------|-----------|
-| `GET` | `/transactions` | `xpApi.transactions.list` | Lista transações com filtros (walletId, type, status, page, pageSize) |
-
-### Depósitos
-
-| Método | Rota | Módulo | Descrição |
-|--------|------|--------|-----------|
-| `POST` | `/deposits` | `xpApi.deposits.create` | Cria solicitação de depósito |
-| `POST` | `/deposits/:id/proof` | `xpApi.deposits.submitProof` | Envia comprovante (tx_hash ou receipt) |
-
-### Swaps
-
-| Método | Rota | Módulo | Descrição |
-|--------|------|--------|-----------|
-| `POST` | `/swaps` | `xpApi.swaps.execute` | Executa conversão entre carteiras |
-
-### Payouts
-
-| Método | Rota | Módulo | Descrição |
-|--------|------|--------|-----------|
-| `POST` | `/payouts` | `xpApi.payouts.create` | Solicita payout (saída de fundos) |
-
-**Payload `PayoutRequest`:**
-
-```typescript
-{
-  amountUSDT: number;                    // Montante em USDT
-  requestedCurrency: 'USDT' | 'EUR' | 'BRL';  // Moeda de recebimento
-  destinationInfo: string;               // Endereço crypto, IBAN ou chave PIX
-  status?: PayoutStatus;                 // Opcional, preenchido pelo backend
-}
-```
-
-### KYC
-
-| Método | Rota | Módulo | Descrição |
-|--------|------|--------|-----------|
-| `GET` | `/kyc/profile` | `xpApi.kyc.getProfile` | Perfil KYC atual com dados por tier |
-| `POST` | `/kyc/upgrade` | `xpApi.kyc.upgrade` | Solicita upgrade de tier |
-
-### Merchant Tools
-
-| Método | Rota | Módulo | Descrição |
-|--------|------|--------|-----------|
-| `GET` | `/merchant/:merchantId/dashboard` | `xpApi.merchant.getDashboard` | Saldos Ledger Engine do Merchant |
-| `GET` | `/merchant/:merchantId/transactions` | `xpApi.merchant.getTransactions` | Transações recentes do Merchant |
-| `GET` | `/merchant/api-keys` | `xpApi.merchant.getApiKeys` | Lista chaves API do merchant |
-| `POST` | `/merchant/api-keys/generate` | `xpApi.merchant.generateApiKey` | Gera nova chave API |
-| `GET` | `/merchant/links` | `xpApi.merchant.getPaymentLinks` | Lista links de pagamento |
-| `POST` | `/merchant/links` | `xpApi.merchant.createPaymentLink` | Cria novo link de pagamento |
-
-### AI Chat (NOVO v3.0)
-
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| `POST` | `/api/ai/chat` | Proxy Next.js para backend AI (OpenRouter) |
-
-> **Nota**: Esta rota é uma API Route do Next.js (`src/app/api/ai/chat/route.ts`), **não** passa pelo client `xpApi`. O componente chat faz `fetch('/api/ai/chat', ...)` diretamente.
-
-**Request body:**
-
-```typescript
-{
-  messages: Array<{
-    role: "user" | "assistant" | "system";
-    content: string;
-  }>;
-}
-```
-
-**Header:** `Authorization: Bearer <JWT>` (encaminhado ao backend)
-
-**Backend esperado:** `POST /api/v1/ai/chat` (ver secção [13. AI Chat](#13-ai-chat--assistente-virtual) para detalhes)
-
-### Tickets
-
-| Método | Rota | Módulo | Descrição |
-|--------|------|--------|-----------|
-| `GET` | `/tickets` | `xpApi.tickets.list` | Lista tickets (filtros: status, type, page) |
-| `PATCH` | `/tickets/:id` | `xpApi.tickets.update` | Atualiza status/resolução do ticket |
-
-### Admin
-
-| Método | Rota | Módulo | Descrição |
-|--------|------|--------|-----------|
-| `GET` | `/admin/stats` | `xpApi.admin.getStats` | Estatísticas agregadas (merchants, volume, transações) |
-| `GET` | `/admin/merchants` | `xpApi.admin.getMerchants` | Lista todos os merchants com detalhes |
-| `GET` | `/organizations` | `xpApi.organizations.list` | Lista organizações |
-| `GET` | `/users` | `xpApi.users.list` | Lista utilizadores (com paginação) |
-
----
-
-## 7. Sistema de Tipos TypeScript
-
-Todos os tipos estão centralizados em `src/types/xpayments.ts` (modelos de domínio) e `src/lib/api/client.ts` (tipos de resposta API), alinhados ao schema Prisma do backend.
+Todos os tipos são definidos em `src/types/xpayments.ts` como **fonte da verdade**, baseados no Prisma Schema do backend.
 
 ### Enums
 
 | Enum | Valores |
 |------|---------|
-| `UserRole` | `customer`, `merchant`, `super_merchant`, `admin`, `operator` |
-| `OrgRole` | `ADMIN`, `OPERATOR`, `ACCOUNT_MANAGER` |
-| `Currency` | `EUR`, `BRL`, `USDT`, `USD` |
 | `TierLevel` | `TIER_0_UNVERIFIED`, `TIER_1_BASIC`, `TIER_2_VERIFIED`, `TIER_3_CORPORATE` |
+| `Currency` | `EUR`, `BRL`, `USDT`, `USD` |
 | `TransactionType` | `PROXY_INCOMING`, `SETTLEMENT`, `PAYOUT`, `SWAP`, `TRANSFER`, `FEE` |
 | `TransactionStatus` | `INCOMING`, `PENDING`, `COMPLETED`, `BLOCKED`, `FAILED` |
-| `PayoutStatus` | `PENDING`, `PROCESSING`, `COMPLETED`, `REJECTED`, `CANCELLED` |
+| `AccountStatus` | `ACTIVE`, `SUSPENDED`, `BLOCKED` |
+| `UserRole` | `customer`, `merchant`, `super_merchant`, `admin`, `operator` |
+| `OrgRole` | `ADMIN`, `OPERATOR`, `ACCOUNT_MANAGER` |
 | `TicketType` | `MANUAL_WITHDRAWAL`, `TIER_UPGRADE`, `FEE_ADJUSTMENT`, `SUPPORT` |
 | `TicketStatus` | `OPEN`, `IN_PROGRESS`, `RESOLVED`, `REJECTED` |
-| `AccountStatus` | `ACTIVE`, `SUSPENDED`, `BLOCKED` |
-| `LedgerStatus` | `INCOMING`, `PENDING`, `RESERVE`, `AVAILABLE`, `CLEARED`, `AUDIT`, `BLOCKED` |
+| `PayoutStatus` | `PENDING`, `PROCESSING`, `COMPLETED`, `REJECTED`, `CANCELLED` |
 
 ### Modelos Principais
 
-| Tipo | Descrição |
-|------|-----------|
-| `Wallet` | Carteira com saldos segregados (balanceIncoming, balancePending, balanceAvailable, balanceBlocked) |
-| `Transaction` | Transação com tipo, status, moeda, taxa e referências |
-| `Merchant` | Organização merchant com tier e reserva percentual |
-| `User` | Utilizador com role, tier, organização e carteiras |
-| `OrgOperator` | Operador interno vinculado a uma organização |
-| `OperationTicket` | Ticket de operação (aprovação manual, upgrade KYC, etc.) |
-| `PaymentLink` | Link de pagamento white-label |
-| `ApiKey` | Chave API S2S para integração merchant |
-| `KycProfile` | Perfil KYC com dados progressivos por tier |
-| `FeeSchedule` | Agendamento de taxas por tier e tipo de transação |
-| `PaymentMethod` | Método de pagamento (network, label, currencies) |
-| `GatewayRoute` | Rota de gateway de depósito (provider, min/max, estimatedTime) |
+| Interface | Descrição |
+|-----------|-----------|
+| `Merchant` | Conta de merchant com tier, reservePercent e relações |
+| `User` | Utilizador com tier, status, wallets e transações |
+| `Wallet` | Carteira com saldos segregados (incoming, pending, available, blocked) |
+| `Transaction` | Transação com tipo, status, amount, fee, currency e batch |
+| `FeeSchedule` | Taxa por tier e tipo de transação (percentageFee + fixedFee) |
+| `SettlementBatch` | Lote de settlement com batchNumber e totalAmount |
+| `PaymentLink` | Link de pagamento com amount, currency, status e métricas |
+| `ApiKey` | Chave API S2S com keyPrefix, status e lastUsed |
+| `Product` | Produto do catálogo com priceFiat, images e store |
+| `OperationTicket` | Ticket de operação com type, status e resolutionNotes |
+| `OrgOperator` | Operador interno da organização |
 
-### API Response Types (client.ts)
+### Tipos de API
 
-| Tipo | Descrição |
-|------|-----------|
-| `MerchantLoginResponse` | Login response: `{ merchantId, name, tier, token }` |
-| `AdminLoginResponse` | Admin login response: `{ adminId, name, role, token }` |
-| `RegisterResponse` | Register response: `{ userId?, merchantId?, token?, message? }` |
-| `AdminStatsResponse` | Stats agregados: `{ totalMerchants, activeMerchants, totalVolumeUSDT, totalTransactions, pendingTickets? }` |
-| `AdminMerchant` | Merchant admin: `{ id, name, email?, tier, status, activeStores?, totalVolume?, createdAt? }` |
-| `MerchantDashboardResponse` | Saldos Ledger: `{ balances?, totalStores?, activeStores?, pendingSettlements?, todayVolume? }` |
-| `MerchantDashboardTransaction` | Transação merchant: `{ id, walletId?, store?, type?, status?, amount?, feeApplied?, currency?, fiatAmount?, fiatCurrency?, description?, createdAt? }` |
-| `MerchantDashboardBalances` | Balances por estado: `{ available?, pending?, incoming?, reserve?, blocked?, totalUSDT? }` |
-
----
-
-## 8. Stores — Estado Global (Zustand)
-
-### Auth Store (`src/stores/auth-store.ts`)
-
-Estado de autenticação persistido em **sessionStorage** via middleware `persist` do Zustand.
-
-| Estado | Tipo | Descrição |
-|--------|------|-----------|
-| `user` | `AuthUser \| null` | Dados do utilizador autenticado |
-| `token` | `string \| null` | JWT token |
-| `isAuthenticated` | `boolean` | Flag de autenticação |
-| `isLoading` | `boolean` | Loading state para operações de auth |
-
-| Ação | Descrição |
-|------|-----------|
-| `setAuth(token, user)` | Define token + user, persiste no sessionStorage |
-| `updateUser(updates)` | Atualiza campos parciais do user |
-| `logout()` | Limpa token, user e sessionStorage |
-| `getUserRole()` | Retorna a role atual (default: `customer`) |
-| `isOperator()` | Verifica se a role é `operator` |
-| `isMerchant()` | Verifica se a role é `merchant`, `super_merchant` ou `customer` |
-
-### Nav Store (`src/stores/nav-store.ts`)
-
-| Estado | Tipo | Descrição |
-|--------|------|-----------|
-| `currentPage` | `NavPage` | Página atual do SPA |
-| `sidebarOpen` | `boolean` | Estado de expansão da sidebar |
-
-| Ação | Descrição |
-|------|-----------|
-| `setPage(page)` | Navega para a página indicada |
-| `toggleSidebar()` | Alterna expansão da sidebar |
-| `setSidebarOpen(open)` | Define estado da sidebar |
-
-**Páginas disponíveis**: `admin-dashboard`, `dashboard`, `wallets`, `deposits`, `swaps`, `payouts`, `transactions`, `kyc`, `admin-tickets`, `admin-users`, `admin-fees`, `admin-organizations`, `merchant-links`, `merchant-api-keys`, `merchant-checkouts`
-
-### Chat Store (`src/stores/chat-store.ts`) — NOVO v3.0
-
-Estado do assistente AI, **não persistido** (sessão apenas).
-
-| Estado | Tipo | Descrição |
-|--------|------|-----------|
-| `isOpen` | `boolean` | Painel do chat aberto/fechado |
-| `messages` | `ChatMessage[]` | Histórico de mensagens da sessão |
-| `isLoading` | `boolean` | Aguardando resposta do LLM |
-
-| Ação | Descrição |
-|------|-----------|
-| `toggleChat()` | Alterna painel do chat |
-| `openChat()` | Abre o painel |
-| `closeChat()` | Fecha o painel |
-| `addMessage(msg)` | Adiciona mensagem (gera `id` e `timestamp` automaticamente) |
-| `setLoading(loading)` | Define estado de loading |
-| `clearMessages()` | Limpa todo o histórico |
-
-**Tipo `ChatMessage`:**
-
-```typescript
-interface ChatMessage {
-  id: string;                          // Gerado: `msg-${Date.now()}-${random}`
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: number;                   // `Date.now()`
-}
-```
+| Interface | Descrição |
+|-----------|-----------|
+| `XPaymentsApiResponse<T>` | Envelope padrão: `{ success: boolean, data: T, message?: string }` |
+| `PaginatedResponse<T>` | Resposta paginada: `{ data, total, page, pageSize, totalPages }` |
+| `LoginRequest` | `{ xpId?, email?, password }` |
+| `LoginResponse` | `{ success, data: { merchantId, token, user: AuthUser } }` |
+| `AuthUser` | Dados do utilizador autenticado com role e tier |
+| `PayoutRequest` | `{ amountUSDT, requestedCurrency, destinationInfo, status? }` |
+| `DepositProofRequest` | `{ depositId, proofType: 'tx_hash' \| 'receipt', proofValue }` |
+| `KycProfile` | Perfil KYC com dados por tier |
+| `TierLimits` | Limites por tier (maxTx, daily, monthly, currencies, features) |
+| `RolePermissions` | Interface com 15 flags de permissão booleanas |
 
 ---
 
-## 9. RBAC & Permissões
+## 7. RBAC & Permissões
 
-### 5 Roles Definidas
-
-| Role | Label | Descrição |
-|------|-------|-----------|
-| `customer` | Customer | Utilizador final sem organização |
-| `merchant` | Merchant | Lojista vinculado a uma organização |
-| `super_merchant` | Super Merchant | Merchant com acesso a sub-clientes |
-| `admin` | Admin | Acesso total à plataforma |
-| `operator` | Operator | Operador interno (equipe XPayments) |
+O sistema de controle de acesso é baseado em **5 roles** com uma **matriz de 15 permissões** definida em `src/stores/auth-store.ts`.
 
 ### Matriz de Permissões
 
 | Permissão | Customer | Merchant | Super Merchant | Admin | Operator |
 |-----------|:--------:|:--------:|:--------------:|:-----:|:--------:|
-| `canViewDashboard` | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `canViewWallets` | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `canDeposit` | ✓ | ✓ | ✓ | ✓ | ✗ |
-| `canSwap` | ✓ | ✓ | ✓ | ✓ | ✗ |
-| `canWithdraw` | ✓ | ✓ | ✓ | ✓ | ✗ |
-| `canViewTransactions` | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `canGeneratePaymentLinks` | ✗ | ✓ | ✓ | ✓ | ✗ |
-| `canManageApiKeys` | ✗ | ✓ | ✓ | ✓ | ✗ |
-| `canConfigureCheckouts` | ✗ | ✓ | ✓ | ✓ | ✗ |
-| `canViewSubClients` | ✗ | ✗ | ✓ | ✓ | ✓ |
-| `canManageTickets` | ✗ | ✗ | ✗ | ✓ | ✓ |
-| `canApproveKyc` | ✗ | ✗ | ✗ | ✓ | ✓ |
-| `canConfigureFees` | ✗ | ✗ | ✗ | ✓ | ✓ |
-| `canManageOrganizations` | ✗ | ✗ | ✗ | ✓ | ✓ |
-| `canManageUsers` | ✗ | ✗ | ✗ | ✓ | ✓ |
-
-A sidebar filtra os itens de navegação com base na role + permissão individual de cada item. A role é lida do payload JWT retornado pelo backend.
-
----
-
-## 10. Fluxo de Autenticação
-
-O formulário de autenticação está integrado na landing page (`xp-landing.tsx`) com um toggle **Login / Registro** e um switch **Admin** para alternar entre fluxos de merchant e admin.
-
-### Merchant Login
-
-```
-POST /api/v1/auth/login   { email, password }
-        ↓
-Response: { merchantId, name, tier, token }
-        ↓
-mapRole() → "merchant"
-        ↓
-setAuth(token, user) → Zustand + sessionStorage → Dashboard
-```
-
-### Admin / Operator Login
-
-Ativado pelo **toggle switch** "Acessar como Admin" na landing page:
-
-```
-POST /api/v1/admin/login   { email, password }
-        ↓
-Response: { adminId, name, role, token }
-        ↓
-mapRole(role) → mapeia role do backend (ver tabela abaixo)
-        ↓
-setAuth(token, user) → Zustand + sessionStorage → Dashboard
-```
-
-### Registro
-
-```
-POST /api/v1/auth/register   { email, password, storeName? }
-        ↓
-Response: { userId?, merchantId?, token?, message }
-        ↓
-Se token presente → setAuth() + Dashboard
-Se não → mensagem de confirmação (verificar email, etc.)
-```
-
-### Mapeamento de Roles (Backend → Frontend)
-
-A função `mapRole()` na landing page converte as roles do backend para o enum `UserRole` do frontend:
-
-| Role do Backend | Role do Frontend | Descrição |
-|----------------|-----------------|-----------|
-| `SUPER_ADMIN` / `ADMIN` | `admin` | Acesso total (Admin) |
-| `OPERATOR` | `operator` | Operações internas (sem depósitos/swaps/payouts) |
-| `SUPER_MERCHANT` | `super_merchant` | Merchant com sub-clientes |
-| `CUSTOMER` | `customer` | Utilizador sem organização |
-| *(outros)* | `merchant` | Fallback padrão |
-
-### Fluxo Pós-Login (comum)
-
-```
-┌──────────────────────────────────────┐
-│ 1. setAuth(token, user)              │  ← Zustand store (useAuthStore)
-│ 2. sessionStorage.setItem('xp_token') │  ← Armazenamento
-│ 3. sessionStorage.setItem('xp_user')  │  ← Armazenamento
-│ 4. dispatch('xp:authenticated')      │  ← Evento customizado
-│ 5. Router → Dashboard                 │  ← Navegação
-└──────────────────────────────────────┘
-```
-
-### Eventos Customizados
-
-| Evento | Quando é disparado | Efeito |
-|--------|-------------------|--------|
-| `xp:authenticated` | Após login bem-sucedido | Navega para Dashboard |
-| `xp:logout` | Ao encerrar sessão | Volta à Landing Page |
-| `xp:unauthorized` | Quando o client recebe 401 | Logout automático + limpa sessão |
-
-### Auto-Logout
-
-O wrapper `request()` em `client.ts` captura qualquer resposta com status `401`, executa `clearStoredToken()` + `clearStoredUser()` + `useAuthStore.getState().logout()` e dispara `xp:unauthorized`. O componente raiz (`page.tsx`) escuta este evento e redireciona para a landing page.
-
-### Dev Mode
-
-A landing page inclui botões de **Dev Mode** (visíveis apenas em ambiente local) que permitem login instantâneo sem API, útil para desenvolvimento e teste de permissões RBAC.
-
----
-
-## 11. Navegação & View Routing
-
-A aplicação utiliza um **SPA-like view routing** dentro do App Router do Next.js:
-
-- `src/app/page.tsx` é o componente raiz que decide o que renderizar com base no estado `isAuthenticated`
-- **Não autenticado** → renderiza `<XPaymentsLanding />`
-- **Autenticado** → renderiza sidebar + página atual baseada em `useNavStore().currentPage`
-
-O mapeamento de páginas é definido no objeto `PAGES` em `page.tsx`, associando cada `NavPage` ao seu componente React correspondente.
-
-### Seções da Sidebar
-
-| Seção | Páginas | Roles com acesso |
-|-------|---------|-----------------|
-| (root) | Painel | Todos |
-| WALLET | Carteiras, Depositar, Swap, Payouts, Transações | Customer, Merchant, Super Merchant |
-| VERIFICAÇÃO | Verificação KYC | Customer, Merchant, Super Merchant |
-| MERCHANT | Links de Pagamento, API Keys, Checkouts | Merchant, Super Merchant |
-| ADMIN | Aprovações, Liquidez, Utilizadores, Organizações | Operator |
-
-### Transição de Páginas
-
-Cada troca de página aplica a classe `animate-page-enter` (slide-up + fade-in, 0.3s) ao container do conteúdo.
-
----
-
-## 12. PWA — Progressive Web App (NOVO v3.0)
-
-A XPayments.Digital v3.0 é uma PWA completa, instalável em desktop e mobile.
-
-### Service Worker
-
-**Localização:** `public/sw.js`
-
-Estratégias de cache por tipo de request:
-
-| Tipo | Estratégia | Descrição |
-|------|-----------|-----------|
-| Assets estáticos (HTML, CSS, JS, imagens) | **Cache-first** + atualização em background | Serve do cache imediatamente; se rede disponível, atualiza o cache para requests futuros |
-| Chamadas API (`/api/`) | **Network-first** + fallback ao cache | Tenta rede primeiro; em caso de falha, serve do cache se disponível |
-
-Detalhes de implementação:
-
-- **Cache version:** `xp-v3` — ao atualizar, o nome muda e caches antigos são removidos automaticamente
-- **Pre-cache no install:** `/`, `/manifest.json`, `/logo.png`, `/logo.svg`
-- **Auto-cleanup:** No evento `activate`, todos os caches com nome diferente de `xp-v3` são deletados
-- **Skip waiting:** `self.skipWaiting()` garante ativação imediata
-
-```javascript
-const CACHE_NAME = 'xp-v3';
-const STATIC_ASSETS = ['/', '/manifest.json', '/logo.png', '/logo.svg'];
-```
-
-### Manifest
-
-**Localização:** `public/manifest.json`
-
-| Campo | Valor |
-|-------|-------|
-| `name` | XPayments.Digital |
-| `short_name` | XPayments |
-| `start_url` | `/` |
-| `display` | `standalone` |
-| `background_color` | `#09090b` |
-| `theme_color` | `#10b981` |
-| `orientation` | `any` |
-| `lang` | `pt-BR` |
-| `categories` | `finance`, `business`, `payments` |
-
-**Ícones:**
-
-| Tamanho | Ficheiro | Propriedade |
-|---------|----------|-------------|
-| 192×192 | `/icons/icon-192.png` | Padrão |
-| 512×512 | `/icons/icon-512.png` | Padrão |
-| 512×512 | `/icons/icon-512.png` | `maskable` |
-
-**Atalho:** Dashboard → `/` ("Painel Financeiro")
-
-### Install Prompt
-
-Dois componentes gerenciam a experiência de instalação:
-
-| Componente | Localização | Descrição |
-|-----------|-------------|-----------|
-| `PwaRegister` | `src/components/pwa/pwa-register.tsx` | Regista automaticamente `/sw.js` no `navigator.serviceWorker` ao montar. Renderiza `null` (não tem UI). |
-| `PwaInstallPrompt` | `src/components/pwa/pwa-install-prompt.tsx` | Banner animado (Framer Motion) no bottom-left. Aparece quando o browser dispara `beforeinstallprompt`. Botão "Instalar" + botão "X" para dispensar. |
-
-**Comportamento de dismiss:** O utilizador pode fechar o prompt com o botão X, que grava `pwa-install-dismissed` no `sessionStorage`. O prompt não reaparece na mesma sessão.
-
-**Animação:** Entrada com `slide-in-from-bottom-4` + `fade-in-0` (spring, damping: 25, stiffness: 300).
-
-### Meta Tags PWA
-
-No `<head>` do `layout.tsx`:
-
-```html
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-```
-
-**Viewport `themeColor`:** `#10b981` (emerald-500)
-
----
-
-## 13. AI Chat — Assistente Virtual (NOVO v3.0)
-
-### Arquitetura
-
-```
-User → xp-ai-chat.tsx → POST /api/ai/chat (Next.js route) → Backend /api/v1/ai/chat → OpenRouter
-```
-
-O frontend **não** chama o LLM diretamente. Todas as mensagens passam por uma API Route do Next.js que atua como proxy seguro, encaminhando o request ao backend XPayments com o JWT do utilizador.
-
-### Chat Widget
-
-**Componente:** `src/components/ai/xp-ai-chat.tsx`
-
-| Elemento | Especificação |
-|----------|--------------|
-| Botão flutuante | Fixo `bottom-6 right-6`, 56×56px, `bg-neon-500` com `shadow-[0_0_20px_rgba(16,185,129,0.3)]`, pulse animado quando chat está fechado |
-| Painel do chat | Fixo `bottom-24 right-6`, `max-w-[380px]` × `520px`, responsivo (`w-[calc(100vw-2rem)]` em mobile) |
-| Header | Ícone `Bot` com ponto verde pulsante, título "XPayments AI", subtítulo "Assistente Virtual", botão fechar |
-| Input | Campo de texto com bordas neon no focus, botão enviar com ícone `SendHorizontal` |
-| Store | `src/stores/chat-store.ts` (Zustand, não persistido) |
-
-**Funcionalidades:**
-
-| Feature | Descrição |
-|---------|-----------|
-| Suggestion chips | 3 chips iniciais: "Ver saldos", "Transações recentes", "Ajuda com KYC" |
-| Typing indicator | 3 pontos pulsantes com `animate-pulse` e delays escalonados (0ms, 150ms, 300ms) |
-| Auto-scroll | `scrollIntoView({ behavior: 'smooth' })` a cada nova mensagem ou mudança de loading |
-| Auto-focus | Input recebe foco 100ms após abertura do painel (aguarda animação) |
-| Error handling | Em caso de erro, adiciona mensagem `role: 'system'` com texto de erro |
-| Mensagem do assistant | Extrai de `data.data.content \|\| data.content \|\| data.message` |
-
-**Estilo das mensagens:**
-
-| Role | Fundo | Borda | Alinhamento |
-|------|-------|-------|-------------|
-| `user` | `bg-neon-500/15` | `rounded-br-md` (canto reto inferior-direito) | Direita |
-| `assistant` | `bg-white/[0.05]` | `rounded-bl-md` (canto reto inferior-esquerdo) | Esquerda |
-| `system` | Sem fundo | — | Centrado, texto `zinc-600` |
-
-### Backend Esperado
-
-O backend deve implementar o endpoint:
-
-```
-POST /api/v1/ai/chat
-Authorization: Bearer <JWT>
-Content-Type: application/json
-```
-
-**Request:**
+| `canViewDashboard` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `canViewWallets` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `canDeposit` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `canSwap` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `canWithdraw` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `canViewTransactions` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `canGeneratePaymentLinks` | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `canManageApiKeys` | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `canConfigureCheckouts` | ❌ | ✅ | ✅ | ✅ | ❌ |
+| `canViewSubClients` | ❌ | ❌ | ✅ | ✅ | ✅ |
+| `canManageTickets` | ❌ | ❌ | ❌ | ✅ | ✅ |
+| `canApproveKyc` | ❌ | ❌ | ❌ | ✅ | ✅ |
+| `canConfigureFees` | ❌ | ❌ | ❌ | ✅ | ✅ |
+| `canManageOrganizations` | ❌ | ❌ | ❌ | ✅ | ✅ |
+| `canManageUsers` | ❌ | ❌ | ❌ | ✅ | ✅ |
+
+### Roles
+
+- **`customer`** — Acesso básico: dashboard, wallets, depósitos, swaps, payouts, transações, KYC
+- **`merchant`** — Tudo do customer + ferramentas de merchant (payment links, API keys, checkouts, catálogo)
+- **`super_merchant`** — Tudo do merchant + visualização de sub-clientes
+- **`admin`** — Acesso total a todas as funcionalidades
+- **`operator`** — Operador interno: dashboard, wallets (somente leitura), transações, tickets, KYC, taxas, organizações, utilizadores
+
+### Como Funciona
+
+A role é lida do payload JWT no momento do login. A sidebar filtra os itens de navegação com base na role do utilizador e nas permissões configuradas na constante `ROLE_PERMISSIONS`.
 
 ```typescript
-{
-  messages: Array<{
-    role: "user" | "assistant" | "system";
-    content: string;
-  }>;
-}
-```
+// Exemplo de uso em componentes
+const { user } = useAuthStore();
+const role = user?.role ?? 'customer';
+const perms = ROLE_PERMISSIONS[role];
 
-**Response:**
-
-```typescript
-{
-  success: true,
-  data: {
-    message: string  // ou { content: string }
-  }
-}
-```
-
-O backend deve:
-1. Validar o JWT e identificar o merchant/utilizador
-2. Adicionar um **system prompt** com personalidade XPayments e contexto da plataforma
-3. Enviar o array de mensagens ao provedor LLM (OpenRouter, OpenAI, etc.)
-4. Retornar a resposta no envelope padrão `{ success, data }`
-
-### Configuração Sugerida (Backend)
-
-```env
-OPENROUTER_API_KEY=sk-or-...
-AI_MODEL=openai/gpt-4o
-AI_SYSTEM_PROMPT="És o assistente virtual da XPayments.Digital. Ajudas merchants com saldos, transações, KYC, depósitos, swaps e payouts. Responde sempre em português."
-```
-
----
-
-## 14. Depósitos — Métodos & Fluxo
-
-### Métodos Disponíveis
-
-| Método | Moeda | Descrição | Comprovante |
-|--------|-------|-----------|-------------|
-| **PIX Instantâneo** | BRL | Transferência PIX em tempo real | `receipt` (referência/ID) |
-| **SEPA Instant** | EUR | Transferência bancária europeia | `receipt` (referência/ID) |
-| **Crypto Wallet** | USDT | USDT/USDC via rede TRC-20 | `tx_hash` (hash da transação) |
-
-### Fluxo (3 Etapas)
-
-```
-Etapa 1: Seleção do Método
-    ↓
-Etapa 2: Valor + Instruções de Pagamento + Envio de Comprovante
-    ↓
-Etapa 3: Confirmação (status: "Em verificação")
-```
-
-O fluxo chama duas APIs em sequência:
-1. `POST /deposits` — cria o registro do depósito
-2. `POST /deposits/:id/proof` — envia o comprovante para verificação
-
----
-
-## 15. Payouts — Fluxo de Saída
-
-### Fluxo
-
-```
-Saldo USDT (AVAILABLE) → Seleciona moeda de recebimento → Informa destino → Submete
-```
-
-### Opções de Recebimento
-
-| Moeda | Tipo | Destino | Processamento |
-|-------|------|---------|---------------|
-| **USDT** | Crypto | Endereço de carteira (TRC-20, ERC-20, etc.) | Automático (minutos) |
-| **EUR** | Fiat | IBAN do destinatário | Manual via OTC desk (D+1) |
-| **BRL** | Fiat | Chave PIX (CPF, email, telefone ou aleatória) | Manual via OTC desk (D+1) |
-
-### Payload
-
-```typescript
-interface PayoutRequest {
-  amountUSDT: number;
-  requestedCurrency: 'USDT' | 'EUR' | 'BRL';
-  destinationInfo: string;
-  status?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'REJECTED' | 'CANCELLED';
+if (perms.canManageApiKeys) {
+  // renderizar seção de API Keys
 }
 ```
 
 ---
 
-## 16. Design System — Dark Control Tower v3.0
+## 8. Sistema de Navegação
 
-### Paleta Principal
+A navegação é gerida pelo store `useNavStore` (`src/stores/nav-store.ts`) e pela sidebar (`src/components/layout/xp-sidebar.tsx`).
 
-| Token | Valor | Uso |
-|-------|-------|-----|
-| `--color-neon` / `neon-400` | `#00FF7F` | Cor de destaque primária (neon green) |
-| `neon-500` | `#00E672` | Gradientes, botões principais |
-| `neon-600` | `#00CC66` | Gradientes (início), hovers |
-| `neon-950` | `#003319` | Backgrounds de alto contraste |
-| PWA Theme Color | `#10b981` | emerald-500, usado no manifest e meta tag |
-| Background | `#0A0E1A` | Background principal (dark) |
-| Card | `zinc-900/50` | Cards com transparência |
-| Border | `zinc-800` | Bordas de cards e divisores |
-| Text primary | `zinc-100` | Texto principal |
-| Text secondary | `zinc-400` | Texto secundário |
+### Store de Navegação
 
-### Tipografia
+```typescript
+interface NavState {
+  currentPage: NavPage;   // Página atual exibida
+  sidebarOpen: boolean;   // Sidebar expandida/colapsada (desktop)
+  setPage: (page: NavPage) => void;
+  toggleSidebar: () => void;
+  setSidebarOpen: (open: boolean) => void;
+}
+```
 
-| Fonte | Variável CSS | Uso |
-|-------|-------------|-----|
-| Inter | `--font-sans` | Texto geral (UI) |
-| JetBrains Mono | `--font-mono` | Código, endereços, hashes |
+### Sidebar — Seções Colapsáveis
 
-Ambas configuradas com `font-display: swap` para performance de carregamento.
+A sidebar organiza os itens de navegação em **6 seções** colapsáveis, com RBAC filtering por role e permissão:
 
-### Animações Premium (NOVO v3.0)
+| Seção | Label | Páginas |
+|-------|-------|---------|
+| **Dashboard** | — | Painel (todos) |
+| **WALLET** | `WALLET` | Carteiras, Depositar, Swap, Payouts |
+| **VERIFICAÇÃO** | `VERIFICAÇÃO` | Verificação KYC |
+| **E-COMMERCE & VENDAS** | `E-COMMERCE & VENDAS` | Transações, Checkouts, Links de Pagamento, Catálogo |
+| **DEVELOPERS** | `DEVELOPERS` | API Keys, API Docs |
+| **ADMIN** | `ADMIN` | Admin Overview, Aprovações, Liquidez, Utilizadores, Organizações |
 
-Todas definidas em `src/app/globals.css`:
+### Navegação Mobile (PWA-style)
 
-| Animação | Classe CSS | Descrição | Duração |
-|----------|-----------|-----------|---------|
-| `particle-drift` | — | Partículas CSS flutuantes (starfield) com `--dx`, `--dy`, `--s` customizáveis | 6s (ease-in-out, infinite) |
-| `shimmer` | `.animate-shimmer` | Skeleton loading premium — gradiente horizontal deslizante | 2s (ease-in-out, infinite) |
-| `glow-pulse` | `.animate-glow-pulse` | Neon breathing — box-shadow pulsante em emerald | 4s (ease-in-out, infinite) |
-| `card-enter` | `.animate-card-enter` | Card entrance — slide-up + fade-in com scale | 0.5s (cubic-bezier 0.16, 1, 0.3, 1) |
-| `value-update` | `.animate-value-update` | Balance change flash — opacidade pulsa brevemente | 0.3s (ease) |
-| `page-enter` | `.animate-page-enter` | SPA page transition — slide-up + fade-in | 0.3s (cubic-bezier 0.16, 1, 0.3, 1) |
-| `ticker-scroll` | `.animate-ticker-scroll` | Ticker tape horizontal de cripto | 40s (linear, infinite) |
-| `marquee-scroll` | `.animate-marquee-scroll` | Marquee genérico | 30s (linear, infinite) |
-| `neon-flow` | `.xpayments-grid-bg` | Grid background com linhas neon pulsantes | 8s (ease-in-out, infinite) |
-| `sweep-horizontal` | `.xpayments-sweep::before` | Feixe de luz horizontal no grid | 12s (linear, infinite) |
-| `sweep-vertical` | `.xpayments-sweep::after` | Feixe de luz vertical no grid | 16s (linear, infinite) |
+Em ecrãs mobile (`< md`), a sidebar é substituída por:
 
-Adicionalmente, existem animações para a landing page: `float-up`, `pulse-glow`, `slide-in-left`, `slide-in-right`, `gradient-x`.
+1. **Bottom Navigation Bar** — Barra fixa inferior com 4 itens rápidos + botão "Mais":
+   - Painel (LayoutDashboard)
+   - Carteiras (Wallet)
+   - Transações (Receipt)
+   - KYC (ShieldCheck)
+   - Mais (Menu) → abre sidebar como overlay
+2. **Safe area** — Respeita `env(safe-area-inset-bottom)` para dispositivos iOS
+3. **Overlay** — Fundo escuro com backdrop-blur ao abrir a sidebar
 
-### Background Particle System (NOVO v3.0)
+### Estado do Sidebar (Desktop)
 
-**Componente:** `src/components/shared/animated-grid-bg.tsx`
-
-Sistema de partículas canvas-based que cria um efeito de constelação interativa.
-
-| Propriedade | Valor |
-|-------------|-------|
-| Partículas | 50 |
-| Distância de conexão | 140px |
-| Raio de atração do mouse | 180px |
-| Força de atração | 0.008 |
-| Cor (RGB) | `16, 185, 129` (#10b981, emerald) |
-| FPS target | 30 (throttle via `requestAnimationFrame`) |
-| DPR awareness | `Math.min(devicePixelRatio, 2)` |
-| Comportamento nas bordas | Wrap-around (partículas reaparecem no lado oposto) |
-
-**Elementos visuais:**
-
-1. **Partículas:** Pontos com radius 1–2.5px e opacidade 0.1–0.4
-2. **Linhas de constelação:** Conectadas entre partículas < 140px com alpha proporcional à distância
-3. **Cursor glow:** Gradiente radial (300px raio) que segue o mouse com smoothing (`0.04` interpolation lag)
-4. **Grid CSS overlay:** Camada base com grid lines neon (`.xpayments-grid-bg`)
-
-**Performance:** O loop de renderização é throttled a 30fps. O canvas respeita o device pixel ratio (limitado a 2x) para evitar overhead em displays de alta densidade.
-
-### Componentes
-
-- **shadcn/ui** (estilo New York) como base (~40 componentes)
-- **Sonner** para toasts (position: `top-right`, `richColors`)
-- **PwaRegister** — auto-registo do service worker
-- **PwaInstallPrompt** — banner de instalação PWA com Framer Motion
-- **XpAiChat** — chat widget flutuante com AI assistant
-- Cards com `bg-zinc-900/50 border-zinc-800` e backdrop-blur
-- Botões principais com gradiente `from-neon-600 to-neon-500`
-- Badges com variantes outline em `border-zinc-700 bg-zinc-900`
-
-### Padrões Visuais — Dashboards
-
-#### Merchant Dashboard (`dashboard-page.tsx`)
-
-| Elemento | Estilo |
-|----------|--------|
-| Header | Ícone `TrendingUp` + "Dashboard Financeiro" + nome da org |
-| Ledger Cards | 4 colunas (1/2/4 responsive) com `border-white/[0.06] bg-white/[0.02]` |
-| Card AVAILABLE | Borda verde, `text-emerald-400`, ícone `Wallet` |
-| Card PENDING | Borda âmbar, `text-amber-400`, ícone `Clock` |
-| Card INCOMING | Borda azul, `text-sky-400`, ícone `ArrowDownLeft` |
-| Card RESERVE | Borda roxa, `text-purple-400`, ícone `ShieldAlert` |
-| Tabela Transações | shadcn `Table`, status badges coloridos, mobile cards |
-| Loading | `Skeleton` animado em todas as posições |
-| Erro | Banner vermelho com retry automático |
-
-#### Admin Dashboard (`admin-dashboard-page.tsx`)
-
-| Elemento | Estilo |
-|----------|--------|
-| Header | Ícone `Shield` + "Super Admin Overview" + badge "Master System" neon |
-| Stat Cards | 3 colunas: Merchants Ativos, Volume USDT, Routing Engine Status |
-| Routing Status | Ponto verde pulsante (`animate-ping`) |
-| Merchants Table | Desktop table + mobile cards, tier badges coloridos |
+- **Expandido**: `w-[260px]` — Mostra ícones, labels, seções colapsáveis e footer completo
+- **Colapsado**: `w-[68px]` — Mostra apenas ícones com tooltips no hover
+- **Toggle**: Botão de chevron no fundo da sidebar
 
 ---
 
-## 17. Design Responsivo — Mobile-First
+## 9. KYC & Taxas
 
-### Abordagem
+O sistema de verificação KYC é progressivo, com **4 tiers** que desbloqueiam funcionalidades, limites e taxas progressivamente.
 
-A aplicação adota uma estratégia **mobile-first** com breakpoints responsivos em todos os grids e layouts.
+### Tiers de Verificação
 
-### Sidebar
+| Tier | Nome | Limite por Tx | Limite Diário | Limite Mensal | Moedas | Settlement |
+|------|------|:-------------:|:-------------:|:-------------:|--------|:----------:|
+| **TIER 0** | Não Verificado | €250 | €1.000 | €5.000 | EUR, BRL, USDT | T+3 |
+| **TIER 1** | Básico | €2.500 | €10.000 | €50.000 | EUR, BRL, USDT | T+2 |
+| **TIER 2** | Verificado | €25.000 | €100.000 | €500.000 | EUR, BRL, USDT, USD | T+1 |
+| **TIER 3** | Corporativo | €250.000 | €1.000.000 | €10.000.000 | EUR, BRL, USDT, USD | T+0 |
 
-| Breakpoint | Comportamento |
-|------------|---------------|
-| `< md` (mobile) | Sidebar como **overlay** absoluto, controlada por botão hamburger no header. Backdrop com `bg-black/60 backdrop-blur-sm`. |
-| `≥ md` (desktop) | Sidebar **static** no fluxo flex, com toggle collapse/expand (64px ↔ 256px). |
+### Documentos Necessários por Tier
 
-### Grids
+| Tier | Documentos |
+|------|-----------|
+| **TIER 0** | Email, Senha |
+| **TIER 1** | Nome Completo, XPayments ID, Região (EU/BR), Contacto |
+| **TIER 2** | NIF/CPF/TIN, Data de Nascimento, Morada Completa, Código Postal |
+| **TIER 3** | Verificação Externa, Documento de Identidade, Proof of Address |
 
-Todos os grids utilizam breakpoints responsivos:
-- `grid-cols-2 lg:grid-cols-3` (cards de cripto)
-- `grid grid-cols-1 sm:grid-cols-4` (moedas suportadas na landing)
-- Padding de conteúdo: `p-4 sm:p-6 lg:p-8`
+### Taxas por Tier
 
-### Header
+| Operação | TIER 0 | TIER 1 | TIER 2 | TIER 3 |
+|----------|:------:|:------:|:------:|:------:|
+| **Recebimentos PIX** | 3.50% + €0.50 | 2.80% + €0.30 | 2.00% + €0.20 | 1.20% + €0.10 |
+| **Recebimentos SEPA** | 2.80% + €1.00 | 2.20% + €0.70 | 1.50% + €0.50 | 0.90% + €0.30 |
+| **Recebimentos USDT** | 1.50% + €0.25 | 1.20% + €0.15 | 0.80% + €0.10 | 0.50% + €0.05 |
+| **Payouts** | €3.00 | €2.00 | €1.20 | €0.60 |
+| **Swaps (Spread)** | 1.50% | 1.00% | 0.60% | 0.30% |
+| **Settlement** | T+3 | T+2 | T+1 | T+0 |
 
-- Mobile: botão hamburger sempre visível
-- Desktop: botão hamburger apenas quando sidebar está colapsada
-- Badge de versão oculto em telas pequenas (`hidden sm:inline-flex`)
+### Timeline de Settlement
 
-### Chat AI (Mobile)
+| Tier | Timeline | Descrição |
+|------|----------|-----------|
+| TIER 0 | T+3 | Liquidação em 3 dias úteis |
+| TIER 1 | T+2 | Liquidação em 2 dias úteis |
+| TIER 2 | T+1 | Liquidação no dia seguinte |
+| TIER 3 | T+0 | Liquidação imediata (mesmo dia) |
 
-O painel do chat é 100% responsivo:
-- **Mobile:** `w-[calc(100vw-2rem)]` — quase full-width com 1rem de margem
-- **Desktop:** `max-w-[380px]` — largura fixa
+### Funcionalidades por Tier
+
+| Funcionalidade | TIER 0 | TIER 1 | TIER 2 | TIER 3 |
+|---------------|:------:|:------:|:------:|:------:|
+| Recebimentos PIX | ✅ | ✅ | ✅ | ✅ |
+| Recebimentos SEPA | ✅ | ✅ | ✅ | ✅ |
+| Recebimentos USDT | — | ✅ | ✅ | ✅ |
+| Payouts (manual) | — | ✅ | ✅ | ✅ |
+| Payouts (automáticos) | — | — | ✅ | ✅ |
+| Swaps básicos | — | ✅ | ✅ | ✅ |
+| Swaps ilimitados | — | — | ✅ | ✅ |
+| Payment Links | — | ✅ | ✅ | ✅ |
+| API Keys | — | — | ✅ | ✅ |
+| Checkouts personalizados | — | — | ✅ | ✅ |
+| Sub-clientes | — | — | ✅ | ✅ |
+| USD | — | — | ✅ | ✅ |
+| Taxas negociáveis | — | — | — | ✅ |
+| Settlement T+0 | — | — | — | ✅ |
+| Suporte 24/7 prioritário | — | — | — | ✅ |
 
 ---
 
-## 18. SEO & Metadados
+## 10. PWA — Progressive Web App
 
-### Arquivos Dinâmicos
+O XPayments.Digital é uma PWA completa, instalável em desktop e mobile.
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `src/app/robots.ts` | Gera `robots.txt`: permite `/`, bloqueia `/api/` e `/admin/` |
-| `src/app/sitemap.ts` | Gera `sitemap.xml` com URL principal, prioridade 1, frequência semanal |
-
-### JSON-LD Structured Data
-
-Tipo `FinancialService` no Schema.org, injetado no `<head>` via `layout.tsx`:
+### Manifest (`public/manifest.json`)
 
 ```json
 {
-  "@type": "FinancialService",
   "name": "XPayments.Digital",
-  "areaServed": ["Brazil", "Portugal", "European Union"],
-  "serviceType": ["Payment Gateway", "Digital Wallet", "Currency Exchange", "Cross-border Payments"],
-  "knowsAbout": ["Blockchain", "Cryptocurrency", "Fiat Payments", "SEPA", "PIX"]
+  "short_name": "XPayments",
+  "display": "standalone",
+  "background_color": "#0A0E1A",
+  "theme_color": "#0A0E1A",
+  "orientation": "any",
+  "lang": "pt-BR",
+  "categories": ["finance", "business", "payments"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
 }
 ```
 
-### Open Graph & Twitter Cards
+### Service Worker (`public/sw.js`)
 
-- Tipo: `website`
-- Locale: `pt_BR`
-- Imagem OG: `/og-image.png` (1200×630)
-- Twitter: `summary_large_image`
+Cache versionado com timestamp de build para reliable cache busting:
 
-### Performance
+```
+CACHE_VERSION = 'xp-v3'
+CACHE_NAME = 'xp-v3-<BUILD_TIMESTAMP>'
+```
 
-| Otimização | Implementação |
-|------------|---------------|
-| `font-display: swap` | Fontes Inter e JetBrains Mono |
-| `dns-prefetch` | `https://api.xpayments.digital` no `<head>` |
-| `preconnect` | Google Fonts e gstatic |
-| `output: standalone` | Build otimizado para Docker/VPS |
+#### Estratégias de Cache
+
+| Tipo de Recurso | Estratégia | Descrição |
+|-----------------|-----------|-----------|
+| **Chamadas API** (`/api/*`) | **Network-First** | Tenta rede, fallback para cache. Em offline: retorna `{ error: 'Sem conexão', offline: true }` com status 503 |
+| **Páginas HTML** (same-origin) | **Stale-While-Revalidate** | Serve do cache imediatamente, atualiza em background |
+| **Assets estáticos** (same-origin) | **Stale-While-Revalidate** | Carregamento instantâneo com atualização background |
+| **Google Fonts CSS** | **Stale-While-Revalidate** | Cache dedicado (`xp-v3-fonts`) |
+| **Google Fonts files** (woff2) | **Cache-First** | Cache permanente por 30 dias |
+
+#### Ciclo de Vida
+
+- **Install** — Pre-cache de assets críticos (`/`, `/manifest.json`, `/logo.png`, ícones, `/offline.html`). Usa `Promise.allSettled` para não falhar se um asset estiver indisponível. Ativação imediata via `skipWaiting()`
+- **Activate** — Remove caches antigos (preserva offline e fonts). Reclama todos os clientes via `clients.claim()`
+- **Fetch** — Roteamento por tipo de recurso com as estratégias descritas acima
+
+#### Offline Fallback
+
+Para requisições de navegação em offline, o SW serve `/offline.html`. Para chamadas API em offline, retorna JSON com `status: 503`.
+
+### Instalação PWA
+
+- **`PwaRegister`** — Componente que registra automaticamente o service worker no mount
+- **`PwaInstallPrompt`** — Componente que detecta o evento `beforeinstallprompt` e exibe um banner de instalação nativo
+
+### Suporte iOS
+
+- `apple-mobile-web-app-capable: yes` no `<head>`
+- `apple-mobile-web-app-status-bar-style: black-translucent`
+- `apple-touch-icon.png` para home screen
+- `env(safe-area-inset-bottom)` respeitado na bottom nav e footer da sidebar
 
 ---
 
-## 19. Deploy — Vercel (NOVO v3.0)
+## 11. Design System — Dark Control Tower v3.0
 
-### Configuração Automática
+### Filosofia
 
-O repositório está configurado para deploy automático no Vercel:
+O design system "Dark Control Tower" cria uma experiência visual que remete a uma torre de controle financeira — fundo escuro profundo (`#0A0E1A`), acentos neon verde (#00FF7F) para indicadores positivos e ações primárias, e tons zinc para hierarquia visual.
 
-1. Fazer fork do repositório
-2. Importar no [Vercel](https://vercel.com/new) (`vercel.com/new`)
-3. Configurar variável de ambiente:
-   - `NEXT_PUBLIC_API_URL=https://api.xpayments.digital`
-4. Deploy automático em cada push para `main`
+### Sistema de Cores
 
-### Variáveis de Ambiente no Vercel
+#### Cores Neon Brand
 
-| Variável | Valor | Obrigatória |
-|----------|-------|-------------|
-| `NEXT_PUBLIC_API_URL` | `https://api.xpayments.digital` | Sim |
+| Token | Valor | Uso |
+|-------|-------|-----|
+| `--color-neon` | `#00FF7F` | Cor principal da marca |
+| `--color-neon-400` | `#00FF7F` | Acentos, links, indicadores ativos |
+| `--color-neon-500` | `#00E672` | Botões primários, badges |
+| `--color-neon-600` | `#00CC66` | Hover states |
+| `--color-neon-700` | `#00994D` | Borders e divisores |
+| `--color-neon-950` | `#003319` | Backgrounds sutis |
 
-### Build Configuration
+#### Cores Dark Theme
 
-| Configuração | Valor |
-|-------------|-------|
-| Framework Preset | Next.js |
-| Build Command | `next build` |
-| Output Directory | `.next` |
-| Install Command | `bun install` |
+| Token | Valor | Uso |
+|-------|-------|-----|
+| `--background` | `#0A0E1A` | Background principal |
+| `--card` | `oklch(0.205 0 0)` | Cards e superfícies elevadas |
+| `--muted` | `oklch(0.269 0 0)` | Elementos desativados |
+| `--muted-foreground` | `oklch(0.708 0 0)` | Texto secundário |
+| `--border` | `oklch(1 0 0 / 10%)` | Bordas sutis |
+| `--input` | `oklch(1 0 0 / 15%)` | Inputs e fields |
 
-O projeto utiliza `output: "standalone"` no `next.config.ts`, permitindo também deploy em qualquer ambiente com suporte a Node.js/Bun.
+### Tipografia
 
-### Docker / VPS
+| Fonte | Variable | Uso |
+|-------|----------|-----|
+| **Inter** | `--font-sans` | Texto principal, UI, headings |
+| **JetBrains Mono** | `--font-mono` | Código, valores numéricos, endereços |
+
+Configuradas via `next/font/google` com `display: swap` para performance.
+
+### Animações Customizadas
+
+| Nome | Classe | Descrição |
+|------|--------|-----------|
+| **Page Enter** | `animate-page-enter` | Transição de página SPA (fade + slide up) |
+| **Card Enter** | `animate-card-enter` | Entrada de cards (fade + slide + scale) |
+| **Shimmer** | `animate-shimmer` | Loading skeleton effect |
+| **Glow Pulse** | `animate-glow-pulse` | Neon breathing para elementos ativos |
+| **Stagger** | `animate-stagger` | Animação escalonada de filhos (até 8) |
+| **Counter Flash** | `animate-counter-flash` | Flash verde em contadores atualizados |
+| **Scale Fade In** | `animate-scale-fade-in` | Para modais, sheets e overlays |
+| **Slide Up** | `animate-slide-up` | Para toasts e notificações |
+| **Fade In** | `animate-fade-in` | Fade genérico rápido |
+| **Float Up** | `animate-float-up` | Elementos flutuantes (landing) |
+| **Pulse Glow** | `animate-pulse-glow` | Pulsação de opacidade (landing) |
+| **Ticker Scroll** | `animate-ticker-scroll` | Marquee de preços (40s loop) |
+| **Marquee Scroll** | `animate-marquee-scroll` | Marquee de logos (30s loop) |
+| **Gradient X** | `animate-gradient-x` | Gradiente animado |
+| **Neon Grid** | `xpayments-grid-bg` | Grid neon de fundo com sweep lines |
+| **Neon Sweep** | `xpayments-sweep` | Linha luminosa cruzando o grid |
+
+### Utilitários de Brand
+
+| Classe | Efeito |
+|--------|--------|
+| `text-neon-glow` | Texto com text-shadow neon |
+| `bg-neon-glow` | Box-shadow neon no fundo |
+| `border-neon-glow` | Box-shadow neon na borda |
+| `text-gradient-neon` | Texto com gradiente neon animado |
+| `focus-neon` | Focus ring neon para acessibilidade |
+| `noise-overlay` | Textura de ruído sutil para profundidade |
+
+### Scrollbar Customizada
+
+```css
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(63, 63, 70, 0.5); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.3); } /* neon no hover */
+```
+
+### Componentes shadcn/ui
+
+A biblioteca inclui **49 componentes** no estilo New York, incluindo:
+
+Button, Card, Dialog, Sheet, Drawer, Input, Select, Textarea, Checkbox, Radio Group, Switch, Slider, Tabs, Table, Badge, Avatar, Tooltip, Popover, Dropdown Menu, Command (CmdK), Accordion, Collapsible, Calendar, Progress, Separator, ScrollArea, Skeleton, Alert, AlertDialog, Form, Label, Toast, Sonner/Toaster, Chart, Carousel, Pagination, Breadcrumb, Hover Card, Context Menu, Menubar, Navigation Menu, Resizable, Input OTP, Sidebar, Toggle, Toggle Group, Aspect Ratio, Page Error Boundary
+
+---
+
+## 12. Variáveis de Ambiente
+
+| Variável | Obrigatória | Descrição |
+|----------|:-----------:|-----------|
+| `NEXT_PUBLIC_API_URL` | **Sim** | URL base da API (sem `/api/v1`). Ex: `https://api.xpayments.digital` |
+| `DATABASE_URL` | Não | String de conexão Prisma (SQLite local, desenvolvimento apenas) |
+| `NEXTAUTH_SECRET` | Não | Reservado para fluxo futuro |
+| `NEXTAUTH_URL` | Não | Reservado para fluxo futuro |
+
+### `.env.example`
+
+```bash
+NEXT_PUBLIC_API_URL="https://api.xpayments.digital"
+```
+
+> ⚠️ **Atenção**: `NEXT_PUBLIC_API_URL` **não** inclui `/api/v1`. O client adiciona automaticamente `/api/v1` ao construir as URLs de request.
+
+---
+
+## 13. Scripts
+
+| Script | Comando | Descrição |
+|--------|---------|-----------|
+| `dev` | `next dev -p 3000` | Servidor de desenvolvimento (Turbopack) |
+| `build` | `next build && cp -r ...` | Build de produção + cópia de assets para standalone |
+| `start` | `NODE_ENV=production bun .next/standalone/server.js` | Iniciar servidor de produção standalone |
+| `lint` | `eslint .` | Verificar qualidade do código com ESLint |
+| `db:push` | `prisma db push` | Push do schema para o banco (sem migrações) |
+| `db:generate` | `prisma generate` | Gerar Prisma Client |
+| `db:migrate` | `prisma migrate dev` | Criar e aplicar migrações |
+| `db:reset` | `prisma migrate reset` | Resetar banco de dados |
+
+---
+
+## 14. Deploy
+
+### Standalone Output
+
+O `next.config.ts` configura `output: "standalone"`, gerando uma build self-contained em `.next/standalone/` pronta para Docker/VPS:
 
 ```bash
 # Build
 bun run build
 
-# Start (produção)
-bun run start
-# Equivalente a: NODE_ENV=production bun .next/standalone/server.js
+# Executar produção
+NODE_ENV=production bun .next/standalone/server.js
 ```
 
-O script de build copia automaticamente os assets estáticos e a pasta `public` para dentro do diretório standalone.
+### Vercel
 
-### Caddy (Exemplo)
+[![Deploy on Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/XPaymentsDigital/xpayments-digital.git&env=NEXT_PUBLIC_API_URL,https://api.xpayments.digital)
 
-O projeto inclui um `Caddyfile` de referência para deploy com reverse proxy.
+Basta clonar o repositório na Vercel e configurar a variável `NEXT_PUBLIC_API_URL`.
 
----
+### Configuração do Next.js
 
-## 20. Roadmap v4.0 (Próxima Versão)
-
-- [ ] **Webhook notifications** — Eventos de pagamento em tempo real via webhooks
-- [ ] **Multi-language (i18n)** — Suporte multi-idioma com `next-intl` (já instalado como dependência)
-- [ ] **Dashboard analytics** — Gráficos interativos com Recharts (já instalado como dependência)
-- [ ] **Checkout embeddable** — Widget iframe para merchants integrarem checkout diretamente
-- [ ] **Sub-clientes** — Hierarquia Super Merchant → Sub-merchants
-- [ ] **API Rate limiting** — Limitação de requests no frontend
-- [ ] **Biometria (WebAuthn)** — Autenticação 2FA por biometria
-- [ ] **Dark/Light theme toggle** — Alternância de tema claro/escuro
-- [ ] **Export CSV/Excel** — Exportação de transações em formato tabular
-- [ ] **Notificações push** — Service worker + backend para notificações em tempo real
-
----
-
-## 21. Licença
-
-Projeto proprietário — **UNLICENSED**. Todos os direitos reservados a XPayments.Digital.
-
----
-
-## 22. Setup & Desenvolvimento
-
-```bash
-# 1. Clonar o repositório
-git clone https://github.com/XPaymentsDigital/xpayments-digital.git
-cd xpayments-digital
-
-# 2. Instalar dependências
-bun install
-
-# 3. Configurar variáveis de ambiente
-cp .env.example .env.local
-# Editar .env.local com NEXT_PUBLIC_API_URL
-
-# 4. (Opcional) Setup do banco de dados local (Prisma/SQLite)
-bun run db:push
-
-# 5. Iniciar em modo de desenvolvimento
-bun run dev
-# Acesse http://localhost:3000
+```typescript
+const nextConfig: NextConfig = {
+  output: "standalone",
+  typescript: { ignoreBuildErrors: true },
+  reactStrictMode: false,
+};
 ```
 
-### Scripts Disponíveis
+---
 
-| Script | Comando | Descrição |
-|--------|---------|-----------|
-| `dev` | `next dev -p 3000` | Servidor de desenvolvimento com Turbopack |
-| `build` | `next build` + copy assets | Build de produção standalone |
-| `start` | `bun .next/standalone/server.js` | Inicia servidor de produção |
-| `lint` | `eslint .` | Linting com ESLint |
-| `db:push` | `prisma db push` | Sincroniza schema Prisma com o banco |
-| `db:generate` | `prisma generate` | Gera client Prisma |
-| `db:migrate` | `prisma migrate dev` | Cria e aplica migrações |
-| `db:reset` | `prisma migrate reset` | Reseta o banco de dados |
+## 15. Roadmap v4.0
+
+- [ ] **i18n Completo** — Internacionalização com `next-intl` (EN, PT, ES)
+- [ ] **Notificações Push** — Web Push API para alertas de transações e payouts
+- [ ] **Dashboard em Tempo Real** — WebSocket para atualizações live de saldos e transações
+- [ ] **Multi-Tenant Avançado** — Gestão de sub-contas e permissões delegadas
+- [ ] **Relatórios Exportáveis** — CSV/PDF de transações, taxas e settlement
+- [ ] **2FA / Biometria** — Autenticação de dois fatores e biometria nativa
+- [ ] **App Store** — Distribuição via Apple App Store e Google Play (Capacitor)
+- [ ] **Audit Log** — Registo detalhado de todas as ações no sistema
+- [ ] **Webhooks Avançados** — Configuração flexível de webhooks com retry
+- [ ] **AI Contextual** — Assistente AI com contexto da conta e transações do utilizador
+
+---
+
+<div align="center">
+
+**XPayments.Digital v3.0** — A ponte entre o sistema financeiro tradicional e a economia digital.
+
+Desenvolvido com 💚 por [XPayments.Digital](https://xpayments.digital)
+
+</div>

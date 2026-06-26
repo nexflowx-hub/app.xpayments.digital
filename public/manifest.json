@@ -4,21 +4,57 @@
   "description": "Plataforma de Pagamentos Institucional — Wallets multi-moeda, settlement e gateway white-label",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#09090b",
-  "theme_color": "#10b981",
+  "background_color": "#0A0E1A",
+  "theme_color": "#0A0E1A",
   "orientation": "any",
   "scope": "/",
   "lang": "pt-BR",
   "dir": "ltr",
   "categories": ["finance", "business", "payments"],
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "screenshots": [],
   "shortcuts": [
-    { "name": "Dashboard", "url": "/", "description": "Painel Financeiro" }
+    {
+      "name": "Dashboard",
+      "short_name": "Painel",
+      "url": "/",
+      "description": "Painel Financeiro"
+    },
+    {
+      "name": "Carteiras",
+      "short_name": "Carteiras",
+      "url": "/",
+      "description": "Gerir carteiras multi-moeda"
+    },
+    {
+      "name": "Depositar",
+      "short_name": "Depositar",
+      "url": "/",
+      "description": "Depositar fundos"
+    },
+    {
+      "name": "KYC",
+      "short_name": "KYC",
+      "url": "/",
+      "description": "Verificação de identidade"
+    }
   ],
   "related_applications": [],
   "prefer_related_applications": false

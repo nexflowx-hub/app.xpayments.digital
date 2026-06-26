@@ -26,7 +26,18 @@ import MerchantApiDocsPage from '@/components/dashboard/merchant-api-docs-page';
 import XpAiChat from '@/components/ai/xp-ai-chat';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, Loader2, ArrowUp, ArrowDown } from 'lucide-react';
+import {
+  Menu,
+  Loader2,
+  ArrowUp,
+  ArrowDown,
+  LayoutDashboard,
+  Wallet,
+  Receipt,
+  ShieldCheck,
+  Bell,
+  User,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const PAGES: Record<string, React.ComponentType> = {
@@ -72,13 +83,21 @@ const TITLES: Record<string, string> = {
 // ── Scroll-to-top / bottom threshold (px from edge) ──
 const SCROLL_THRESHOLD = 60;
 
+// ── Mobile bottom nav items ──
+const MOBILE_NAV_ITEMS = [
+  { key: 'dashboard', label: 'Painel', icon: LayoutDashboard },
+  { key: 'wallets', label: 'Carteiras', icon: Wallet },
+  { key: 'transactions', label: 'Transações', icon: Receipt },
+  { key: 'kyc', label: 'KYC', icon: ShieldCheck },
+] as const;
+
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { currentPage, sidebarOpen, toggleSidebar, setPage } = useNavStore();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -144,6 +163,14 @@ export default function Home() {
   const handleToggleMobile = () => {
     setMobileMenuOpen((prev) => !prev);
   };
+
+  // Derive initials from user info for avatar
+  const userInitials = user
+    ? (user.fullName?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+      ?? user.nickname?.slice(0, 2).toUpperCase()
+      ?? user.email?.slice(0, 2).toUpperCase()
+      ?? 'U')
+    : 'U';
 
   if (!mounted) {
     return (
@@ -219,8 +246,33 @@ export default function Home() {
             <h1 className="text-sm font-semibold text-zinc-200 truncate tracking-tight">{title}</h1>
           </div>
 
-          {/* ── Right side: scroll controls + version ── */}
+          {/* ── Right side: notification bell, avatar, scroll controls + version ── */}
           <div className="flex items-center gap-1.5">
+            {/* Notification Bell (visual only) */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.06] rounded-lg transition-colors duration-200 relative"
+              aria-label="Notificações"
+            >
+              <Bell className="size-4" />
+              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-neon-500 ring-2 ring-[#09090b]" />
+            </Button>
+
+            {/* User Avatar (desktop only) */}
+            <div className="hidden md:flex items-center justify-center h-8 w-8 rounded-full bg-neon-500/10 border border-neon-500/20 text-neon-400 text-xs font-semibold shrink-0" aria-label="Perfil do utilizador">
+              {user?.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={userInitials}
+                  className="h-full w-full rounded-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <User className="size-3.5" />
+              )}
+            </div>
+
             {/* Scroll to Top */}
             {canScrollUp && (
               <Button
@@ -257,12 +309,70 @@ export default function Home() {
           className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth"
           style={{ scrollbarGutter: 'stable' }}
         >
-          <div key={currentPage} className="p-4 sm:p-6 lg:p-8 animate-page-enter">
+          <div key={currentPage} className="p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 animate-page-enter">
             <PageErrorBoundary>
               <Page />
             </PageErrorBoundary>
           </div>
         </div>
+
+        {/* ── Mobile Bottom Navigation Bar ── */}
+        <nav
+          className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-zinc-950/90 backdrop-blur-xl border-t border-zinc-800"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          aria-label="Navegação principal"
+        >
+          <div className="flex items-center justify-around h-16">
+            {MOBILE_NAV_ITEMS.map((item) => {
+              const isActive = currentPage === item.key;
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setPage(item.key)}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-lg min-w-[3.5rem] transition-colors duration-200',
+                    isActive
+                      ? 'text-neon-400'
+                      : 'text-zinc-500 active:text-zinc-300',
+                  )}
+                  aria-label={item.label}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <Icon className={cn('size-5', isActive && 'drop-shadow-[0_0_6px_rgba(16,185,129,0.5)]')} />
+                  <span className={cn(
+                    'text-[10px] font-medium leading-tight',
+                    isActive ? 'text-neon-400' : 'text-zinc-500',
+                  )}>
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+
+            {/* "Mais" button — opens full sidebar */}
+            <button
+              type="button"
+              onClick={handleToggleMobile}
+              className={cn(
+                'flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-lg min-w-[3.5rem] transition-colors duration-200',
+                mobileMenuOpen
+                  ? 'text-neon-400'
+                  : 'text-zinc-500 active:text-zinc-300',
+              )}
+              aria-label="Mais opções"
+            >
+              <Menu className={cn('size-5', mobileMenuOpen && 'drop-shadow-[0_0_6px_rgba(16,185,129,0.5)]')} />
+              <span className={cn(
+                'text-[10px] font-medium leading-tight',
+                mobileMenuOpen ? 'text-neon-400' : 'text-zinc-500',
+              )}>
+                Mais
+              </span>
+            </button>
+          </div>
+        </nav>
       </main>
 
       {/* ── AI Chat Widget (authenticated only) ── */}
