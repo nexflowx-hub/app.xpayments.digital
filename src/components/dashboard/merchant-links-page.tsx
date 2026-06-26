@@ -141,7 +141,7 @@ export default function MerchantLinksPage() {
     const product = products.find((p) => p.id === productId);
     if (product) {
       setFormDescription(product.name);
-      setFormAmount(String(product.priceFiat));
+      setFormAmount(String(Number(product.priceFiat)));
       if (['EUR', 'USD', 'BRL', 'USDT'].includes(product.currency)) {
         setFormCurrency(product.currency);
       }
@@ -402,7 +402,7 @@ export default function MerchantLinksPage() {
                       <span className="flex items-center gap-2">
                         {product.name}
                         <span className="text-zinc-500 text-xs ml-auto">
-                          {currencySymbols[product.currency] ?? ''}{product.priceFiat.toFixed(2)}
+                          {currencySymbols[product.currency] ?? ''}{Number(product.priceFiat).toFixed(2)}
                         </span>
                       </span>
                     </SelectItem>

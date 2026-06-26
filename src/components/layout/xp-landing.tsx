@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { useAuthStore, ROLE_LABELS } from '@/stores/auth-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { useNavStore } from '@/stores/nav-store';
 import { xpApi, type MerchantLoginResponse, type AdminLoginResponse } from '@/lib/api/client';
 import { XPaymentsApiError } from '@/lib/api/client';
@@ -32,55 +32,6 @@ import {
 import CryptoCards from '@/components/shared/crypto-cards';
 import { cn } from '@/lib/utils';
 import type { AuthUser, UserRole } from '@/types/xpayments';
-
-// --- Dev Mode Mock Users (apenas para dev local, SEM API) ---
-const devUsers: Record<string, AuthUser> = {
-  customer: {
-    id: 'usr_cust_001',
-    email: 'customer@email.com',
-    nickname: 'Buyer2024',
-    fullName: 'Customer Demo',
-    role: 'customer',
-    tier: 'TIER_1_BASIC',
-  },
-  merchant: {
-    id: 'usr_merch_001',
-    email: 'merchant@shop.com',
-    nickname: 'CryptoSeller',
-    fullName: 'Merchant Demo',
-    role: 'merchant',
-    tier: 'TIER_2_VERIFIED',
-    organizationId: 'org_001',
-    organizationName: 'XPayments Demo Store',
-  },
-  super_merchant: {
-    id: 'usr_super_001',
-    email: 'super@xpayments.corp',
-    nickname: 'XPaymentsAdmin',
-    fullName: 'Super Merchant',
-    role: 'super_merchant',
-    tier: 'TIER_3_CORPORATE',
-    organizationId: 'org_xpcorp',
-    organizationName: 'XPayments Corp',
-  },
-  admin: {
-    id: 'usr_admin_001',
-    email: 'admin@xpayments.digital',
-    nickname: 'XPaymentsAdmin',
-    fullName: 'Admin XPayments',
-    role: 'admin',
-    tier: 'TIER_3_CORPORATE',
-  },
-  operator: {
-    id: 'usr_ops_001',
-    email: 'ops@xpayments.digital',
-    nickname: 'OpsAgent',
-    fullName: 'Operator',
-    role: 'operator',
-  },
-};
-
-const devRoles = ['customer', 'merchant', 'super_merchant', 'admin', 'operator'] as const;
 
 const FEATURES = [
   { icon: Layers, title: 'Multi-Wallet', desc: 'EUR, BRL, USD, USDT — gestão centralizada em multi-moeda' },
@@ -228,17 +179,6 @@ export default function XPaymentsLanding() {
       }
     },
     [regEmail, regPassword, regStoreName, setLoading],
-  );
-
-  // ── Dev Mode (sem API) ──
-  const handleDevLogin = useCallback(
-    (role: string) => {
-      const user = devUsers[role];
-      if (!user) return;
-      setAuth('dev_token_xxx', user);
-      window.dispatchEvent(new CustomEvent('xp:authenticated'));
-    },
-    [setAuth],
   );
 
   return (
@@ -548,27 +488,6 @@ export default function XPaymentsLanding() {
                     </div>
                   </form>
                 )}
-              </div>
-            </div>
-
-            {/* Dev Mode */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-amber-500/80 animate-pulse" />
-                <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">Dev Mode — Acesso Rápido</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {devRoles.map((role) => (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => handleDevLogin(role)}
-                    className="group flex items-center gap-1.5 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-1.5 text-[11px] font-medium text-zinc-500 transition-all hover:border-neon-500/25 hover:bg-neon-500/[0.06] hover:text-neon-400"
-                  >
-                    {ROLE_LABELS[role]}
-                    <ArrowRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                  </button>
-                ))}
               </div>
             </div>
           </div>

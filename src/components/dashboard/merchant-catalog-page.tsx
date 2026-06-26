@@ -819,7 +819,7 @@ export default function MerchantCatalogPage() {
                     {/* Price */}
                     <TableCell className="py-3">
                       <span className="text-sm font-semibold text-zinc-100">
-                        {formatPrice(product.priceFiat, product.currency)}
+                        {formatPrice(Number(product.priceFiat), product.currency)}
                       </span>
                     </TableCell>
 
