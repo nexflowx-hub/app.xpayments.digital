@@ -17,7 +17,9 @@ export type NavPage =
   | 'admin-organizations'
   | 'merchant-links'
   | 'merchant-api-keys'
-  | 'merchant-checkouts';
+  | 'merchant-checkouts'
+  | 'merchant-catalog'
+  | 'merchant-api-docs';
 
 interface NavState {
   currentPage: NavPage;

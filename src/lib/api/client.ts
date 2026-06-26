@@ -410,13 +410,9 @@ export const xpApi = {
     generateApiKey: (data?: { storeName?: string }) =>
       post<unknown>('/merchant/api-keys/generate', data),
 
-    /** DELETE /merchant/api-keys/:id — Eliminar uma chave API */
-    deleteApiKey: (id: string) =>
-      del<unknown>(`/merchant/api-keys/${id}`),
-
     getPaymentLinks: () => get<unknown>('/merchant/links'),
 
-    createPaymentLink: (data: { amount: number; currency: string; description?: string }) =>
+    createPaymentLink: (data: { amount: number; currency: string; description?: string; productId?: string }) =>
       post<unknown>('/merchant/links', data),
 
     /** GET /merchant/:merchantId/stores — Listar lojas/checkouts */

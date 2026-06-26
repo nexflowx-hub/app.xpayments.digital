@@ -34,6 +34,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Package,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -95,15 +97,8 @@ const NAV_ITEMS: NavItemDef[] = [
     roles: ['customer', 'merchant', 'super_merchant'],
     permission: 'canWithdraw',
   },
-  {
-    page: 'transactions',
-    label: 'Transações',
-    icon: Receipt,
-    roles: ['customer', 'merchant', 'super_merchant', 'operator'],
-    permission: 'canViewTransactions',
-  },
 
-  // KYC – Customer/Merchant
+  // KYC
   {
     page: 'kyc',
     label: 'Verificação KYC',
@@ -111,20 +106,13 @@ const NAV_ITEMS: NavItemDef[] = [
     roles: ['customer', 'merchant', 'super_merchant'],
   },
 
-  // Merchant section – apenas Merchant/Super Merchant
+  // ── E-Commerce & Vendas (Mini-CRM) ──
   {
-    page: 'merchant-links',
-    label: 'Links de Pagamento',
-    icon: Link,
-    roles: ['merchant', 'super_merchant'],
-    permission: 'canGeneratePaymentLinks',
-  },
-  {
-    page: 'merchant-api-keys',
-    label: 'API Keys',
-    icon: Key,
-    roles: ['merchant', 'super_merchant'],
-    permission: 'canManageApiKeys',
+    page: 'transactions',
+    label: 'Transações',
+    icon: Receipt,
+    roles: ['customer', 'merchant', 'super_merchant', 'operator'],
+    permission: 'canViewTransactions',
   },
   {
     page: 'merchant-checkouts',
@@ -133,9 +121,37 @@ const NAV_ITEMS: NavItemDef[] = [
     roles: ['merchant', 'super_merchant'],
     permission: 'canConfigureCheckouts',
   },
+  {
+    page: 'merchant-links',
+    label: 'Links de Pagamento',
+    icon: Link,
+    roles: ['merchant', 'super_merchant'],
+    permission: 'canGeneratePaymentLinks',
+  },
+  {
+    page: 'merchant-catalog',
+    label: 'Catálogo',
+    icon: Package,
+    roles: ['merchant', 'super_merchant'],
+    permission: 'canConfigureCheckouts',
+  },
+
+  // ── Developers ──
+  {
+    page: 'merchant-api-keys',
+    label: 'API Keys',
+    icon: Key,
+    roles: ['merchant', 'super_merchant'],
+    permission: 'canManageApiKeys',
+  },
+  {
+    page: 'merchant-api-docs',
+    label: 'API Docs',
+    icon: BookOpen,
+    roles: ['merchant', 'super_merchant'],
+  },
 
   // Admin section – APENAS Operator (OrgOperator)
-  // Merchants (User) NÃO vêem "Aprovações" nem "Liquidez"
   {
     page: 'admin-tickets',
     label: 'Aprovações',
@@ -170,15 +186,16 @@ const NAV_ITEMS: NavItemDef[] = [
 // Section grouping
 // ---------------------------------------------------------------------------
 
-type SectionKey = 'dashboard' | 'wallet' | 'kyc' | 'merchant' | 'admin';
+type SectionKey = 'dashboard' | 'wallet' | 'kyc' | 'ecommerce' | 'developers' | 'admin';
 
-const SECTION_ORDER: SectionKey[] = ['dashboard', 'wallet', 'kyc', 'merchant', 'admin'];
+const SECTION_ORDER: SectionKey[] = ['dashboard', 'wallet', 'kyc', 'ecommerce', 'developers', 'admin'];
 
 const SECTION_MAP: Record<SectionKey, NavPage[]> = {
   dashboard: ['dashboard'],
-  wallet: ['wallets', 'deposits', 'swaps', 'payouts', 'transactions'],
+  wallet: ['wallets', 'deposits', 'swaps', 'payouts'],
   kyc: ['kyc'],
-  merchant: ['merchant-links', 'merchant-api-keys', 'merchant-checkouts'],
+  ecommerce: ['transactions', 'merchant-checkouts', 'merchant-links', 'merchant-catalog'],
+  developers: ['merchant-api-keys', 'merchant-api-docs'],
   admin: ['admin-dashboard', 'admin-tickets', 'admin-fees', 'admin-users', 'admin-organizations'],
 };
 
@@ -186,7 +203,8 @@ const SECTION_LABELS: Record<SectionKey, string> = {
   dashboard: '',
   wallet: 'WALLET',
   kyc: 'VERIFICAÇÃO',
-  merchant: 'MERCHANT',
+  ecommerce: 'E-COMMERCE & VENDAS',
+  developers: 'DEVELOPERS',
   admin: 'ADMIN',
 };
 
