@@ -171,6 +171,13 @@ function post<T>(path: string, body?: unknown): Promise<T> {
   });
 }
 
+function put<T>(path: string, body?: unknown): Promise<T> {
+  return request<T>(path, {
+    method: 'PUT',
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
 function patch<T>(path: string, body?: unknown): Promise<T> {
   return request<T>(path, {
     method: 'PATCH',
@@ -269,6 +276,23 @@ export interface AdminMerchant {
   activeStores?: number;
   totalVolume?: number;
   createdAt?: string;
+}
+
+// ── E-Commerce: Product Types ──
+
+export interface Product {
+  id: string;
+  storeId: string;
+  name: string;
+  slug: string;
+  description?: string;
+  category?: string;
+  priceFiat: number;
+  currency: string;
+  images: string[];
+  isActive: boolean;
+  store?: { name: string };
+  createdAt: string;
 }
 
 export interface MerchantStore {
@@ -402,6 +426,24 @@ export const xpApi = {
     /** POST /merchant/:merchantId/stores — Criar nova loja/checkout */
     createStore: (merchantId: string, data: { name: string; primaryColor?: string; successUrl?: string; webhookUrl?: string }) =>
       post<MerchantStore>(`/merchant/${merchantId}/stores`, data),
+
+    // ── E-Commerce: Products CRUD ──
+
+    /** GET /merchant/products — Listar todos os produtos do merchant */
+    getProducts: () =>
+      get<Product[]>('/merchant/products'),
+
+    /** POST /merchant/products — Criar novo produto */
+    createProduct: (data: Omit<Product, 'id' | 'createdAt' | 'store'>) =>
+      post<Product>('/merchant/products', data),
+
+    /** PUT /merchant/products/:id — Atualizar produto existente */
+    updateProduct: (id: string, data: Partial<Omit<Product, 'id' | 'createdAt' | 'store'>>) =>
+      put<Product>(`/merchant/products/${id}`, data),
+
+    /** DELETE /merchant/products/:id — Eliminar produto */
+    deleteProduct: (id: string) =>
+      del<unknown>(`/merchant/products/${id}`),
   },
 
   // ── TICKETS (Admin/Operator) ──
