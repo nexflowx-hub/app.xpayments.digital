@@ -412,7 +412,7 @@ export const xpApi = {
 
     getPaymentLinks: () => get<unknown>('/merchant/links'),
 
-    createPaymentLink: (data: { amount: number; currency: string; description?: string; productId?: string }) =>
+    createPaymentLink: (data: { name: string; amountFiat: number; currency: string; description?: string; productId?: string }) =>
       post<unknown>('/merchant/links', data),
 
     /** GET /merchant/:merchantId/stores — Listar lojas/checkouts */
