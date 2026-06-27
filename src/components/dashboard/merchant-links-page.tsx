@@ -50,14 +50,21 @@ import { xpApi, type Product } from '@/lib/api/client';
 interface PaymentLink {
   id: string;
   merchantId?: string;
-  amount: number;
-  currency: string;
-  description: string;
-  status: 'active' | 'expired' | 'paid' | 'cancelled';
-  url: string;
+  amount?: number;
+  amountFiat?: number | string;
+  currency?: string;
+  description?: string;
+  status?: string;
+  url?: string;
   transactions?: number;
   volume?: number;
-  createdAt: string;
+  createdAt?: string;
+}
+
+// Safe numeric extractor — never crashes on undefined / NaN / string
+function safeNum(val: unknown, fallback = 0): number {
+  const n = Number(val);
+  return Number.isFinite(n) ? n : fallback;
 }
 
 const LINK_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -141,7 +148,7 @@ export default function MerchantLinksPage() {
     const product = products.find((p) => p.id === productId);
     if (product) {
       setFormDescription(product.name);
-      setFormAmount(String(Number(product.priceFiat)));
+      setFormAmount(String(safeNum(product.priceFiat)));
       if (['EUR', 'USD', 'BRL', 'USDT'].includes(product.currency)) {
         setFormCurrency(product.currency);
       }
@@ -161,9 +168,19 @@ export default function MerchantLinksPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
+      // Resolve amount from form or selected product — NEVER send undefined/NaN
+      const resolvedAmount = safeNum(
+        formAmount,
+        safeNum(
+          formProductId && formProductId !== '__none__'
+            ? products.find((p) => p.id === formProductId)?.priceFiat
+            : undefined
+        )
+      );
+
       const payload = {
-        amount: parseFloat(formAmount) || 0,
-        currency: formCurrency,
+        amount: resolvedAmount,
+        currency: formCurrency || 'BRL',
         description: formDescription || undefined,
         ...(formProductId && formProductId !== '__none__' ? { productId: formProductId } : {}),
       };
@@ -299,13 +316,14 @@ export default function MerchantLinksPage() {
                 </TableHeader>
                 <TableBody>
                   {links.map((link) => {
-                    const statusCfg = LINK_STATUS_CONFIG[link.status];
+                    const statusCfg = LINK_STATUS_CONFIG[link.status ?? ''];
+                    const displayStatus = statusCfg ?? { label: (link.status ?? '—'), color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' };
                     return (
                       <TableRow key={link.id} className="border-white/[0.06] hover:bg-white/[0.03] transition-colors">
                         <TableCell>
                           <div className="flex items-center gap-2 min-w-0">
                             <code className="text-xs text-zinc-300 font-mono truncate max-w-[200px]">
-                              {link.url}
+                              {link.url || '—'}
                             </code>
                           </div>
                           {link.description && (
@@ -313,20 +331,20 @@ export default function MerchantLinksPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-right text-xs font-mono text-zinc-200 whitespace-nowrap">
-                          {currencySymbols[link.currency] ?? ''}{link.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          {currencySymbols[link.currency ?? ''] ?? ''}{safeNum(link.amount ?? link.amountFiat).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="text-[10px] bg-white/[0.04] text-zinc-300 border-white/[0.08] px-2 py-0 h-5">
-                            {link.currency}
+                            {link.currency ?? '—'}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={cn('text-[10px] px-2 py-0 h-5', statusCfg.color)}>
-                            {statusCfg.label}
+                          <Badge variant="outline" className={cn('text-[10px] px-2 py-0 h-5', displayStatus.color)}>
+                            {displayStatus.label}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-xs text-zinc-400 whitespace-nowrap">
-                          {formatDate(link.createdAt)}
+                          {link.createdAt ? formatDate(link.createdAt) : '—'}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
@@ -334,7 +352,7 @@ export default function MerchantLinksPage() {
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 text-zinc-400 hover:text-emerald-400 hover:bg-emerald-500/10"
-                              onClick={() => handleCopyLink(link.id, link.url)}
+                              onClick={() => link.url && handleCopyLink(link.id, link.url)}
                               aria-label="Copiar link"
                             >
                               {copiedId === link.id ? (
@@ -402,7 +420,7 @@ export default function MerchantLinksPage() {
                       <span className="flex items-center gap-2">
                         {product.name}
                         <span className="text-zinc-500 text-xs ml-auto">
-                          {currencySymbols[product.currency] ?? ''}{Number(product.priceFiat).toFixed(2)}
+                          {currencySymbols[product.currency ?? ''] ?? ''}{(safeNum(product.priceFiat)).toFixed(2)}
                         </span>
                       </span>
                     </SelectItem>

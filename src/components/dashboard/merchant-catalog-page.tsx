@@ -25,9 +25,15 @@ import { cn } from '@/lib/utils';
 // Price formatter
 // ============================================================
 
-function formatPrice(amount: number, currency: string): string {
+function safeNum(val: unknown, fallback = 0): number {
+  const n = Number(val);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function formatPrice(amount: unknown, currency: string): string {
   const symbols: Record<string, string> = { EUR: '€', USD: '$', BRL: 'R$', USDT: '₮' };
-  return `${symbols[currency] || currency} ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const safe = safeNum(amount);
+  return `${symbols[currency] || currency} ${safe.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 // ============================================================
@@ -819,7 +825,7 @@ export default function MerchantCatalogPage() {
                     {/* Price */}
                     <TableCell className="py-3">
                       <span className="text-sm font-semibold text-zinc-100">
-                        {formatPrice(Number(product.priceFiat), product.currency)}
+                        {formatPrice(product.priceFiat, product.currency)}
                       </span>
                     </TableCell>
 
