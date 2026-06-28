@@ -75,7 +75,7 @@ const TITLES: Record<string, string> = {
   'admin-organizations': 'Organizações',
   'merchant-links': 'Links de Pagamento',
   'merchant-api-keys': 'API Keys',
-  'merchant-checkouts': 'Checkouts',
+  'merchant-checkouts': 'Stores / API',
   'merchant-catalog': 'Catálogo de Produtos',
   'merchant-api-docs': 'Documentação API',
 };

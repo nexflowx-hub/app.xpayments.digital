@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Store, Plus, Copy, Check, RefreshCw, AlertCircle,
-  Palette, Link2, ExternalLink, CircleDot, Loader2,
+  Palette, Globe, Webhook, Loader2, CircleDot, Pencil, Trash2,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { xpApi, type MerchantStore, XPaymentsApiError } from '@/lib/api/client';
@@ -13,19 +13,19 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Card, CardContent,
+} from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 // ============================================================
-// Merchant Checkouts (Stores) Page
-// GET  /api/v1/merchant/:merchantId/stores   → list
-// POST /api/v1/merchant/:merchantId/stores   → create
-// Payment URL → https://checkout.xpayments.digital/pay/[STORE_ID]
+// Stores / Integrações API — Gestor de Lojas Virtuais
+// O Store ID é usado pelos plugins (WooCommerce / Walluxe) e pela
+// API B2B para gerar sessões dinâmicas de pagamento.
 // ============================================================
-
-const CHECKOUT_BASE_URL = 'https://checkout.xpayments.digital/pay';
 
 // ── Status badge config ──
 const STATUS_STYLES: Record<string, string> = {
@@ -44,27 +44,50 @@ const STATUS_LABELS: Record<string, string> = {
 
 function formatDate(dateStr?: string | null): string {
   if (!dateStr) return '—';
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  }).format(new Date(dateStr));
+  try {
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit', month: 'short', year: 'numeric',
+    }).format(new Date(dateStr));
+  } catch {
+    return '—';
+  }
 }
 
-// ── Create Store Dialog ──
-function CreateStoreDialog({
+// ── Store Form Dialog (Create / Edit) ──
+function StoreFormDialog({
   open,
   onOpenChange,
-  onCreated,
+  onSaved,
+  editStore,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreated: (store: MerchantStore) => void;
+  onSaved: (store: MerchantStore) => void;
+  editStore?: MerchantStore | null;
 }) {
   const { toast } = useToast();
+  const isEdit = !!editStore;
+
   const [name, setName] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#10b981');
   const [successUrl, setSuccessUrl] = useState('');
   const [webhookUrl, setWebhookUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Populate form when editing
+  useEffect(() => {
+    if (open && editStore) {
+      setName(editStore.name || '');
+      setPrimaryColor(editStore.primaryColor || '#10b981');
+      setSuccessUrl(editStore.successUrl || '');
+      setWebhookUrl(editStore.webhookUrl || '');
+    } else if (open) {
+      setName('');
+      setPrimaryColor('#10b981');
+      setSuccessUrl('');
+      setWebhookUrl('');
+    }
+  }, [open, editStore]);
 
   const resetForm = () => {
     setName('');
@@ -81,21 +104,23 @@ function CreateStoreDialog({
 
     setSubmitting(true);
     try {
-      const store = await xpApi.merchant.createStore(merchantId, {
+      const payload = {
         name: name.trim(),
         primaryColor: primaryColor || undefined,
         successUrl: successUrl.trim() || undefined,
         webhookUrl: webhookUrl.trim() || undefined,
-      });
+      };
+
+      const store = await xpApi.merchant.createStore(merchantId, payload);
       toast({
-        title: 'Checkout criado',
-        description: `"${name.trim()}" está pronto para receber pagamentos.`,
+        title: isEdit ? 'Loja atualizada' : 'Loja criada',
+        description: `"${name.trim()}" ${isEdit ? 'atualizada' : 'pronta'} para integração.`,
       });
       resetForm();
       onOpenChange(false);
-      onCreated(store);
+      onSaved(store);
     } catch (err: unknown) {
-      const msg = err instanceof XPaymentsApiError ? err.message : 'Erro ao criar checkout.';
+      const msg = err instanceof XPaymentsApiError ? err.message : `Erro ao ${isEdit ? 'atualizar' : 'criar'} loja.`;
       toast({
         title: 'Erro',
         description: msg,
@@ -108,22 +133,25 @@ function CreateStoreDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); onOpenChange(v); }}>
-      <DialogContent className="bg-[#0f0f12] border-white/[0.08] text-zinc-100 sm:max-w-[460px] rounded-2xl">
+      <DialogContent className="bg-[#0f0f12] border-white/[0.08] text-zinc-100 sm:max-w-[480px] rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-base font-semibold text-zinc-100 flex items-center gap-2">
             <Store className="size-4 text-emerald-400" />
-            Criar Novo Checkout
+            {isEdit ? 'Editar Loja' : 'Nova Loja Virtual'}
           </DialogTitle>
+          <DialogDescription className="text-zinc-500 text-xs">
+            Configure o branding e os webhooks para a integração B2B.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-1">
-          {/* Name */}
+          {/* Store Name */}
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-zinc-400">Nome da Loja *</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Loja Principal"
+              placeholder="Ex: Walluxe Oficial, MyShop WooCommerce"
               className="h-10 bg-white/[0.03] border-white/[0.08] text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20"
               disabled={submitting}
             />
@@ -131,7 +159,7 @@ function CreateStoreDialog({
 
           {/* Primary Color */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-zinc-400">Cor Primária</Label>
+            <Label className="text-xs font-medium text-zinc-400">Cor Principal (Hex)</Label>
             <div className="flex items-center gap-3">
               <div className="relative">
                 <input
@@ -161,11 +189,14 @@ function CreateStoreDialog({
 
           {/* Success URL */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-zinc-400">Success URL (opcional)</Label>
+            <Label className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
+              <Globe className="size-3" />
+              URL de Sucesso (pós-pagamento)
+            </Label>
             <Input
               value={successUrl}
               onChange={(e) => setSuccessUrl(e.target.value)}
-              placeholder="https://seusite.com/obrigado"
+              placeholder="https://seusite.com/pagamento-confirmado"
               className="h-10 bg-white/[0.03] border-white/[0.08] text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20"
               disabled={submitting}
             />
@@ -173,14 +204,20 @@ function CreateStoreDialog({
 
           {/* Webhook URL */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-zinc-400">Webhook URL (opcional)</Label>
+            <Label className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
+              <Webhook className="size-3" />
+              Webhook URL
+            </Label>
             <Input
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
-              placeholder="https://seusite.com/webhook/xpayments"
+              placeholder="https://seusite.com/api/webhooks/xpayments"
               className="h-10 bg-white/[0.03] border-white/[0.08] text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20"
               disabled={submitting}
             />
+            <p className="text-[10px] text-zinc-600 leading-relaxed">
+              Receba notificações POST em tempo real sobre o estado dos pagamentos desta loja.
+            </p>
           </div>
         </div>
 
@@ -208,7 +245,7 @@ function CreateStoreDialog({
             ) : (
               <Plus className="size-4" />
             )}
-            {submitting ? 'A criar...' : 'Criar Checkout'}
+            {submitting ? 'A guardar...' : isEdit ? 'Guardar Alterações' : 'Criar Loja'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -248,9 +285,9 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
       <div className="flex items-center justify-center size-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] mb-4">
         <Store className="size-7 text-zinc-600" />
       </div>
-      <h3 className="text-sm font-semibold text-zinc-300 mb-1">Nenhum checkout criado</h3>
-      <p className="text-xs text-zinc-600 mb-5 max-w-[260px]">
-        Crie o seu primeiro checkout para começar a receber pagamentos.
+      <h3 className="text-sm font-semibold text-zinc-300 mb-1">Nenhuma loja virtual configurada</h3>
+      <p className="text-xs text-zinc-600 mb-5 max-w-[300px]">
+        Crie a sua primeira loja para obter o Store ID necessário para integrar com o plugin WooCommerce, Walluxe ou a API B2B.
       </p>
       <Button
         onClick={onCreateClick}
@@ -261,33 +298,33 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
         )}
       >
         <Plus className="size-4" />
-        Criar Primeiro Checkout
+        Criar Primeira Loja
       </Button>
     </div>
   );
 }
 
-// ── Store Card (Grid item) ──
+// ── Store Card ──
 function StoreCard({
   store,
   copiedId,
-  onCopy,
+  onCopyId,
+  onEdit,
 }: {
   store: MerchantStore;
   copiedId: string | null;
-  onCopy: (id: string) => void;
+  onCopyId: (id: string) => void;
+  onEdit: (store: MerchantStore) => void;
 }) {
-  const status = store.status?.toUpperCase() || 'ACTIVE';
+  const status = (store.status ?? 'active').toLowerCase();
   const statusStyle = STATUS_STYLES[status] || STATUS_STYLES.active;
   const statusLabel = STATUS_LABELS[status] || status;
-  const paymentUrl = `${CHECKOUT_BASE_URL}/${store.id}`;
-  const isCopied = copiedId === store.id;
-
   const color = store.primaryColor || '#10b981';
+  const isCopied = copiedId === `id-${store.id}`;
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 hover:bg-white/[0.04] transition-colors group">
-      {/* Top row: name + status */}
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 hover:bg-white/[0.04] transition-colors">
+      {/* Top row: icon + name + status */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex items-center gap-3 min-w-0">
           <div
@@ -298,7 +335,7 @@ function StoreCard({
           </div>
           <div className="min-w-0">
             <p className="text-sm font-medium text-zinc-100 truncate">{store.name || '—'}</p>
-            <p className="text-[10px] text-zinc-600 font-mono mt-0.5">{store.id}</p>
+            <p className="text-[10px] text-zinc-600 mt-0.5">{formatDate(store.createdAt)}</p>
           </div>
         </div>
         <Badge
@@ -310,7 +347,34 @@ function StoreCard({
         </Badge>
       </div>
 
-      {/* Details */}
+      {/* ── Store ID — critical for B2B integration ── */}
+      <div className="mb-4">
+        <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Store ID</p>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0 bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-2">
+            <code className="text-xs font-mono text-zinc-300 block truncate">{store.id}</code>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onCopyId(store.id)}
+            className={cn(
+              'shrink-0 h-9 gap-1.5 px-3 text-xs rounded-lg border transition-all duration-200',
+              isCopied
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
+                : 'text-zinc-400 border-white/[0.06] hover:text-zinc-200 hover:border-white/[0.12] hover:bg-white/[0.04]',
+            )}
+          >
+            {isCopied ? (
+              <><Check className="size-3.5" /> Copiado</>
+            ) : (
+              <><Copy className="size-3.5" /> Copiar ID</>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* ── Branding details ── */}
       <div className="flex items-center gap-4 mb-4 text-[11px] text-zinc-500">
         <div className="flex items-center gap-1.5">
           <Palette className="size-3" />
@@ -323,48 +387,41 @@ function StoreCard({
             <span className="font-mono text-zinc-400">{color}</span>
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span>{formatDate(store.createdAt)}</span>
-        </div>
+        {store.webhookUrl && (
+          <div className="flex items-center gap-1.5">
+            <Webhook className="size-3 text-emerald-500" />
+            <span className="text-emerald-400/70">Webhook ativo</span>
+          </div>
+        )}
       </div>
 
-      {/* Payment URL + Copy */}
-      <div className="flex items-center gap-2">
-        <div className="flex-1 min-w-0 bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-2">
-          <p className="text-[11px] font-mono text-zinc-500 truncate">{paymentUrl}</p>
-        </div>
+      {/* ── URLs ── */}
+      <div className="space-y-1.5 text-[10px] text-zinc-500">
+        {store.successUrl && (
+          <div className="flex items-center gap-1.5 truncate">
+            <Globe className="size-3 shrink-0" />
+            <span className="truncate">{store.successUrl}</span>
+          </div>
+        )}
+        {store.webhookUrl && (
+          <div className="flex items-center gap-1.5 truncate">
+            <Webhook className="size-3 shrink-0" />
+            <span className="truncate font-mono">{store.webhookUrl}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Actions ── */}
+      <div className="flex items-center justify-end gap-1 mt-4 pt-3 border-t border-white/[0.04]">
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onCopy(store.id)}
-          className={cn(
-            'shrink-0 h-9 gap-1.5 px-3 text-xs rounded-lg border transition-all duration-200',
-            isCopied
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
-              : 'text-zinc-400 border-white/[0.06] hover:text-zinc-200 hover:border-white/[0.12] hover:bg-white/[0.04]',
-          )}
+          onClick={() => onEdit(store)}
+          className="h-7 gap-1.5 px-2.5 text-[11px] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] rounded-lg"
         >
-          {isCopied ? (
-            <>
-              <Check className="size-3.5" />
-              Copiado
-            </>
-          ) : (
-            <>
-              <Copy className="size-3.5" />
-              Copiar Link
-            </>
-          )}
+          <Pencil className="size-3" />
+          Editar
         </Button>
-        <a
-          href={paymentUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 flex items-center justify-center size-9 rounded-lg border border-white/[0.06] text-zinc-500 hover:text-zinc-200 hover:border-white/[0.12] hover:bg-white/[0.04] transition-colors"
-          aria-label="Abrir link de pagamento"
-        >
-          <ExternalLink className="size-3.5" />
-        </a>
       </div>
     </div>
   );
@@ -382,6 +439,7 @@ export default function MerchantCheckoutsPage() {
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [editStore, setEditStore] = useState<MerchantStore | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // ── Fetch stores (on-mount only) ──
@@ -400,7 +458,7 @@ export default function MerchantCheckoutsPage() {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        const msg = err instanceof XPaymentsApiError ? err.message : 'Erro ao carregar checkouts.';
+        const msg = err instanceof XPaymentsApiError ? err.message : 'Erro ao carregar lojas.';
         setError(msg);
       })
       .finally(() => {
@@ -410,7 +468,7 @@ export default function MerchantCheckoutsPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // ── Manual refresh (button) ──
+  // ── Manual refresh ──
   const fetchStores = useCallback(async (isRefresh = false) => {
     const mid = useAuthStore.getState().user?.id;
     if (!mid) return;
@@ -422,50 +480,97 @@ export default function MerchantCheckoutsPage() {
       const data = await xpApi.merchant.getStores(mid);
       setStores(Array.isArray(data) ? data : []);
     } catch (err: unknown) {
-      const msg = err instanceof XPaymentsApiError ? err.message : 'Erro ao carregar checkouts.';
+      const msg = err instanceof XPaymentsApiError ? err.message : 'Erro ao carregar lojas.';
       setError(msg);
     } finally {
       setRefreshing(false);
     }
   }, []);
 
-  // ── Handle copy ──
-  const handleCopy = (storeId: string) => {
-    const url = `${CHECKOUT_BASE_URL}/${storeId}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setCopiedId(storeId);
+  // ── Copy Store ID ──
+  const handleCopyId = (storeId: string) => {
+    navigator.clipboard.writeText(storeId).then(() => {
+      setCopiedId(`id-${storeId}`);
       toast({
-        title: 'Link copiado',
-        description: 'O link de pagamento foi copiado para a área de transferência.',
+        title: 'Store ID copiado',
+        description: 'Cole este ID no plugin WooCommerce / Walluxe ou nas chamadas à API B2B.',
       });
       setTimeout(() => setCopiedId(null), 2500);
     }).catch(() => {
       toast({
         title: 'Erro',
-        description: 'Não foi possível copiar o link.',
+        description: 'Não foi possível copiar o Store ID.',
         variant: 'destructive',
       });
     });
   };
 
-  // ── Handle create callback ──
-  const handleCreated = (store: MerchantStore) => {
-    setStores((prev) => [store, ...prev]);
+  // ── Store saved (create or edit) ──
+  const handleSaved = (store: MerchantStore) => {
+    setStores((prev) => {
+      const idx = prev.findIndex((s) => s.id === store.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = store;
+        return next;
+      }
+      return [store, ...prev];
+    });
+    setEditStore(null);
   };
 
-  // ── Render ──
+  // ── Edit handler ──
+  const handleEdit = (store: MerchantStore) => {
+    setEditStore(store);
+    setShowCreate(true);
+  };
+
+  // ── Dialog close — clear edit ──
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+      setEditStore(null);
+    }
+    setShowCreate(open);
+  };
+
+  // ── Stats ──
+  const activeStores = stores.filter((s) => (s.status ?? 'active').toLowerCase() === 'active').length;
+
   return (
     <div className="space-y-6">
+      {/* ── Stats ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Card className="bg-white/[0.02] border-white/[0.06]">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <Store className="h-5 w-5 text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-zinc-100">{stores.length}</p>
+              <p className="text-xs text-zinc-500">Total de Lojas</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white/[0.02] border-white/[0.06]">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <CircleDot className="h-5 w-5 text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-zinc-100">{activeStores}</p>
+              <p className="text-xs text-zinc-500">Lojas Ativas</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center size-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-            <Store className="size-5 text-emerald-400" />
-          </div>
           <div>
-            <h2 className="text-lg font-bold text-zinc-100">Checkouts de Pagamento</h2>
+            <h2 className="text-lg font-bold text-zinc-100">Stores / Integrações API</h2>
             <p className="text-xs text-zinc-500 mt-0.5">
-              {loading ? 'A carregar...' : `${stores.length} checkout${stores.length !== 1 ? 's' : ''} configurado${stores.length !== 1 ? 's' : ''}`}
+              {loading ? 'A carregar...' : `Gestão de lojas virtuais para integração com plugins e API B2B`}
             </p>
           </div>
         </div>
@@ -481,7 +586,7 @@ export default function MerchantCheckoutsPage() {
             Atualizar
           </Button>
           <Button
-            onClick={() => setShowCreate(true)}
+            onClick={() => { setEditStore(null); setShowCreate(true); }}
             className={cn(
               'gap-2 text-white text-sm h-9 rounded-lg',
               'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400',
@@ -489,7 +594,7 @@ export default function MerchantCheckoutsPage() {
             )}
           >
             <Plus className="size-4" />
-            Criar Novo Checkout
+            Nova Loja
           </Button>
         </div>
       </div>
@@ -499,7 +604,7 @@ export default function MerchantCheckoutsPage() {
         <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/[0.08] border border-red-500/20">
           <AlertCircle className="size-4 text-red-400 shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-red-300">Erro ao carregar checkouts</p>
+            <p className="text-xs font-medium text-red-300">Erro ao carregar lojas</p>
             <p className="text-[11px] text-red-400/70 mt-0.5 truncate">{error}</p>
           </div>
           <Button
@@ -518,7 +623,7 @@ export default function MerchantCheckoutsPage() {
 
       {/* ── Empty State ── */}
       {!loading && !error && stores.length === 0 && (
-        <EmptyState onCreateClick={() => setShowCreate(true)} />
+        <EmptyState onCreateClick={() => { setEditStore(null); setShowCreate(true); }} />
       )}
 
       {/* ── Stores Grid ── */}
@@ -529,7 +634,8 @@ export default function MerchantCheckoutsPage() {
               key={store.id}
               store={store}
               copiedId={copiedId}
-              onCopy={handleCopy}
+              onCopyId={handleCopyId}
+              onEdit={handleEdit}
             />
           ))}
         </div>
@@ -537,21 +643,26 @@ export default function MerchantCheckoutsPage() {
 
       {/* ── Info Banner ── */}
       {!loading && stores.length > 0 && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-          <Link2 className="size-4 text-zinc-500 shrink-0" />
-          <p className="text-[11px] text-zinc-500 leading-relaxed">
-            Cada checkout gera um <span className="text-zinc-400 font-mono">https://checkout.xpayments.digital/pay/[ID]</span> único.
-            Partilhe o link com os seus clientes para receber pagamentos.
-            A cor primária personaliza a experiência de checkout.
-          </p>
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+          <Webhook className="size-4 text-zinc-500 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="text-[11px] text-zinc-500 leading-relaxed">
+              O <span className="text-zinc-400 font-mono font-medium">Store ID</span> é o identificador único da loja para integração com a API B2B.
+              Utilize-o nos plugins WooCommerce, Walluxe ou nas chamadas diretas ao endpoint de sessões de pagamento.
+            </p>
+            <p className="text-[10px] text-zinc-600 font-mono">
+              POST /api/v1/payments/sessions → {`{ "storeId": "<ID>" }`}
+            </p>
+          </div>
         </div>
       )}
 
-      {/* ── Create Dialog ── */}
-      <CreateStoreDialog
+      {/* ── Form Dialog ── */}
+      <StoreFormDialog
         open={showCreate}
-        onOpenChange={setShowCreate}
-        onCreated={handleCreated}
+        onOpenChange={handleDialogChange}
+        onSaved={handleSaved}
+        editStore={editStore}
       />
     </div>
   );

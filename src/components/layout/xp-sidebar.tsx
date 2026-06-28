@@ -117,7 +117,7 @@ const NAV_ITEMS: NavItemDef[] = [
   },
   {
     page: 'merchant-checkouts',
-    label: 'Checkouts',
+    label: 'Stores / API',
     icon: ShoppingCart,
     roles: ['merchant', 'super_merchant'],
     permission: 'canConfigureCheckouts',
