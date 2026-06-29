@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,38 +31,58 @@ import {
 import {
   Link as LinkIcon,
   Plus,
-  ExternalLink,
   Copy,
   Check,
   Loader2,
   DollarSign,
   FileText,
   Package,
+  Pencil,
+  Trash2,
+  MoreHorizontal,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { xpApi, type Product } from '@/lib/api/client';
 
 // ---------------------------------------------------------------------------
-// Types — Alinhados com o Prisma
+// Types
 // ---------------------------------------------------------------------------
 
 interface PaymentLink {
   id: string;
-  storeId?: string;
+  merchantId?: string;
   name?: string;
+  amount?: number;
   amountFiat?: number | string;
   currency?: string;
   description?: string;
-  urlCode?: string;
-  url?: string;
-  isActive?: boolean;
   status?: string;
+  url?: string;
+  urlCode?: string;
+  transactions?: number;
+  volume?: number;
   createdAt?: string;
 }
 
-// Extrator numérico seguro — nunca rebenta com undefined / NaN / string
+// Safe numeric extractor — never crashes on undefined / NaN / string
 function safeNum(val: unknown, fallback = 0): number {
-  if (val === undefined || val === null) return fallback;
   const n = Number(val);
   return Number.isFinite(n) ? n : fallback;
 }
@@ -84,11 +104,13 @@ export default function MerchantLinksPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [editingLink, setEditingLink] = useState<PaymentLink | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PaymentLink | null>(null);
 
   // Form state
   const [formName, setFormName] = useState('');
   const [formAmount, setFormAmount] = useState('');
-  const [formCurrency, setFormCurrency] = useState('BRL');
+  const [formCurrency, setFormCurrency] = useState('EUR');
   const [formDescription, setFormDescription] = useState('');
   const [formProductId, setFormProductId] = useState<string>('');
 
@@ -148,8 +170,7 @@ export default function MerchantLinksPage() {
     if (!productId || productId === '__none__') return;
     const product = products.find((p) => p.id === productId);
     if (product) {
-      setFormName(product.name);
-      setFormDescription(product.description || '');
+      setFormDescription(product.name);
       setFormAmount(String(safeNum(product.priceFiat)));
       if (['EUR', 'USD', 'BRL', 'USDT'].includes(product.currency)) {
         setFormCurrency(product.currency);
@@ -161,65 +182,97 @@ export default function MerchantLinksPage() {
   const resetForm = useCallback(() => {
     setFormName('');
     setFormAmount('');
-    setFormCurrency('BRL');
+    setFormCurrency('EUR');
     setFormDescription('');
     setFormProductId('');
+    setEditingLink(null);
   }, []);
 
-  // ── Create link via API ──
+  // ── Create / Update link via API ──
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const resolvedAmount = safeNum(formAmount);
+      // Resolve amount from form or selected product — NEVER send undefined/NaN
+      const resolvedAmount = safeNum(
+        formAmount,
+        safeNum(
+          formProductId && formProductId !== '__none__'
+            ? products.find((p) => p.id === formProductId)?.priceFiat
+            : undefined
+        )
+      );
 
       const payload = {
-        name: formName || 'Cobrança', // Obrigatório no Prisma
-        amountFiat: resolvedAmount,   // Corrigido: envia amountFiat em vez de amount
+        name: formName || undefined,
+        amountFiat: resolvedAmount,
         currency: formCurrency || 'BRL',
         description: formDescription || undefined,
         ...(formProductId && formProductId !== '__none__' ? { productId: formProductId } : {}),
       };
 
-      const result = await xpApi.merchant.createPaymentLink(payload) as Record<string, unknown> | PaymentLink;
-      const newLink = (result && 'data' in result ? (result as Record<string, unknown>).data : result) as PaymentLink | undefined;
-
-      if (newLink) {
-        setLinks((prev) => [newLink, ...prev]);
+      if (editingLink) {
+        // ── Update existing link ──
+        const result = await xpApi.merchant.updatePaymentLink(editingLink.id, payload) as Record<string, unknown> | PaymentLink;
+        const updatedLink = (result && 'data' in result ? (result as Record<string, unknown>).data : result) as PaymentLink | undefined;
+        if (updatedLink) {
+          setLinks((prev) => prev.map((l) => l.id === editingLink.id ? updatedLink : l));
+        }
+      } else {
+        // ── Create new link ──
+        const result = await xpApi.merchant.createPaymentLink(payload) as Record<string, unknown> | PaymentLink;
+        const newLink = (result && 'data' in result ? (result as Record<string, unknown>).data : result) as PaymentLink | undefined;
+        if (newLink) {
+          setLinks((prev) => [newLink, ...prev]);
+        }
       }
       setCreateDialogOpen(false);
       resetForm();
-    } catch (error) {
-      console.error('[XPayments] Erro na criação do link:', error);
+    } catch {
+      // Error handled silently
     } finally {
       setSubmitting(false);
     }
   };
 
-  const getFullUrl = (urlCode?: string) =>
-    urlCode ? `https://checkout.xpayments.digital/pay/${urlCode}` : '';
+  // ── Open dialog in edit mode ──
+  const handleEditLink = useCallback((link: PaymentLink) => {
+    setFormName(link.name || '');
+    setFormAmount(String(safeNum(link.amountFiat ?? link.amount)));
+    setFormCurrency(link.currency || 'BRL');
+    setFormDescription(link.description || '');
+    setFormProductId('');
+    setEditingLink(link);
+    setCreateDialogOpen(true);
+  }, []);
 
-  const handleCopyLink = (id: string, urlCode?: string) => {
-    if (!urlCode) return;
-    navigator.clipboard.writeText(getFullUrl(urlCode));
+  // ── Delete link ──
+  const handleDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    try {
+      await xpApi.merchant.deletePaymentLink(deleteTarget.id);
+      setLinks((prev) => prev.filter((l) => l.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch {
+      // Error handled silently
+    }
+  }, [deleteTarget]);
+
+  const handleCopyLink = useCallback((id: string, url: string) => {
+    navigator.clipboard.writeText(url);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
+  }, []);
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '—';
-    try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch {
-      return dateStr;
-    }
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
   const currencySymbols: Record<string, string> = { EUR: '€', BRL: 'R$', USDT: '₮', USD: '$' };
 
   const stats = {
-    active: links.filter((l) => l.isActive !== false && l.status !== 'cancelled').length,
+    active: links.filter((l) => l.status === 'active').length,
     paid: links.filter((l) => l.status === 'paid').length,
     total: links.length,
   };
@@ -286,11 +339,7 @@ export default function MerchantLinksPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
-            </div>
-          ) : links.length === 0 ? (
+          {links.length === 0 ? (
             /* Empty state */
             <div className="flex flex-col items-center justify-center py-16 px-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.06] mb-4">
@@ -298,7 +347,7 @@ export default function MerchantLinksPage() {
               </div>
               <h3 className="text-base font-semibold text-zinc-300 mb-1">Sem links de pagamento</h3>
               <p className="text-sm text-zinc-500 mb-4 text-center max-w-sm">
-                Crie o seu primeiro link de pagamento para começar a faturar.
+                Crie o seu primeiro link de pagamento para começar a receber.
               </p>
               <Button
                 onClick={() => setCreateDialogOpen(true)}
@@ -317,7 +366,7 @@ export default function MerchantLinksPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-white/[0.06] hover:bg-transparent">
-                    <TableHead className="text-zinc-400 text-xs font-medium">Nome / Link</TableHead>
+                    <TableHead className="text-zinc-400 text-xs font-medium">Link</TableHead>
                     <TableHead className="text-zinc-400 text-xs font-medium text-right">Montante</TableHead>
                     <TableHead className="text-zinc-400 text-xs font-medium">Moeda</TableHead>
                     <TableHead className="text-zinc-400 text-xs font-medium">Estado</TableHead>
@@ -327,23 +376,22 @@ export default function MerchantLinksPage() {
                 </TableHeader>
                 <TableBody>
                   {links.map((link) => {
-                    const statusCfg = LINK_STATUS_CONFIG[link.status ?? 'active'] || LINK_STATUS_CONFIG['active'];
-                    const amountSafe = safeNum(link.amountFiat);
-
+                    const statusCfg = LINK_STATUS_CONFIG[link.status ?? ''];
+                    const displayStatus = statusCfg ?? { label: (link.status ?? '—'), color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' };
                     return (
                       <TableRow key={link.id} className="border-white/[0.06] hover:bg-white/[0.03] transition-colors">
                         <TableCell>
-                          <div className="flex flex-col gap-0.5 min-w-0">
-                            <span className="text-sm text-zinc-200 font-medium truncate">
-                              {link.name || 'Pagamento'}
-                            </span>
-                            <code className="text-[10px] text-zinc-500 font-mono truncate max-w-[220px]">
-                              {link.urlCode ? `/pay/${link.urlCode}` : (link.url || '—')}
+                          <div className="flex items-center gap-2 min-w-0">
+                            <code className="text-xs text-zinc-300 font-mono truncate max-w-[200px]">
+                              {link.url || '—'}
                             </code>
                           </div>
+                          {link.description && (
+                            <p className="text-[10px] text-zinc-500 truncate mt-0.5">{link.description}</p>
+                          )}
                         </TableCell>
                         <TableCell className="text-right text-xs font-mono text-zinc-200 whitespace-nowrap">
-                          {currencySymbols[link.currency ?? ''] ?? ''}{amountSafe.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          {currencySymbols[link.currency ?? ''] ?? ''}{safeNum(link.amount ?? link.amountFiat).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="text-[10px] bg-white/[0.04] text-zinc-300 border-white/[0.08] px-2 py-0 h-5">
@@ -351,41 +399,34 @@ export default function MerchantLinksPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={cn('text-[10px] px-2 py-0 h-5', statusCfg.color)}>
-                            {statusCfg.label}
+                          <Badge variant="outline" className={cn('text-[10px] px-2 py-0 h-5', displayStatus.color)}>
+                            {displayStatus.label}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-xs text-zinc-400 whitespace-nowrap">
-                          {formatDate(link.createdAt)}
+                          {link.createdAt ? formatDate(link.createdAt) : '—'}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-zinc-400 hover:text-emerald-400 hover:bg-emerald-500/10"
-                              onClick={() => handleCopyLink(link.id, link.urlCode)}
-                              aria-label="Copiar link"
-                            >
-                              {copiedId === link.id ? (
-                                <Check className="h-3.5 w-3.5 text-emerald-400" />
-                              ) : (
-                                <Copy className="h-3.5 w-3.5" />
-                              )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-zinc-400 hover:text-emerald-400 hover:bg-emerald-500/10"
-                              onClick={() => {
-                                const url = link.urlCode ? getFullUrl(link.urlCode) : link.url;
-                                if (url) window.open(url, '_blank', 'noopener');
-                              }}
-                              aria-label="Abrir link"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 text-zinc-400 hover:text-zinc-200">
+                                <MoreHorizontal className="size-3.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-[#0f0f12] border-white/[0.08]">
+                              <DropdownMenuItem onClick={() => link.url && handleCopyLink(link.id, link.url)}>
+                                {copiedId === link.id ? <Check className="size-3.5 mr-2 text-emerald-400" /> : <Copy className="size-3.5 mr-2" />}
+                                Copiar Link
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEditLink(link)}>
+                                <Pencil className="size-3.5 mr-2" /> Editar Link
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="bg-white/[0.06]" />
+                              <DropdownMenuItem onClick={() => setDeleteTarget(link)} className="text-red-400 focus:text-red-300">
+                                <Trash2 className="size-3.5 mr-2" /> Eliminar Link
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );
@@ -408,29 +449,14 @@ export default function MerchantLinksPage() {
         <DialogContent className="bg-[#0f0f12] border-white/[0.08] text-zinc-100 sm:max-w-[480px] rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-zinc-100 flex items-center gap-2">
-              <Plus className="h-5 w-5 text-emerald-400" />
-              Criar Link de Pagamento
+              <Plus className={cn('h-5 w-5', editingLink ? 'text-amber-400' : 'text-emerald-400')} />
+              {editingLink ? 'Editar Link de Pagamento' : 'Criar Link de Pagamento'}
             </DialogTitle>
             <DialogDescription className="text-zinc-400">
               Gere um link de pagamento que pode partilhar com os seus clientes.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4 pt-2">
-            {/* ── Nome da Cobrança ── */}
-            <div className="space-y-1.5">
-              <Label htmlFor="link-name" className="text-xs font-medium text-zinc-400">
-                Nome da Cobrança *
-              </Label>
-              <Input
-                id="link-name"
-                type="text"
-                placeholder="Ex: Plano Premium Mensal"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                className="h-10 bg-white/[0.03] border-white/[0.08] text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20"
-              />
-            </div>
-
             {/* ── Associate to Product ── */}
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
@@ -451,7 +477,7 @@ export default function MerchantLinksPage() {
                       <span className="flex items-center gap-2">
                         {product.name}
                         <span className="text-zinc-500 text-xs ml-auto">
-                          {currencySymbols[product.currency ?? ''] ?? ''}{safeNum(product.priceFiat).toFixed(2)}
+                          {currencySymbols[product.currency ?? ''] ?? ''}{(safeNum(product.priceFiat)).toFixed(2)}
                         </span>
                       </span>
                     </SelectItem>
@@ -485,8 +511,8 @@ export default function MerchantLinksPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#0f0f12] border-white/[0.08]">
-                  <SelectItem value="BRL" className="text-zinc-200 focus:bg-white/[0.04]">BRL — Real Brasileiro</SelectItem>
                   <SelectItem value="EUR" className="text-zinc-200 focus:bg-white/[0.04]">EUR — Euro</SelectItem>
+                  <SelectItem value="BRL" className="text-zinc-200 focus:bg-white/[0.04]">BRL — Real Brasileiro</SelectItem>
                   <SelectItem value="USDT" className="text-zinc-200 focus:bg-white/[0.04]">USDT — Tether</SelectItem>
                   <SelectItem value="USD" className="text-zinc-200 focus:bg-white/[0.04]">USD — Dólar</SelectItem>
                 </SelectContent>
@@ -498,7 +524,7 @@ export default function MerchantLinksPage() {
               <Label htmlFor="link-desc" className="text-xs font-medium text-zinc-400">Descrição</Label>
               <Input
                 id="link-desc"
-                placeholder="Ex: Assinatura mensal do plano premium"
+                placeholder="Ex: Plano Premium Mensal"
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
                 className="h-10 bg-white/[0.03] border-white/[0.08] text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20"
@@ -528,18 +554,35 @@ export default function MerchantLinksPage() {
               {submitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  A gerar link...
+                  {editingLink ? 'A guardar alterações...' : 'A gerar link...'}
                 </>
               ) : (
                 <>
                   <LinkIcon className="h-4 w-4" />
-                  Gerar Link de Pagamento
+                  {editingLink ? 'Guardar Alterações' : 'Gerar Link de Pagamento'}
                 </>
               )}
             </Button>
           </form>
         </DialogContent>
       </Dialog>
+      {/* ── Delete Confirmation Dialog ── */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="bg-[#0f0f12] border-white/[0.08]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-zinc-100">Eliminar Link</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Tem a certeza que pretende eliminar o link <strong className="text-zinc-200">{deleteTarget?.name || deleteTarget?.description || 'de pagamento'}</strong>? Clientes que tentarem aceder receberão erro 404.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="text-zinc-400">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-500 text-white">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

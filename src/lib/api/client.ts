@@ -415,6 +415,14 @@ export const xpApi = {
     createPaymentLink: (data: { name: string; amountFiat: number; currency: string; description?: string; productId?: string }) =>
       post<unknown>('/merchant/links', data),
 
+    /** PUT /merchant/links/:id — Atualizar link de pagamento */
+    updatePaymentLink: (id: string, data: Partial<{ name: string; amountFiat: number; currency: string; description: string; productId: string }>) =>
+      put<unknown>(`/merchant/links/${id}`, data),
+
+    /** DELETE /merchant/links/:id — Eliminar link de pagamento */
+    deletePaymentLink: (id: string) =>
+      del<unknown>(`/merchant/links/${id}`),
+
     /** GET /merchant/:merchantId/stores — Listar lojas/checkouts */
     getStores: (merchantId: string) =>
       get<MerchantStore[]>(`/merchant/${merchantId}/stores`),

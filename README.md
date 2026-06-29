@@ -112,7 +112,7 @@ src/
 │   │   ├── admin-organizations-page.tsx  # Gestão de organizações
 │   │   ├── merchant-links-page.tsx    # Links de pagamento
 │   │   ├── merchant-api-keys-page.tsx # Gestão de API Keys
-│   │   ├── merchant-checkouts-page.tsx # Gestão de checkouts
+│   │   ├── merchant-checkouts-page.tsx # Stores / Integrações API (B2B)
 │   │   ├── merchant-catalog-page.tsx  # Catálogo de produtos
 │   │   └── merchant-api-docs-page.tsx # Documentação da API
 │   ├── wallet/                 # 5 páginas de wallet
@@ -222,7 +222,7 @@ O XPayments.Digital utiliza um padrão **Single-Route SPA** — toda a aplicaç�
 | `admin-organizations` | `AdminOrganizationsPage` | Organizações |
 | `merchant-links` | `MerchantLinksPage` | Links de Pagamento |
 | `merchant-api-keys` | `MerchantApiKeysPage` | API Keys |
-| `merchant-checkouts` | `MerchantCheckoutsPage` | Checkouts |
+| `merchant-checkouts` | `MerchantCheckoutsPage` | Stores / API |
 | `merchant-catalog` | `MerchantCatalogPage` | Catálogo de Produtos |
 | `merchant-api-docs` | `MerchantApiDocsPage` | Documentação API |
 
@@ -344,7 +344,9 @@ O client HTTP é implementado em `src/lib/api/client.ts` utilizando **`fetch` na
 | DELETE | `/merchant/api-keys/:id` | `xpApi.merchant.deleteApiKey()` | Eliminar API Key |
 | POST | `/merchant/api-keys/generate` | `xpApi.merchant.generateApiKey()` | Gerar nova API Key |
 | GET | `/merchant/links` | `xpApi.merchant.getPaymentLinks()` | Listar links de pagamento |
-| POST | `/merchant/links` | `xpApi.merchant.createPaymentLink()` | Criar link de pagamento |
+| POST | `/merchant/links` | `xpApi.merchant.createPaymentLink()` | Criar link de pagamento (`name`, `amountFiat`, `currency`) |
+| PUT | `/merchant/links/:id` | `xpApi.merchant.updatePaymentLink()` | Atualizar link de pagamento |
+| DELETE | `/merchant/links/:id` | `xpApi.merchant.deletePaymentLink()` | Eliminar link de pagamento |
 | GET | `/merchant/:merchantId/stores` | `xpApi.merchant.getStores()` | Listar lojas/checkouts |
 | POST | `/merchant/:merchantId/stores` | `xpApi.merchant.createStore()` | Criar nova loja/checkout |
 | GET | `/merchant/products` | `xpApi.merchant.getProducts()` | Listar produtos |
@@ -506,8 +508,8 @@ A sidebar organiza os itens de navegação em **6 seções** colapsáveis, com R
 | **Dashboard** | — | Painel (todos) |
 | **WALLET** | `WALLET` | Carteiras, Depositar, Swap, Payouts |
 | **VERIFICAÇÃO** | `VERIFICAÇÃO` | Verificação KYC |
-| **E-COMMERCE & VENDAS** | `E-COMMERCE & VENDAS` | Transações, Checkouts, Links de Pagamento, Catálogo |
-| **DEVELOPERS** | `DEVELOPERS` | API Keys, API Docs |
+| **E-COMMERCE & VENDAS** | `E-COMMERCE & VENDAS` | Transações, Stores / API, Links de Pagamento, Catálogo |
+| **DEVELOPERS** | `DEVELOPERS` | API Keys, Documentação API (3 Tabs: Endpoints, Webhooks, AI Prompt) |
 | **ADMIN** | `ADMIN` | Admin Overview, Aprovações, Liquidez, Utilizadores, Organizações |
 
 ### Navegação Mobile (PWA-style)
@@ -818,6 +820,9 @@ const nextConfig: NextConfig = {
 
 ## 15. Roadmap v4.0
 
+- [x] **CRUD E-Commerce Completo** — Produtos (GET/POST/PUT/DELETE) e Links de Pagamento (GET/POST/PUT/DELETE) com DropdownMenu + AlertDialog
+- [x] **API Docs 3-Tab** — Documentação com Endpoints & Auth, Webhooks & Eventos, e AI Integration Prompt
+- [x] **Stores / API B2B** — Gestor de Lojas Virtuais com Store ID copy para plugins (WooCommerce/Walluxe)
 - [ ] **i18n Completo** — Internacionalização com `next-intl` (EN, PT, ES)
 - [ ] **Notificações Push** — Web Push API para alertas de transações e payouts
 - [ ] **Dashboard em Tempo Real** — WebSocket para atualizações live de saldos e transações

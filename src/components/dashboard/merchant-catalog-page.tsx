@@ -9,12 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import {
   Package, Plus, Pencil, Trash2, Loader2, RefreshCw,
   Image as ImageIcon, X, Search, AlertCircle, ShoppingBag, Tag,
+  MoreHorizontal,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { xpApi, type Product, type MerchantStore, XPaymentsApiError } from '@/lib/api/client';
@@ -569,6 +572,7 @@ export default function MerchantCatalogPage() {
   const [search, setSearch] = useState('');
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
   // ── Fetch products on mount ──
   useEffect(() => {
@@ -634,11 +638,14 @@ export default function MerchantCatalogPage() {
   }, []);
 
   // ── Delete product ──
-  const handleDelete = async (id: string) => {
-    const productName = products.find((p) => p.id === id)?.name || 'Produto';
+  const handleDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    const productName = deleteTarget.name || 'Produto';
+    const id = deleteTarget.id;
 
     // Optimistic removal
     setProducts((prev) => prev.filter((p) => p.id !== id));
+    setDeleteTarget(null);
 
     try {
       await xpApi.merchant.deleteProduct(id);
@@ -647,7 +654,6 @@ export default function MerchantCatalogPage() {
         description: `"${productName}" foi removido do catálogo.`,
       });
     } catch (err: unknown) {
-      // Revert on error
       const msg = err instanceof XPaymentsApiError ? err.message : 'Erro ao eliminar produto.';
       toast({
         title: 'Erro',
@@ -657,7 +663,7 @@ export default function MerchantCatalogPage() {
       // Re-fetch to restore correct state
       fetchProducts();
     }
-  };
+  }, [deleteTarget, toast, fetchProducts]);
 
   // ── Filtered products ──
   const filteredProducts = search.trim()
@@ -862,26 +868,22 @@ export default function MerchantCatalogPage() {
 
                     {/* Actions */}
                     <TableCell className="py-3 pr-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenEdit(product)}
-                          className="h-8 w-8 text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg"
-                          aria-label="Editar produto"
-                        >
-                          <Pencil className="size-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(product.id)}
-                          className="h-8 w-8 text-zinc-500 hover:text-destructive hover:bg-red-500/10 rounded-lg"
-                          aria-label="Eliminar produto"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-[#0f0f12] border-white/[0.08]">
+                          <DropdownMenuItem onClick={() => handleOpenEdit(product)}>
+                            <Pencil className="size-3.5 mr-2" /> Editar Produto
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-white/[0.06]" />
+                          <DropdownMenuItem onClick={() => setDeleteTarget(product)} className="text-red-400 focus:text-red-300">
+                            <Trash2 className="size-3.5 mr-2" /> Eliminar Produto
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -898,6 +900,24 @@ export default function MerchantCatalogPage() {
         editingProduct={editingProduct}
         onSaved={handleSaved}
       />
+
+      {/* ── Delete Confirmation Dialog ── */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="bg-[#0f0f12] border-white/[0.08]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-zinc-100">Eliminar Produto</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Tem a certeza que pretende eliminar <strong className="text-zinc-200">{deleteTarget?.name}</strong>? Esta ação é irreversível.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="text-zinc-400">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-500 text-white">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
