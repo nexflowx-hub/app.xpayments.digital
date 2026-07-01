@@ -15,83 +15,35 @@ import {
 } from '@/components/ui/table';
 import {
   Wallet,
-  Clock,
-  ArrowDownLeft,
   ShieldAlert,
   RefreshCw,
   AlertCircle,
   Activity,
   TrendingUp,
+  BarChart3,
+  PieChart,
   Inbox,
 } from 'lucide-react';
 import {
   xpApi,
   XPaymentsApiError,
-  type MerchantDashboardResponse,
   type MerchantDashboardTransaction,
 } from '@/lib/api/client';
+import type { AnalyticsOverview, RiskProfile } from '@/types/xpayments';
 import { cn } from '@/lib/utils';
 
 // ============================================================
-// XPAYMENTS CORE — Merchant Dashboard (Ledger Engine View)
+// XPAYMENTS CORE — Merchant Dashboard V2
 //
 // Endpoints:
-//   GET /merchant/:merchantId/dashboard  → balances (AVAILABLE, PENDING, INCOMING, RESERVE)
-//   GET /merchant/:merchantId/transactions → last N transactions
+//   GET /wallets               → saldo disponível
+//   GET /analytics/overview    → BI (faturação, conversão, revenue)
+//   GET /risk/profile          → Risk Engine (score, reserva)
+//   GET /merchant/:id/transactions → transações
 //
-// merchantId comes from useAuthStore.user.id
+// O middleware authenticateMerchant extrai o merchantId do JWT,
+// pelo que não precisamos de o passar no URL para analytics/risk/crm.
 // ============================================================
-
-// ── Ledger Card Config ──
-
-interface LedgerCardConfig {
-  key: keyof NonNullable<MerchantDashboardResponse['balances']>;
-  label: string;
-  icon: React.ElementType;
-  accentColor: string;
-  borderColor: string;
-  bgColor: string;
-  iconColor: string;
-}
-
-const LEDGER_CARDS: LedgerCardConfig[] = [
-  {
-    key: 'available',
-    label: 'Disponível (USDT)',
-    icon: Wallet,
-    accentColor: 'text-emerald-400',
-    borderColor: 'border-emerald-500/20',
-    bgColor: 'bg-emerald-500/[0.06]',
-    iconColor: 'text-emerald-500',
-  },
-  {
-    key: 'pending',
-    label: 'Em Processamento',
-    icon: Clock,
-    accentColor: 'text-amber-400',
-    borderColor: 'border-amber-500/20',
-    bgColor: 'bg-amber-500/[0.06]',
-    iconColor: 'text-amber-500',
-  },
-  {
-    key: 'incoming',
-    label: 'Volume Entrante',
-    icon: ArrowDownLeft,
-    accentColor: 'text-sky-400',
-    borderColor: 'border-sky-500/20',
-    bgColor: 'bg-sky-500/[0.06]',
-    iconColor: 'text-sky-500',
-  },
-  {
-    key: 'reserve',
-    label: 'Reserva de Risco',
-    icon: ShieldAlert,
-    accentColor: 'text-purple-400',
-    borderColor: 'border-purple-500/20',
-    bgColor: 'bg-purple-500/[0.06]',
-    iconColor: 'text-purple-500',
-  },
-];
 
 // ── Status Badge Styles ──
 
@@ -164,36 +116,37 @@ function truncateId(id: string): string {
 }
 
 // ============================================================
-// Ledger Card Component
+// BI Card Component
 // ============================================================
 
-function LedgerCard({
-  config,
+function BiCard({
+  icon: Icon,
+  iconBg,
+  iconColor,
+  label,
   value,
+  subValue,
+  valueColor,
   isLoading,
+  children,
 }: {
-  config: LedgerCardConfig;
-  value: number | undefined;
-  isLoading: boolean;
+  icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+  label: string;
+  value: string;
+  subValue?: string;
+  valueColor?: string;
+  isLoading?: boolean;
+  children?: React.ReactNode;
 }) {
-  const Icon = config.icon;
-
   return (
-    <div
-      className={cn(
-        'rounded-xl border p-5 transition-colors',
-        'border-white/[0.06] bg-white/[0.02]',
-        'hover:bg-white/[0.04]',
-        config.borderColor,
-      )}
-    >
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
       <div className="flex items-center gap-3 mb-4">
-        <div className={cn('flex items-center justify-center size-9 rounded-lg', config.bgColor)}>
-          <Icon className={cn('size-4', config.iconColor)} />
+        <div className={cn('flex items-center justify-center size-9 rounded-lg', iconBg)}>
+          <Icon className={cn('size-4', iconColor)} />
         </div>
-        <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-          {config.label}
-        </span>
+        <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">{label}</span>
       </div>
 
       {isLoading ? (
@@ -203,10 +156,11 @@ function LedgerCard({
         </div>
       ) : (
         <>
-          <p className={cn('text-2xl font-bold tabular-nums tracking-tight', config.accentColor)}>
-            {formatUSDT(value)}
+          <p className={cn('text-2xl font-bold tabular-nums tracking-tight', valueColor || 'text-zinc-100')}>
+            {value}
           </p>
-          <p className="text-[11px] text-zinc-600 mt-1">Ledger Engine</p>
+          {subValue && <p className="text-[11px] text-zinc-600 mt-1">{subValue}</p>}
+          {children}
         </>
       )}
     </div>
@@ -393,41 +347,45 @@ function TransactionsTable({
 }
 
 // ============================================================
-// Main Component — Merchant Dashboard
+// Main Component — Merchant Dashboard V2
 // ============================================================
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
-  const [dashboard, setDashboard] = useState<MerchantDashboardResponse | null>(null);
+
+  // ── States ──
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null);
+  const [risk, setRisk] = useState<RiskProfile | null>(null);
   const [transactions, setTransactions] = useState<MerchantDashboardTransaction[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
-  const merchantId = user?.id || '';
-
   const fetchData = useCallback(async (isRefresh = false) => {
-    if (!merchantId) {
-      setLoading(false);
-      return;
-    }
-
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
     setError('');
 
     try {
-      const [dashData, txData] = await Promise.all([
-        xpApi.merchant.getDashboard(merchantId),
-        xpApi.merchant.getTransactions(merchantId, { limit: 10 }),
+      // 🚀 Dispara todas as chamadas em paralelo para o novo Backend V2!
+      const [walletData, analyticsData, riskData, txData] = await Promise.all([
+        xpApi.wallets.list(),          // Wallet Real-Time
+        xpApi.analytics.getOverview(), // Motor de BI
+        xpApi.risk.getProfile(),       // Risk Engine
+        xpApi.merchant.getTransactions(user?.id || '', { limit: 10 }),
       ]);
 
-      setDashboard(dashData);
+      // Atualiza Estados
+      if (Array.isArray(walletData) && walletData.length > 0) {
+        const first = walletData[0] as Record<string, unknown>;
+        setWalletBalance(typeof first.balance === 'number' ? first.balance : 0);
+      }
+      setAnalytics(analyticsData);
+      setRisk(riskData);
 
-      // Handle both array and paginated response
+      // Tratamento da tabela de transações (array ou paginado)
       if (Array.isArray(txData)) {
         setTransactions(txData);
       } else if (txData && Array.isArray((txData as { data: MerchantDashboardTransaction[] }).data)) {
@@ -441,32 +399,30 @@ export default function DashboardPage() {
       } else if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Erro ao carregar dados do dashboard');
+        setError('Erro ao carregar o motor financeiro V2');
       }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [merchantId]);
+  }, [user?.id]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const balances = dashboard?.balances;
-
   return (
     <div className="space-y-6">
-      {/* ── Header ── */}
+      {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center size-10 rounded-xl border border-emerald-500/20 bg-emerald-500/10">
             <TrendingUp className="size-5 text-emerald-400" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-zinc-100">Dashboard Financeiro</h2>
+            <h2 className="text-lg font-bold text-zinc-100">Performance da Loja</h2>
             <p className="text-xs text-zinc-600 mt-0.5">
-              Visão geral Ledger Engine {user?.organizationName ? `· ${user.organizationName}` : ''}
+              Powered by XPayments Analytics
             </p>
           </div>
         </div>
@@ -478,11 +434,11 @@ export default function DashboardPage() {
           className="h-8 gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border border-white/[0.06]"
         >
           <RefreshCw className={cn('size-3.5', refreshing && 'animate-spin')} />
-          {refreshing ? 'A atualizar...' : 'Atualizar'}
+          {refreshing ? 'A sincronizar...' : 'Atualizar Dados'}
         </Button>
       </div>
 
-      {/* ── Error State ── */}
+      {/* ── ALERTA DE ERRO ── */}
       {error && !loading && (
         <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/[0.08] border border-red-500/20">
           <AlertCircle className="size-4 text-red-400 shrink-0" />
@@ -501,19 +457,115 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── Ledger Cards (4 columns) ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {LEDGER_CARDS.map((card) => (
-          <LedgerCard
-            key={card.key}
-            config={card}
-            value={balances?.[card.key]}
-            isLoading={loading}
-          />
-        ))}
-      </div>
+      {/* ── BUSINESS INTELLIGENCE CARDS ── */}
+      {!loading && analytics && risk ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 
-      {/* ── Transactions Table ── */}
+          {/* Cartão 1: Saldo Disponível */}
+          <BiCard
+            icon={Wallet}
+            iconBg="bg-emerald-500/[0.06]"
+            iconColor="text-emerald-500"
+            label="Saldo Disponível"
+            value={`₮ ${walletBalance.toFixed(2)}`}
+            valueColor="text-emerald-400"
+          />
+
+          {/* Cartão 2: Faturação Mensal */}
+          <BiCard
+            icon={BarChart3}
+            iconBg="bg-sky-500/[0.06]"
+            iconColor="text-sky-500"
+            label="Faturação (Mês)"
+            value={`$ ${analytics.timeframes.month.toFixed(2)}`}
+            valueColor="text-sky-400"
+            subValue={`Hoje: $ ${analytics.timeframes.today.toFixed(2)}`}
+          />
+
+          {/* Cartão 3: Taxa de Conversão */}
+          <BiCard
+            icon={PieChart}
+            iconBg="bg-amber-500/[0.06]"
+            iconColor="text-amber-500"
+            label="Conversão"
+            value={`${analytics.conversion.rate}%`}
+            valueColor="text-amber-400"
+            subValue={`${analytics.conversion.successful} pagamentos concluídos`}
+          />
+
+          {/* Cartão 4: Trust & Safety / Risk Score */}
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 relative overflow-hidden">
+            <div className="flex items-center gap-3 mb-4 relative z-10">
+              <div className={cn(
+                'flex items-center justify-center size-9 rounded-lg',
+                risk.riskScore < 40 ? 'bg-green-500/[0.06]' : 'bg-red-500/[0.06]',
+              )}>
+                <ShieldAlert className={cn(
+                  'size-4',
+                  risk.riskScore < 40 ? 'text-green-500' : 'text-red-500',
+                )} />
+              </div>
+              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                Trust &amp; Safety
+              </span>
+            </div>
+            <p className={cn(
+              'text-2xl font-bold tabular-nums relative z-10',
+              risk.riskScore < 40 ? 'text-green-400' : 'text-red-400',
+            )}>
+              {risk.riskScore} / 100
+            </p>
+            <p className="text-[11px] text-zinc-600 mt-1 relative z-10">
+              {risk.reserve.active
+                ? `Reserva ativa (${risk.reserve.percentRetained}%)`
+                : 'Conta Saudável'}
+            </p>
+
+            {/* Security status badge */}
+            <div className="absolute top-3 right-3 z-10">
+              <Badge
+                variant="outline"
+                className={cn(
+                  'text-[10px] font-semibold px-2 py-0.5 rounded-md border',
+                  risk.securityStatus === 'SAFE'
+                    ? 'bg-green-500/15 text-green-400 border-green-500/30'
+                    : 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+                )}
+              >
+                {risk.securityStatus === 'SAFE' ? '✓ Seguro' : '⚠ Revisão'}
+              </Badge>
+            </div>
+
+            {/* Risk score bar background */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-800">
+              <div
+                className={cn(
+                  'h-full transition-all duration-500',
+                  risk.riskScore < 40 ? 'bg-green-500/60' : risk.riskScore < 70 ? 'bg-amber-500/60' : 'bg-red-500/60',
+                )}
+                style={{ width: `${Math.min(risk.riskScore, 100)}%` }}
+              />
+            </div>
+          </div>
+
+        </div>
+      ) : (
+        /* Loading skeleton for BI cards */
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <Skeleton className="size-9 rounded-lg" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-3 w-20 mt-2" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── TRANSACTIONS TABLE ── */}
       <TransactionsTable transactions={transactions} isLoading={loading} />
     </div>
   );

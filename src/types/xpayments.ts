@@ -471,3 +471,49 @@ export interface RolePermissions {
   canManageOrganizations: boolean;
   canManageUsers: boolean;
 }
+
+// --- NOVOS TIPOS: ANALYTICS, RISK & CRM (V2) ---
+
+export interface AnalyticsOverview {
+  timeframes: {
+    today: number;
+    month: number;
+  };
+  conversion: {
+    rate: number;
+    totalAttempts: number;
+    successful: number;
+  };
+  financials: {
+    grossProcessedUSDT: number;
+    feesPaidUSDT: number;
+    netRevenueUSDT: number;
+  };
+  currencySplit: Record<string, number>;
+}
+
+export interface RiskProfile {
+  riskScore: number;
+  securityStatus: 'SAFE' | 'REVIEW_NEEDED';
+  reserve: {
+    active: boolean;
+    percentRetained: number;
+    holdingPeriodDays: number;
+  };
+  metrics: {
+    totalVolumeProcessed: number;
+  };
+}
+
+export interface CustomerCRM {
+  id: string;
+  name: string | null;
+  email: string;
+  taxId: string | null;
+  createdAt: string;
+  stats: {
+    totalPurchases: number;
+    lifetimeValueUSDT: number;
+    lastPurchaseAt: string | null;
+  };
+}

@@ -9,7 +9,7 @@
 //   - Formato de resposta do backend: { success: boolean, data: T }
 // ============================================================
 
-import type { PayoutRequest, DepositProofRequest } from '@/types/xpayments';
+import type { PayoutRequest, DepositProofRequest, AnalyticsOverview, RiskProfile, CustomerCRM } from '@/types/xpayments';
 
 // ── Base URL ──
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'https://api.xpayments.digital').replace(/\/+$/, '');
@@ -348,6 +348,21 @@ export const xpApi = {
   wallets: {
     list: () => get<unknown>('/wallets'),
     getById: (id: string) => get<unknown>(`/wallets/${id}`),
+  },
+
+  // ── ANALYTICS (BI) ──
+  analytics: {
+    getOverview: () => get<AnalyticsOverview>('/analytics/overview'),
+  },
+
+  // ── RISK ENGINE ──
+  risk: {
+    getProfile: () => get<RiskProfile>('/risk/profile'),
+  },
+
+  // ── CRM (Clientes) ──
+  crm: {
+    getCustomers: () => get<CustomerCRM[]>('/customers'),
   },
 
   // ── TRANSACTIONS ──
