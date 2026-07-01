@@ -23,6 +23,7 @@ import MerchantApiKeysPage from '@/components/dashboard/merchant-api-keys-page';
 import MerchantCheckoutsPage from '@/components/dashboard/merchant-checkouts-page';
 import MerchantCatalogPage from '@/components/dashboard/merchant-catalog-page';
 import MerchantApiDocsPage from '@/components/dashboard/merchant-api-docs-page';
+import CrmPage from '@/components/crm/crm-page';
 import XpAiChat from '@/components/ai/xp-ai-chat';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -58,6 +59,7 @@ const PAGES: Record<string, React.ComponentType> = {
   'merchant-checkouts': MerchantCheckoutsPage,
   'merchant-catalog': MerchantCatalogPage,
   'merchant-api-docs': MerchantApiDocsPage,
+  crm: CrmPage,
 };
 
 const TITLES: Record<string, string> = {
@@ -78,6 +80,7 @@ const TITLES: Record<string, string> = {
   'merchant-checkouts': 'Stores / API',
   'merchant-catalog': 'Catálogo de Produtos',
   'merchant-api-docs': 'Documentação API',
+  crm: 'Clientes & CRM',
 };
 
 // ── Scroll-to-top / bottom threshold (px from edge) ──

@@ -37,6 +37,7 @@ import {
   ChevronDown,
   Package,
   BookOpen,
+  UserCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -137,6 +138,14 @@ const NAV_ITEMS: NavItemDef[] = [
     permission: 'canConfigureCheckouts',
   },
 
+  {
+    page: 'crm',
+    label: 'Clientes & CRM',
+    icon: UserCircle,
+    roles: ['merchant', 'super_merchant'],
+    permission: 'canViewSubClients',
+  },
+
   // ── Developers ──
   {
     page: 'merchant-api-keys',
@@ -195,7 +204,7 @@ const SECTION_MAP: Record<SectionKey, NavPage[]> = {
   dashboard: ['dashboard'],
   wallet: ['wallets', 'deposits', 'swaps', 'payouts'],
   kyc: ['kyc'],
-  ecommerce: ['transactions', 'merchant-checkouts', 'merchant-links', 'merchant-catalog'],
+  ecommerce: ['transactions', 'crm', 'merchant-checkouts', 'merchant-links', 'merchant-catalog'],
   developers: ['merchant-api-keys', 'merchant-api-docs'],
   admin: ['admin-dashboard', 'admin-tickets', 'admin-fees', 'admin-users', 'admin-organizations'],
 };
