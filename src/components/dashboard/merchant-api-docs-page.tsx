@@ -30,7 +30,7 @@ import {
   Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth-store';
 import { xpApi, type MerchantStore } from '@/lib/api/client';
 
@@ -52,16 +52,15 @@ interface ApiKeyRecord {
 // ============================================================
 
 function CodeBlock({ code, language = 'json' }: { code: string; language?: string }) {
-  const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(code).then(() => {
       setCopied(true);
-      toast({ title: 'Copiado!', description: 'Código copiado para a área de transferência.' });
+      toast.success('Copiado!', { description: 'Código copiado para a área de transferência.' });
       setTimeout(() => setCopied(false), 2000);
     });
-  }, [code, toast]);
+  }, [code]);
 
   return (
     <div className="relative rounded-lg bg-zinc-900 border border-white/[0.06] overflow-hidden">
@@ -143,16 +142,15 @@ function AIPromptBlock({
   description: string;
   promptText: string;
 }) {
-  const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(promptText).then(() => {
       setCopied(true);
-      toast({ title: 'Prompt copiado!', description: 'Cole no ChatGPT, Cursor ou Claude.' });
+      toast.success('Prompt copiado!', { description: 'Cole no ChatGPT, Cursor ou Claude.' });
       setTimeout(() => setCopied(false), 2500);
     });
-  }, [promptText, toast]);
+  }, [promptText]);
 
   return (
     <Card className="relative overflow-hidden border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.04] to-transparent">

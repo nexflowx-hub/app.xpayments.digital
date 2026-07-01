@@ -18,7 +18,7 @@ import {
 import {
   Card, CardContent,
 } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 // ============================================================
@@ -65,7 +65,6 @@ function StoreFormDialog({
   onSaved: (store: MerchantStore) => void;
   editStore?: MerchantStore | null;
 }) {
-  const { toast } = useToast();
   const isEdit = !!editStore;
 
   const [name, setName] = useState('');
@@ -112,8 +111,7 @@ function StoreFormDialog({
       };
 
       const store = await xpApi.merchant.createStore(merchantId, payload);
-      toast({
-        title: isEdit ? 'Loja atualizada' : 'Loja criada',
+      toast.success(isEdit ? 'Loja atualizada' : 'Loja criada', {
         description: `"${name.trim()}" ${isEdit ? 'atualizada' : 'pronta'} para integração.`,
       });
       resetForm();
@@ -121,10 +119,8 @@ function StoreFormDialog({
       onSaved(store);
     } catch (err: unknown) {
       const msg = err instanceof XPaymentsApiError ? err.message : `Erro ao ${isEdit ? 'atualizar' : 'criar'} loja.`;
-      toast({
-        title: 'Erro',
+      toast.error('Erro', {
         description: msg,
-        variant: 'destructive',
       });
     } finally {
       setSubmitting(false);
@@ -432,7 +428,6 @@ function StoreCard({
 // ============================================================
 
 export default function MerchantCheckoutsPage() {
-  const { toast } = useToast();
 
   const [stores, setStores] = useState<MerchantStore[]>([]);
   const [loading, setLoading] = useState(true);
@@ -491,16 +486,13 @@ export default function MerchantCheckoutsPage() {
   const handleCopyId = (storeId: string) => {
     navigator.clipboard.writeText(storeId).then(() => {
       setCopiedId(`id-${storeId}`);
-      toast({
-        title: 'Store ID copiado',
+      toast.success('Store ID copiado', {
         description: 'Cole este ID no plugin WooCommerce / Walluxe ou nas chamadas à API B2B.',
       });
       setTimeout(() => setCopiedId(null), 2500);
     }).catch(() => {
-      toast({
-        title: 'Erro',
+      toast.error('Erro', {
         description: 'Não foi possível copiar o Store ID.',
-        variant: 'destructive',
       });
     });
   };

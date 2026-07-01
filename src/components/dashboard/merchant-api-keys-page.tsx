@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { xpApi, XPaymentsApiError } from '@/lib/api/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // ============================================================
 // XPAYMENTS CORE - API Keys Management
@@ -81,7 +81,6 @@ function formatDate(dateStr?: string | null): string {
 // ---------------------------------------------------------------------------
 
 export default function MerchantApiKeysPage() {
-  const { toast } = useToast();
 
   // ── State ──
   const [keys, setKeys] = useState<ApiKeyRecord[]>([]);
@@ -141,41 +140,35 @@ export default function MerchantApiKeysPage() {
       const keyList = Array.isArray(updated) ? updated : updated ? [updated] : [];
       setKeys(keyList as ApiKeyRecord[]);
 
-      toast({
-        title: 'Chave gerada',
+      toast.success('Chave gerada', {
         description: 'Nova chave API criada com sucesso.',
       });
     } catch (err) {
       console.error('[XPayments] Erro ao gerar API key:', err);
       const msg = err instanceof XPaymentsApiError ? err.message : 'Erro ao gerar nova chave.';
-      toast({
-        title: 'Erro',
+      toast.error('Erro', {
         description: msg,
-        variant: 'destructive',
       });
     } finally {
       setGenerating(false);
     }
-  }, [toast]);
+  }, []);
 
   // ── Copy to clipboard ──
   const handleCopy = useCallback((id: string, value: string) => {
     if (!value) return;
     navigator.clipboard.writeText(value).then(() => {
       setCopiedId(id);
-      toast({
-        title: 'Copiado',
+      toast.success('Copiado', {
         description: 'Chave copiada para a área de transferência.',
       });
       setTimeout(() => setCopiedId(null), 2000);
     }).catch(() => {
-      toast({
-        title: 'Erro',
+      toast.error('Erro', {
         description: 'Não foi possível copiar.',
-        variant: 'destructive',
       });
     });
-  }, [toast]);
+  }, []);
 
   // ── Toggle secret key visibility ──
   const handleToggleReveal = useCallback((id: string) => {
@@ -199,24 +192,21 @@ export default function MerchantApiKeysPage() {
       .then(() => {
         // Optimistic: remove from state immediately
         setKeys((prev) => prev.filter((k) => k.id !== id));
-        toast({
-          title: 'Chave eliminada',
+        toast.success('Chave eliminada', {
           description: 'A chave API foi removida com sucesso.',
         });
       })
       .catch((err) => {
         console.error('[XPayments] Erro ao eliminar API key:', err);
         const msg = err instanceof XPaymentsApiError ? err.message : 'Erro ao eliminar a chave.';
-        toast({
-          title: 'Erro',
+        toast.error('Erro', {
           description: msg,
-          variant: 'destructive',
         });
       })
       .finally(() => {
         setDeletingId(null);
       });
-  }, [toast]);
+  }, []);
 
   const hasKeys = keys.length > 0;
 

@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type {
   UserRole,
   RolePermissions,
+  AuthUser as AuthUserType,
 } from '@/types/xpayments';
 import {
   setStoredToken,
@@ -23,17 +24,8 @@ import {
 // NÃO há role 'admin' hardcoded. Tudo vem do backend.
 // ============================================================
 
-interface AuthUser {
-  id: string;
-  email?: string | null;
-  nickname?: string | null;
-  fullName?: string | null;
-  role: UserRole;
-  tier?: string;
-  organizationId?: string | null;
-  organizationName?: string | null;
-  avatar?: string | null;
-}
+// AuthUser re-exported from types — single source of truth
+type AuthUser = AuthUserType;
 
 interface AuthState {
   user: AuthUser | null;

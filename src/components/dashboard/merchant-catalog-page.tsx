@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { xpApi, type Product, type MerchantStore, XPaymentsApiError } from '@/lib/api/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 // ============================================================
@@ -173,7 +173,6 @@ function ProductSheet({
   editingProduct: Product | null;
   onSaved: (product: Product) => void;
 }) {
-  const { toast } = useToast();
   const [form, setForm] = useState<ProductFormData>({ ...EMPTY_FORM });
   const [imageInput, setImageInput] = useState('');
   const [stores, setStores] = useState<MerchantStore[]>([]);
@@ -248,20 +247,16 @@ function ProductSheet({
 
   const handleSubmit = async () => {
     if (!form.name.trim() || !form.priceFiat || !form.storeId) {
-      toast({
-        title: 'Campos obrigatórios',
+      toast.error('Campos obrigatórios', {
         description: 'Preencha o nome, preço e selecione uma loja.',
-        variant: 'destructive',
       });
       return;
     }
 
     const priceNum = parseFloat(form.priceFiat);
     if (isNaN(priceNum) || priceNum < 0) {
-      toast({
-        title: 'Preço inválido',
+      toast.error('Preço inválido', {
         description: 'Insira um valor numérico válido.',
-        variant: 'destructive',
       });
       return;
     }
@@ -283,14 +278,12 @@ function ProductSheet({
       let product: Product;
       if (isEditing && editingProduct) {
         product = await xpApi.merchant.updateProduct(editingProduct.id, payload);
-        toast({
-          title: 'Produto atualizado',
+        toast.success('Produto atualizado', {
           description: `"${form.name.trim()}" foi atualizado com sucesso.`,
         });
       } else {
         product = await xpApi.merchant.createProduct(payload);
-        toast({
-          title: 'Produto criado',
+        toast.success('Produto criado', {
           description: `"${form.name.trim()}" foi adicionado ao catálogo.`,
         });
       }
@@ -299,10 +292,8 @@ function ProductSheet({
       onSaved(product);
     } catch (err: unknown) {
       const msg = err instanceof XPaymentsApiError ? err.message : 'Erro ao salvar produto.';
-      toast({
-        title: 'Erro',
+      toast.error('Erro', {
         description: msg,
-        variant: 'destructive',
       });
     } finally {
       setSubmitting(false);
@@ -563,7 +554,6 @@ function TableSkeleton() {
 // ============================================================
 
 export default function MerchantCatalogPage() {
-  const { toast } = useToast();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -649,21 +639,18 @@ export default function MerchantCatalogPage() {
 
     try {
       await xpApi.merchant.deleteProduct(id);
-      toast({
-        title: 'Produto eliminado',
+      toast.success('Produto eliminado', {
         description: `"${productName}" foi removido do catálogo.`,
       });
     } catch (err: unknown) {
       const msg = err instanceof XPaymentsApiError ? err.message : 'Erro ao eliminar produto.';
-      toast({
-        title: 'Erro',
+      toast.error('Erro', {
         description: msg,
-        variant: 'destructive',
       });
       // Re-fetch to restore correct state
       fetchProducts();
     }
-  }, [deleteTarget, toast, fetchProducts]);
+  }, [deleteTarget, fetchProducts]);
 
   // ── Filtered products ──
   const filteredProducts = search.trim()
