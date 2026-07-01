@@ -495,3 +495,9 @@
   pointer-events: none;
   z-index: 1;
 }
+
+/* World map glow pulse animation */
+@keyframes xp-glow-pulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}

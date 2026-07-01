@@ -28,6 +28,11 @@ import {
   FileText,
   HelpCircle,
   Activity,
+  CreditCard,
+  Headphones,
+  Send,
+  Tag,
+  MessageSquare,
 } from 'lucide-react';
 import CryptoCards from '@/components/shared/crypto-cards';
 import { cn } from '@/lib/utils';
@@ -47,6 +52,35 @@ const NAV_LINKS = [
   { label: 'Suporte', href: '#' },
 ];
 
+/* ── Currency Card for World Map Overlay ── */
+function CurrencyCard({ code, name, symbol, color, flag, className }: {
+  code: string;
+  name: string;
+  symbol?: string;
+  color?: string;
+  flag?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn(
+      'flex items-center gap-2.5 rounded-xl border border-white/[0.08] bg-[#071120]/90 px-3 py-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.8)] backdrop-blur-md',
+      className,
+    )}>
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+        {flag || (symbol && (
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-white" style={{ backgroundColor: color }}>
+            {symbol}
+          </div>
+        ))}
+      </div>
+      <div className="leading-tight">
+        <div className="text-xs font-bold text-white">{code}</div>
+        <div className="text-[10px] text-zinc-400">{name}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function XPaymentsLanding() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isAdminLogin, setIsAdminLogin] = useState(false);
@@ -58,6 +92,8 @@ export default function XPaymentsLanding() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(true);
+  const [aiValue, setAiValue] = useState('');
 
   const { setAuth, isLoading, setLoading } = useAuthStore();
   const { setPage } = useNavStore();
@@ -495,6 +531,63 @@ export default function XPaymentsLanding() {
 
         {/* LEFT: Crypto Exchange Data — order-2 on mobile (comes after auth), first on desktop */}
         <div className="order-2 lg:order-first lg:flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+          {/* World Map Hero */}
+          <div className="relative h-[280px] sm:h-[360px] lg:h-[440px] w-full overflow-hidden rounded-2xl border border-white/[0.06] mb-6">
+            <div className="absolute inset-0 overflow-hidden">
+              <img
+                src="/images/world-map-glow.png"
+                alt="Mapa mundial - rede global de pagamentos XPayments"
+                className="h-full w-full object-cover object-center opacity-90 animate-[xp-glow-pulse_4s_ease-in-out_infinite] [mask-image:radial-gradient(ellipse_75%_75%_at_center,black_45%,transparent_92%)]"
+              />
+            </div>
+            {/* Currency Cards floating on top */}
+            <CurrencyCard
+              code="USD"
+              name="Dólar Americano"
+              symbol="$"
+              color="#16a34a"
+              className="absolute left-[8%] top-[6%]"
+            />
+            <CurrencyCard
+              code="EUR"
+              name="Euro"
+              symbol="€"
+              color="#2563eb"
+              className="absolute left-[2%] top-[34%]"
+            />
+            <CurrencyCard
+              code="BRL"
+              name="Real Brasileiro"
+              flag={
+                <svg viewBox="0 0 32 32" className="h-8 w-8 rounded-lg">
+                  <rect width="32" height="32" fill="#009739" />
+                  <polygon points="16,4 28,16 16,28 4,16" fill="#FEDD00" />
+                  <circle cx="16" cy="16" r="6" fill="#002776" />
+                </svg>
+              }
+              className="absolute left-[10%] top-[62%]"
+            />
+            <CurrencyCard
+              code="JPY"
+              name="Yen Japonês"
+              symbol="¥"
+              color="#c026d3"
+              className="absolute right-[2%] top-[26%]"
+            />
+            <CurrencyCard
+              code="NGN"
+              name="Naira Nigeriano"
+              flag={
+                <svg viewBox="0 0 32 32" className="h-8 w-8 rounded-lg">
+                  <rect width="32" height="32" fill="white" />
+                  <rect width="11" height="32" fill="#008751" />
+                  <rect x="21" width="11" height="32" fill="#008751" />
+                </svg>
+              }
+              className="absolute right-[16%] top-[74%]"
+            />
+          </div>
+
           {/* Stats row - horizontal scroll on mobile */}
           <div className="flex items-center gap-4 sm:gap-6 mb-5 overflow-x-auto pb-2 -mx-1 px-1 animate-slide-in-left">
             {[
@@ -565,6 +658,97 @@ export default function XPaymentsLanding() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Floating Contact Sidebar */}
+      <div className="fixed right-5 top-1/2 z-40 hidden -translate-y-1/2 flex-col gap-3 xl:flex">
+        {[
+          { label: 'WhatsApp', src: '/logos/whatsapp.svg', color: '#25D366' },
+          { label: 'Telegram', src: '/logos/telegram.svg', color: '#229ED9' },
+          { label: 'Discord', src: '/logos/discord.svg', color: '#5865F2' },
+        ].map((c) => (
+          <a
+            key={c.label}
+            href="#"
+            className="flex items-center gap-3 rounded-full border border-white/[0.08] bg-[#071120]/90 py-2 pl-2 pr-5 shadow-[0_12px_30px_-12px_rgba(0,0,0,0.9)] backdrop-blur-md transition-transform hover:scale-[1.03]"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: c.color }}>
+              <img src={c.src} alt="" className="h-4 w-4 brightness-0 invert" />
+            </span>
+            <span className="text-sm font-medium text-white">{c.label}</span>
+          </a>
+        ))}
+      </div>
+
+      {/* AI Assistant */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+        {aiOpen && (
+          <div className="w-[340px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a1524] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)]">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2563eb]">
+                  <img src="/logo.png" alt="" className="h-5 w-5 rounded-full" />
+                </span>
+                <div className="leading-tight">
+                  <div className="text-sm font-semibold text-white">Assistente X</div>
+                  <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
+                    Online agora
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setAiOpen(false)} className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white" aria-label="Fechar assistente">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {/* Body */}
+            <div className="space-y-4 px-4 py-4">
+              <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white/[0.06] px-4 py-3 text-sm leading-relaxed text-white">
+                Olá! 👋<br />Sou o Assistente XPayments.<br />Como posso ajudar você hoje?
+              </div>
+              <div className="flex flex-col gap-2">
+                {[
+                  { icon: HelpCircle, label: 'Como funciona a plataforma?' },
+                  { icon: CreditCard, label: 'Quais métodos de pagamento?' },
+                  { icon: Tag, label: 'Taxas e Pricing' },
+                  { icon: FileText, label: 'Integração via API' },
+                  { icon: Headphones, label: 'Falar com suporte humano' },
+                ].map((q) => {
+                  const Icon = q.icon;
+                  return (
+                    <button key={q.label} className="flex items-center gap-2.5 rounded-xl border border-white/[0.08] bg-[#071120]/60 px-3.5 py-2.5 text-left text-sm text-white transition-colors hover:bg-white/[0.06]">
+                      <Icon className="h-4 w-4 shrink-0 text-[#2563eb]" />
+                      {q.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Input */}
+            <div className="border-t border-white/[0.08] p-3">
+              <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#071120] px-3 py-2">
+                <input
+                  value={aiValue}
+                  onChange={(e) => setAiValue(e.target.value)}
+                  placeholder="Pergunte qualquer coisa..."
+                  className="flex-1 bg-transparent text-sm text-white placeholder:text-zinc-500 focus:outline-none"
+                />
+                <button className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#2563eb] text-white transition-colors hover:bg-blue-500" aria-label="Enviar mensagem">
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Launcher */}
+        <button
+          onClick={() => setAiOpen((o: boolean) => !o)}
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-[0_16px_40px_-8px_rgba(37,99,235,0.7)] transition-transform hover:scale-105"
+          aria-label={aiOpen ? 'Fechar assistente' : 'Abrir assistente'}
+        >
+          {aiOpen ? <X className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
+        </button>
       </div>
 
       {/* === FOOTER (sticky) === */}
