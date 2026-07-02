@@ -511,11 +511,11 @@ export default function XPaymentsLanding() {
 
               {/* Right column — World Map */}
               <div className="relative h-[320px] w-full sm:h-[420px] lg:h-[520px]">
-                <div className="absolute inset-0 -right-[6%] overflow-hidden">
+                <div className="absolute inset-0 flex items-center justify-center -right-[6%]">
                   <img
                     src="/images/world-map-glow.png"
                     alt="Mapa mundial iluminado mostrando a rede global de pagamentos da XPayments"
-                    className="h-full w-full object-cover object-center opacity-90 [mask-image:radial-gradient(ellipse_75%_75%_at_center,black_45%,transparent_92%)]"
+                    className="h-full max-h-full w-auto mix-blend-screen [mask-image:radial-gradient(ellipse_90%_85%_at_center,black_30%,transparent_100%)]"
                   />
                 </div>
                 <CurrencyCard code="USD" name="Dólar Americano" symbol="$" color="#16a34a" className="left-[8%] top-[6%]" />
