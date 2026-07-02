@@ -373,20 +373,20 @@ export const xpApi = {
 
   // ── DEPOSITS (IN) ──
   deposits: {
-    create: (data: { walletId: string; currency: string; amount: number }) =>
-      post<unknown>('/deposits', data),
+    create: (data: { currency: string; amount: number }) =>
+      post<unknown>('/wallets/deposit', data),
 
     submitProof: (data: DepositProofRequest) =>
-      post<unknown>(`/deposits/${data.depositId}/proof`, {
+      post<unknown>(`/wallets/deposits/${data.depositId}/proof`, {
         proofType: data.proofType,
         proofValue: data.proofValue,
       }),
   },
 
-  // ── SWAPS ──
+  // ── SWAPS (FX) ──
   swaps: {
-    execute: (data: { fromWalletId: string; toWalletId: string; amount: number }) =>
-      post<unknown>('/swaps', data),
+    execute: (data: { fromCurrency: string; toCurrency: string; amount: number }) =>
+      post<unknown>('/wallets/swap', data),
   },
 
   // ── PAYOUTS (OUT) ──

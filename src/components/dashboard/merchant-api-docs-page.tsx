@@ -332,7 +332,7 @@ export default function MerchantApiDocsPage() {
 
 SEGURANÇA: Adiciona as chaves ao meu ficheiro .env:\nXPAYMENTS_SECRET_KEY=${activeSecretKey}\nXPAYMENTS_STORE_ID=${activeStoreId}\nNão as exponhas no frontend. As chamadas à API XPayments devem ser via Backend.
 
-PASSO 1: Cria um endpoint Backend para fazer POST a https://api.xpayments.digital/api/v1/checkout/sessions (usa o Header Authorization Bearer). O payload precisa do storeId, amountFiat, currency e orderId.
+PASSO 1: Cria um endpoint Backend para fazer POST a https://api.xpayments.digital/api/v1/checkout/session (usa o Header Authorization Bearer). O payload precisa do storeId, amountFiat, currency e metadata com orderId.
 
 PASSO 2 (Frontend Seamless): Quando o cliente clicar em 'Pagar', não redireciones. Abre o URL devolvido pela sessão num Modal (iframe) sobre o meu site.
 
@@ -494,7 +494,7 @@ Authorization: Bearer ${activeSecretKey}`,
             />
             <CodeBlock
               language="javascript"
-              code={`const response = await fetch('https://api.xpayments.digital/api/v1/checkout/sessions', {
+              code={`const response = await fetch('https://api.xpayments.digital/api/v1/checkout/session', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -504,7 +504,9 @@ Authorization: Bearer ${activeSecretKey}`,
     storeId: '${activeStoreId}',
     amountFiat: 99.90,
     currency: 'EUR',
-    orderId: 'ORD-001',
+    metadata: {
+      orderId: 'ORD-001',
+    },
   }),
 });
 
@@ -544,13 +546,19 @@ const session = await response.json();
             />
             <EndpointCard
               method="POST"
-              url="https://api.xpayments.digital/api/v1/checkout/sessions"
-              description="Cria uma nova sessão de checkout e devolve a URL de pagamento única."
+              url="https://api.xpayments.digital/api/v1/checkout/session"
+              description="Cria uma nova sessão de checkout e devolve a URL de pagamento única. Suporta Split Payments automático (Marketplace). Envie o objeto splitRules para dividir a receita atómicamente com parceiros."
               requestPayload={{
                 storeId: activeStoreId,
                 amountFiat: 99.9,
                 currency: 'EUR',
-                orderId: 'ORD-2024-001',
+                metadata: {
+                  orderId: 'ORD-2024-001',
+                },
+                splitRules: {
+                  targetMerchantId: 'uuid-do-parceiro-xpayments',
+                  percentage: 20,
+                },
               }}
               responsePayload={{
                 success: true,
