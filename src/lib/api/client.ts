@@ -485,7 +485,7 @@ export const xpApi = {
       get<unknown>('/users', params as Record<string, string | number | undefined>),
   },
 
-  // ── CHECKOUT PÚBLICO (Sessões) ──
+  // ── CHECKOUT (Público + Dashboard) ──
   checkout: {
     /** GET /checkout/session/:id — Lê os dados reais e invioláveis da sessão (preço, loja, etc) */
     getSession: (sessionId: string) =>
@@ -494,6 +494,10 @@ export const xpApi = {
     /** POST /checkout/initiate — Processa o pagamento usando apenas o Session ID */
     initiate: (data: { sessionId: string; customerDetails: { fullName?: string; email: string; taxId?: string } }) =>
       post<{ gateway: string; checkoutData: unknown }>('/checkout/initiate', data),
+
+    /** GET /checkout/sessions — Lista sessões de checkout do merchant (JWT protegido) */
+    list: (params?: { status?: string; page?: number; pageSize?: number }) =>
+      get<unknown[]>('/checkout/sessions', params as Record<string, string | number | undefined>),
   },
 
   // ── DASHBOARD (dados agregados) ──

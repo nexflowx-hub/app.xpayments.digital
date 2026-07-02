@@ -312,7 +312,7 @@ function AuthModal({ open, onClose, initialMode }: { open: boolean; onClose: () 
                 <Label htmlFor="modal-login-id" className="text-xs font-medium text-zinc-400">Email</Label>
                 <div className="relative">
                   <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
-                  <Input id="modal-login-id" type="text" placeholder="seu@email.com" value={loginId} onChange={(e) => setLoginId(e.target.value)}
+                  <Input id="modal-login-id" type="email" autoComplete="email" placeholder="seu@email.com" value={loginId} onChange={(e) => setLoginId(e.target.value)}
                     className="h-11 border-white/[0.08] bg-white/[0.03] pl-10 text-sm text-white placeholder:text-zinc-600 focus-visible:border-[#2563eb]/40 focus-visible:ring-[#2563eb]/15" required />
                 </div>
               </div>
@@ -323,7 +323,7 @@ function AuthModal({ open, onClose, initialMode }: { open: boolean; onClose: () 
                 </div>
                 <div className="relative">
                   <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
-                  <Input id="modal-login-pass" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)}
+                  <Input id="modal-login-pass" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)}
                     className="h-11 border-white/[0.08] bg-white/[0.03] pl-10 pr-10 text-sm text-white placeholder:text-zinc-600 focus-visible:border-[#2563eb]/40 focus-visible:ring-[#2563eb]/15" required />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors" tabIndex={-1}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -346,7 +346,7 @@ function AuthModal({ open, onClose, initialMode }: { open: boolean; onClose: () 
                 <Label htmlFor="modal-reg-email" className="text-xs font-medium text-zinc-400">Email</Label>
                 <div className="relative">
                   <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
-                  <Input id="modal-reg-email" type="email" placeholder="seu@email.com" value={regEmail} onChange={(e) => setRegEmail(e.target.value)}
+                  <Input id="modal-reg-email" type="email" autoComplete="email" placeholder="seu@email.com" value={regEmail} onChange={(e) => setRegEmail(e.target.value)}
                     className="h-11 border-white/[0.08] bg-white/[0.03] pl-10 text-sm text-white placeholder:text-zinc-600 focus-visible:border-[#2563eb]/40 focus-visible:ring-[#2563eb]/15" required />
                 </div>
               </div>
@@ -354,7 +354,7 @@ function AuthModal({ open, onClose, initialMode }: { open: boolean; onClose: () 
                 <Label htmlFor="modal-reg-pass" className="text-xs font-medium text-zinc-400">Criar Senha</Label>
                 <div className="relative">
                   <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
-                  <Input id="modal-reg-pass" type={showPassword ? 'text' : 'password'} placeholder="Mínimo 8 caracteres" value={regPassword} onChange={(e) => setRegPassword(e.target.value)}
+                  <Input id="modal-reg-pass" type={showPassword ? 'text' : 'password'} autoComplete="new-password" placeholder="Mínimo 8 caracteres" value={regPassword} onChange={(e) => setRegPassword(e.target.value)}
                     className="h-11 border-white/[0.08] bg-white/[0.03] pl-10 pr-10 text-sm text-white placeholder:text-zinc-600 focus-visible:border-[#2563eb]/40 focus-visible:ring-[#2563eb]/15" required />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors" tabIndex={-1}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
