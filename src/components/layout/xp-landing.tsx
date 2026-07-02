@@ -35,6 +35,7 @@ import {
   Menu,
   MessageSquare,
 } from 'lucide-react';
+import WorldMapSVG from '@/components/layout/world-map-svg';
 import { cn } from '@/lib/utils';
 import type { AuthUser, UserRole } from '@/types/xpayments';
 
@@ -512,11 +513,9 @@ export default function XPaymentsLanding() {
               {/* Right column — World Map */}
               <div className="relative h-[320px] w-full sm:h-[420px] lg:h-[520px]">
                 <div className="absolute inset-0 -right-[6%] overflow-hidden">
-                  <img
-                    src="/images/world-map-glow.png"
-                    alt="Mapa mundial iluminado mostrando a rede global de pagamentos da XPayments"
-                    className="h-full w-full animate-[xp-glow-pulse_4s_ease-in-out_infinite] object-cover object-center opacity-90 [mask-image:radial-gradient(ellipse_75%_75%_at_center,black_45%,transparent_92%)]"
-                  />
+                  <div className="h-full w-full [mask-image:radial-gradient(ellipse_75%_75%_at_center,black_45%,transparent_92%)]">
+                    <WorldMapSVG />
+                  </div>
                 </div>
                 <CurrencyCard code="USD" name="Dólar Americano" symbol="$" color="#16a34a" className="left-[8%] top-[6%]" />
                 <CurrencyCard code="EUR" name="Euro" symbol="€" color="#2563eb" className="left-[2%] top-[34%]" />
