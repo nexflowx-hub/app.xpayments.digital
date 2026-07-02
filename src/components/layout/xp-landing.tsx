@@ -23,7 +23,6 @@ import {
   ShoppingBag,
   Shuffle,
   HelpCircle,
-  Send,
   Tag,
   CreditCard,
   FileText,
@@ -33,7 +32,6 @@ import {
   Calendar,
   Copy,
   Menu,
-  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AuthUser, UserRole } from '@/types/xpayments';
@@ -72,14 +70,6 @@ const KPI_DATA = [
 ];
 
 const CODE_TABS = ['Node.js', 'PHP', 'Python', 'Go', 'cURL'];
-
-const QUICK_QUESTIONS = [
-  { icon: HelpCircle, label: 'Como funciona a plataforma?' },
-  { icon: CreditCard, label: 'Quais métodos de pagamento?' },
-  { icon: Tag, label: 'Taxas e Pricing' },
-  { icon: FileText, label: 'Integração via API' },
-  { icon: Headphones, label: 'Falar com suporte humano' },
-];
 
 const CONTACTS = [
   { label: 'WhatsApp', src: '/logos/whatsapp.svg', color: '#25D366' },
@@ -397,8 +387,6 @@ export default function XPaymentsLanding() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [aiOpen, setAiOpen] = useState(true);
-  const [aiValue, setAiValue] = useState('');
   const [codeTab, setCodeTab] = useState('Node.js');
 
   const openAuth = (mode: 'login' | 'register') => {
@@ -409,8 +397,8 @@ export default function XPaymentsLanding() {
   return (
     <div className="min-h-screen flex flex-col bg-[#020817] text-white">
       {/* ══════════════════ HEADER ══════════════════ */}
-      <header className="relative z-30 h-20 border-b border-white/[0.06]">
-        <div className="mx-auto flex h-20 max-w-[1600px] items-center justify-between px-6 lg:px-12">
+      <header className="relative z-30 h-14 sm:h-16 lg:h-20 border-b border-white/[0.06]">
+        <div className="mx-auto flex h-14 sm:h-16 lg:h-20 max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-12">
           {/* Logo */}
           <a href="#" className="flex items-center gap-2.5">
             <XLogo className="h-8 w-8" />
@@ -510,26 +498,26 @@ export default function XPaymentsLanding() {
               </div>
 
               {/* Right column — World Map */}
-              <div className="relative h-[320px] w-full sm:h-[420px] lg:h-[520px]">
-                <div className="absolute inset-0 flex items-center justify-center -right-[6%]">
+              <div className="relative h-[280px] w-full sm:h-[420px] lg:h-[520px]">
+                <div className="absolute inset-0 flex items-center justify-center -right-[6%] overflow-hidden">
                   <img
                     src="/images/world-map-glow.png"
                     alt="Mapa mundial iluminado mostrando a rede global de pagamentos da XPayments"
                     className="h-full max-h-full w-auto mix-blend-screen [mask-image:radial-gradient(ellipse_90%_85%_at_center,black_30%,transparent_100%)]"
                   />
                 </div>
-                <CurrencyCard code="USD" name="Dólar Americano" symbol="$" color="#16a34a" className="left-[8%] top-[6%]" />
-                <CurrencyCard code="EUR" name="Euro" symbol="€" color="#2563eb" className="left-[2%] top-[34%]" />
+                <CurrencyCard code="USD" name="Dólar Americano" symbol="$" color="#16a34a" className="hidden sm:block left-[8%] top-[6%]" />
+                <CurrencyCard code="EUR" name="Euro" symbol="€" color="#2563eb" className="hidden sm:block left-[2%] top-[34%]" />
                 <CurrencyCard
                   code="BRL" name="Real Brasileiro"
                   flag={<svg viewBox="0 0 32 32" className="h-full w-full"><rect width="32" height="32" fill="#009B3A" /><path d="M16 5 L29 16 L16 27 L3 16 Z" fill="#FEDF00" /><circle cx="16" cy="16" r="6" fill="#002776" /></svg>}
-                  className="left-[10%] top-[62%]"
+                  className="hidden md:block left-[10%] top-[62%]"
                 />
-                <CurrencyCard code="JPY" name="Yen Japonês" symbol="¥" color="#c026d3" className="right-[2%] top-[26%]" />
+                <CurrencyCard code="JPY" name="Yen Japonês" symbol="¥" color="#c026d3" className="hidden sm:block right-[2%] top-[26%]" />
                 <CurrencyCard
                   code="NGN" name="Naira Nigeriano"
                   flag={<svg viewBox="0 0 32 32" className="h-full w-full"><rect width="32" height="32" fill="#ffffff" /><rect width="10.66" height="32" fill="#008751" /><rect width="10.66" height="32" x="21.33" fill="#008751" /></svg>}
-                  className="right-[16%] top-[74%]"
+                  className="hidden lg:block right-[16%] top-[74%]"
                 />
               </div>
             </div>
@@ -579,12 +567,8 @@ export default function XPaymentsLanding() {
                 <img src="/logos/pix.svg" alt="" className="h-6 w-6" />
                 <span className="text-lg font-semibold lowercase tracking-tight text-[#32BCAD]">pix</span>
               </span>
-              <span className="flex items-center gap-1.5 text-base font-bold text-white">
-                <span className="rounded bg-white px-1.5 py-0.5 text-xs font-extrabold text-[#020817]">MB</span>WAY
-              </span>
-              <span className="flex items-center gap-1 text-lg font-semibold lowercase text-white">
-                <span className="text-[#00c3e3]">%</span>bizum
-              </span>
+              <img src="/logos/mbway.svg" alt="MB WAY" className="h-5 w-auto" />
+              <img src="/logos/bizum.png" alt="Bizum" className="h-5 w-auto" />
               <span className="flex items-center gap-2 text-sm font-medium text-zinc-400">
                 <Landmark className="h-5 w-5" />
                 Transferência Bancária
@@ -746,71 +730,6 @@ export default function XPaymentsLanding() {
             <span className="text-sm font-medium text-white">{c.label}</span>
           </a>
         ))}
-      </div>
-
-      {/* ══════════════════ AI ASSISTANT ══════════════════ */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
-        {aiOpen && (
-          <div className="w-[340px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a1524] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)]">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2563eb]">
-                  <XLogo className="h-5 w-5" />
-                </span>
-                <div className="leading-tight">
-                  <div className="text-sm font-semibold text-white">Assistente X</div>
-                  <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
-                    Online agora
-                  </div>
-                </div>
-              </div>
-              <button onClick={() => setAiOpen(false)} className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white" aria-label="Fechar assistente">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            {/* Body */}
-            <div className="space-y-4 px-4 py-4">
-              <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white/[0.06] px-4 py-3 text-sm leading-relaxed text-white">
-                Olá! 👋<br />Sou o Assistente XPayments.<br />Como posso ajudar você hoje?
-              </div>
-              <div className="flex flex-col gap-2">
-                {QUICK_QUESTIONS.map((q) => {
-                  const Icon = q.icon;
-                  return (
-                    <button key={q.label} className="flex items-center gap-2.5 rounded-xl border border-white/[0.08] bg-[#071120]/60 px-3.5 py-2.5 text-left text-sm text-white transition-colors hover:bg-white/[0.06]">
-                      <Icon className="h-4 w-4 shrink-0 text-[#2563eb]" />
-                      {q.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            {/* Input */}
-            <div className="border-t border-white/[0.08] p-3">
-              <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#071120] px-3 py-2">
-                <input
-                  value={aiValue}
-                  onChange={(e) => setAiValue(e.target.value)}
-                  placeholder="Pergunte qualquer coisa..."
-                  className="flex-1 bg-transparent text-sm text-white placeholder:text-zinc-500 focus:outline-none"
-                />
-                <button className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#2563eb] text-white transition-colors hover:bg-blue-500" aria-label="Enviar mensagem">
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        {/* Launcher */}
-        <button
-          onClick={() => setAiOpen((o: boolean) => !o)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-[0_16px_40px_-8px_rgba(37,99,235,0.7)] transition-transform hover:scale-105"
-          aria-label={aiOpen ? 'Fechar assistente' : 'Abrir assistente'}
-        >
-          {aiOpen ? <X className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
-        </button>
       </div>
 
       {/* ══════════════════ AUTH MODAL ══════════════════ */}
