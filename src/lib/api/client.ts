@@ -485,6 +485,17 @@ export const xpApi = {
       get<unknown>('/users', params as Record<string, string | number | undefined>),
   },
 
+  // ── CHECKOUT PÚBLICO (Sessões) ──
+  checkout: {
+    /** GET /checkout/session/:id — Lê os dados reais e invioláveis da sessão (preço, loja, etc) */
+    getSession: (sessionId: string) =>
+      get<{ amountFiat: number; currency: string; storeName: string; logoUrl?: string; primaryColor?: string }>(`/checkout/session/${sessionId}`),
+
+    /** POST /checkout/initiate — Processa o pagamento usando apenas o Session ID */
+    initiate: (data: { sessionId: string; customerDetails: { fullName?: string; email: string; taxId?: string } }) =>
+      post<{ gateway: string; checkoutData: unknown }>('/checkout/initiate', data),
+  },
+
   // ── DASHBOARD (dados agregados) ──
   dashboard: {
     getWallets: () => get<unknown>('/dashboard/wallets'),
