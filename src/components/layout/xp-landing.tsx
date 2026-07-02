@@ -567,8 +567,11 @@ export default function XPaymentsLanding() {
                 <img src="/logos/pix.svg" alt="" className="h-6 w-6" />
                 <span className="text-lg font-semibold lowercase tracking-tight text-[#32BCAD]">pix</span>
               </span>
-              <img src="/logos/mbway.svg" alt="MB WAY" className="h-5 w-auto" />
-              <img src="/logos/bizum.png" alt="Bizum" className="h-5 w-auto" />
+              <span className="flex items-center gap-1.5">
+                <img src="/logos/mbway.svg" alt="MB WAY" className="h-5 w-auto" />
+                <span className="text-sm font-semibold text-white">MBWay</span>
+              </span>
+              <img src="/logos/bizum.svg" alt="Bizum" className="h-5 w-auto" />
               <span className="flex items-center gap-2 text-sm font-medium text-zinc-400">
                 <Landmark className="h-5 w-5" />
                 Transferência Bancária
